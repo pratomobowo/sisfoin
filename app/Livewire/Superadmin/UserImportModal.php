@@ -33,18 +33,22 @@ class UserImportModal extends Component
         $this->isLoading = true;
         
         try {
-            // Get employees data with email, NIP, and active status
+            // Employees
+            $employeesTotal = \DB::table('employees')->where('status_aktif', 'Aktif')->count();
+            
             $employeesQuery = \DB::table('employees')
+                ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->whereNotNull('nip')
-                ->where('nip', '!=', '')
-                ->where('status_aktif', 'Aktif');
+                ->where('nip', '!=', '');
             
-            $employeesTotal = $employeesQuery->count();
+            $employeesReady = $employeesQuery->count();
+            $employeesSkipped = $employeesTotal - $employeesReady; // Skipped due to missing email/nip
+            
             $employeesData = $employeesQuery->get(['id', 'nama', 'email', 'nip']);
 
-            // Check which employees are new vs existing
+            // Check new vs existing
             $employeesNew = 0;
             $employeesExisting = 0;
             foreach ($employeesData as $employee) {
@@ -56,18 +60,22 @@ class UserImportModal extends Component
                 }
             }
 
-            // Get dosens data with email, NIP, and active status
+            // Dosens
+            $dosensTotal = \DB::table('dosens')->where('status_aktif', 'Aktif')->count();
+            
             $dosensQuery = \DB::table('dosens')
+                ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->whereNotNull('nip')
-                ->where('nip', '!=', '')
-                ->where('status_aktif', 'Aktif');
+                ->where('nip', '!=', '');
             
-            $dosensTotal = $dosensQuery->count();
+            $dosensReady = $dosensQuery->count();
+            $dosensSkipped = $dosensTotal - $dosensReady;
+
             $dosensData = $dosensQuery->get(['id', 'nama', 'email', 'nidn']);
 
-            // Check which dosens are new vs existing
+            // Check new vs existing
             $dosensNew = 0;
             $dosensExisting = 0;
             foreach ($dosensData as $dosen) {
@@ -81,27 +89,24 @@ class UserImportModal extends Component
 
             $this->importCounts = [
                 'employees_total' => $employeesTotal,
+                'employees_ready' => $employeesReady,
+                'employees_skipped' => $employeesSkipped,
                 'employees_new' => $employeesNew,
                 'employees_existing' => $employeesExisting,
+                
                 'dosens_total' => $dosensTotal,
+                'dosens_ready' => $dosensReady,
+                'dosens_skipped' => $dosensSkipped,
                 'dosens_new' => $dosensNew,
                 'dosens_existing' => $dosensExisting,
+                
                 'total_new' => $employeesNew + $dosensNew,
                 'total_existing' => $employeesExisting + $dosensExisting,
             ];
 
         } catch (\Exception $e) {
             \Log::error('Error preparing import data: ' . $e->getMessage());
-            $this->importCounts = [
-                'employees_total' => 0,
-                'employees_new' => 0,
-                'employees_existing' => 0,
-                'dosens_total' => 0,
-                'dosens_new' => 0,
-                'dosens_existing' => 0,
-                'total_new' => 0,
-                'total_existing' => 0,
-            ];
+            $this->importCounts = [];
         }
 
         $this->isLoading = false;

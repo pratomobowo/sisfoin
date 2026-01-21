@@ -41,12 +41,18 @@
                             <!-- Stats -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
-                                    <div class="text-2xl font-bold text-gray-900">{{ $importCounts['employees_total'] ?? 0 }}</div>
-                                    <div class="text-xs text-gray-600">Karyawan</div>
+                                    <div class="text-2xl font-bold text-gray-900">{{ $importCounts['employees_ready'] ?? 0 }}</div>
+                                    <div class="text-xs text-gray-600">Karyawan (Siap)</div>
+                                    @if(($importCounts['employees_skipped'] ?? 0) > 0)
+                                        <div class="text-[10px] text-red-500 mt-1">{{ $importCounts['employees_skipped'] }} data tidak lengkap</div>
+                                    @endif
                                 </div>
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
-                                    <div class="text-2xl font-bold text-gray-900">{{ $importCounts['dosens_total'] ?? 0 }}</div>
-                                    <div class="text-xs text-gray-600">Dosen</div>
+                                    <div class="text-2xl font-bold text-gray-900">{{ $importCounts['dosens_ready'] ?? 0 }}</div>
+                                    <div class="text-xs text-gray-600">Dosen (Siap)</div>
+                                     @if(($importCounts['dosens_skipped'] ?? 0) > 0)
+                                        <div class="text-[10px] text-red-500 mt-1">{{ $importCounts['dosens_skipped'] }} data tidak lengkap</div>
+                                    @endif
                                 </div>
                                 <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
                                     <div class="text-2xl font-bold text-green-600">{{ $importCounts['total_new'] ?? 0 }}</div>
