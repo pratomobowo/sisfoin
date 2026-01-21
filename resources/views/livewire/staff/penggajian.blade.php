@@ -1,0 +1,249 @@
+<div class="space-y-6">
+    <!-- Info Card -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Informasi Slip Gaji</h3>
+                <p class="mt-1 text-sm text-blue-700">
+                    Berikut adalah ringkasan penggajian Anda. Slip gaji yang sudah tersedia dapat diunduh dalam format PDF.
+                    Jika slip gaji belum tersedia, silakan hubungi bagian SDM.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    @if($this->availableSlips > 0)
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Gaji Bersih Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Gaji Bersih</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1">
+                        Rp {{ number_format($this->totalGajiBersih, 0, ',', '.') }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Dari {{ $this->availableSlips }} slip tersedia
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Potongan Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Potongan</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1">
+                        Rp {{ number_format($this->totalPotongan, 0, ',', '.') }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Total semua potongan
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Honor Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Honor</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1">
+                        Rp {{ number_format($this->totalHonor, 0, ',', '.') }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Honor tetap + tunai + insentif
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Pajak Kurang Potong Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Pajak Kurang Potong</p>
+                    <p class="text-2xl font-bold text-yellow-600 mt-1">
+                        Rp {{ number_format($this->totalPajakKurangPotong, 0, ',', '.') }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        PPh 21 kurang dipotong
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex-1">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="search"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Cari berdasarkan periode..."
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slip Gaji List -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="overflow-hidden">
+            @if($slipGaji->count() > 0)
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gaji Bersih</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Potongan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Honor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pajak Kurang Potong</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($slipGaji as $index => $slip)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $pagination->firstItem() + $index }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ $slip['period_name'] }}</div>
+                                    <div class="text-sm text-gray-500">{{ $slip['period'] }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if(isset($slip['gaji_bersih']) && $slip['gaji_bersih'] > 0)
+                                        <div class="text-sm font-medium text-green-600">
+                                            Rp {{ number_format($slip['gaji_bersih'], 0, ',', '.') }}
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if(isset($slip['total_potongan']) && $slip['total_potongan'] > 0)
+                                        <div class="text-sm font-medium text-red-600">
+                                            Rp {{ number_format($slip['total_potongan'], 0, ',', '.') }}
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if(isset($slip['total_honor']) && $slip['total_honor'] > 0)
+                                        <div class="text-sm font-medium text-blue-600">
+                                            Rp {{ number_format($slip['total_honor'], 0, ',', '.') }}
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if(isset($slip['pajak_kurang_potong']) && $slip['pajak_kurang_potong'] > 0)
+                                        <div class="text-sm font-medium text-yellow-600">
+                                            Rp {{ number_format($slip['pajak_kurang_potong'], 0, ',', '.') }}
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($slip['can_download'])
+                                        <a href="{{ route('staff.penggajian.download-pdf', $slip['header_id']) }}" 
+                                           class="inline-flex items-center px-3 py-1 border border-green-300 text-sm leading-4 font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" 
+                                           title="Download PDF">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </a>
+                                    @else
+                                        <span class="text-sm text-gray-500 flex items-center justify-center">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Tidak Tersedia
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center py-12">
+                    <div class="text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Slip Gaji</h3>
+                        <p class="text-gray-500">Slip gaji Anda belum tersedia. Silakan hubungi bagian SDM untuk informasi lebih lanjut.</p>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if($slipGaji->count() > 0)
+        <x-superadmin.pagination 
+            :currentPage="$pagination->currentPage()"
+            :lastPage="$pagination->lastPage()"
+            :total="$pagination->total()"
+            :perPage="$pagination->perPage()"
+            :perPageOptions="[10, 25, 50, 100]"
+            :showPageInfo="true"
+            :showPerPage="true"
+            alignment="justify-between"
+            perPageWireModel="perPage"
+            previousPageWireModel="previousPage"
+            nextPageWireModel="nextPage"
+            gotoPageWireModel="gotoPage"
+        />
+    @endif
+</div>
