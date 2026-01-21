@@ -133,79 +133,79 @@ class UserImportModal extends Component
                 ->where('status_aktif', 'Aktif')
                 ->get(['id', 'nama', 'email', 'nip']);
 
+            // Import employees
             foreach ($employeesData as $employee) {
                 $existingUser = \DB::table('users')->where('email', $employee->email)->first();
                 
+                $userData = [
+                    'name' => $employee->nama,
+                    'employee_id' => $employee->id,
+                    'employee_type' => 'employee',
+                    'updated_at' => now(),
+                ];
+
                 if ($existingUser) {
-                    // Update existing user
-                    \DB::table('users')
-                        ->where('id', $existingUser->id)
-                        ->update([
-                            'name' => $employee->nama,
-                            'updated_at' => now(),
-                        ]);
+                    \DB::table('users')->where('id', $existingUser->id)->update($userData);
                     $updatedCount++;
                 } else {
-                    // Create new user
-                    $userId = \DB::table('users')->insertGetId([
-                        'name' => $employee->nama,
+                    $userData = array_merge($userData, [
                         'email' => $employee->email,
                         'password' => bcrypt('password123'),
                         'email_verified_at' => now(),
                         'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
-
-                    // Assign staff role
+                    $userId = \DB::table('users')->insertGetId($userData);
+                    
                     \DB::table('model_has_roles')->insert([
                         'role_id' => $staffRole->id,
                         'model_type' => 'App\Models\User',
                         'model_id' => $userId,
                     ]);
-
                     $importedCount++;
                 }
             }
 
-            // Import dosens with email, NIP, and active status
+            // Import dosens
             $dosensData = \DB::table('dosens')
+                ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
-                ->whereNotNull('nip')
-                ->where('nip', '!=', '')
-                ->where('status_aktif', 'Aktif')
-                ->get(['id', 'nama', 'email', 'nidn']);
+                ->where(function($query) {
+                    $query->where(function($q) {
+                        $q->whereNotNull('nip')->where('nip', '!=', '');
+                    })->orWhere(function($q) {
+                        $q->whereNotNull('nidn')->where('nidn', '!=', '');
+                    });
+                })
+                ->get(['id', 'nama', 'email', 'nidn', 'nip']);
 
             foreach ($dosensData as $dosen) {
                 $existingUser = \DB::table('users')->where('email', $dosen->email)->first();
                 
+                $userData = [
+                    'name' => $dosen->nama,
+                    'employee_id' => $dosen->id,
+                    'employee_type' => 'dosen', // Assuming 'dosen' or 'lecturer'? Let's check User model/enum if possible. Usually 'dosen' based on previous context.
+                    'updated_at' => now(),
+                ];
+
                 if ($existingUser) {
-                    // Update existing user
-                    \DB::table('users')
-                        ->where('id', $existingUser->id)
-                        ->update([
-                            'name' => $dosen->nama,
-                            'updated_at' => now(),
-                        ]);
+                    \DB::table('users')->where('id', $existingUser->id)->update($userData);
                     $updatedCount++;
                 } else {
-                    // Create new user
-                    $userId = \DB::table('users')->insertGetId([
-                        'name' => $dosen->nama,
+                    $userData = array_merge($userData, [
                         'email' => $dosen->email,
                         'password' => bcrypt('password123'),
                         'email_verified_at' => now(),
                         'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
+                    $userId = \DB::table('users')->insertGetId($userData);
 
-                    // Assign staff role
                     \DB::table('model_has_roles')->insert([
                         'role_id' => $staffRole->id,
                         'model_type' => 'App\Models\User',
                         'model_id' => $userId,
                     ]);
-
                     $importedCount++;
                 }
             }
