@@ -155,6 +155,8 @@
                         @error('employee_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+                    
                     <!-- Employee ID -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -195,6 +197,7 @@
                     </div>
                 </div>
                 
+                <!-- Password & Roles Grid -->
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mt-6">
                     <!-- Password -->
                     <div>
@@ -235,23 +238,19 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Peran <span class="text-red-500">*</span>
                         </label>
-                        <div class="mt-1 rounded-md border border-gray-300 p-4 max-h-48 overflow-y-auto">
-                            <div class="space-y-2">
+                        <div class="mt-1 rounded-md border border-gray-300 p-4 max-h-48 overflow-y-auto bg-gray-50/50">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                 @foreach($roles as $role)
-                                    <div class="flex items-start">
-                                        <div class="flex items-center h-5">
-                                            <input type="checkbox" 
-                                                   wire:model="selectedRoles"
-                                                   value="{{ $role->name }}"
-                                                   id="role_{{ $role->id }}"
-                                                   class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
-                                        </div>
-                                        <div class="ml-3 text-sm">
-                                            <label for="role_{{ $role->id }}" class="font-medium text-gray-700">
-                                                {{ ucfirst(str_replace('-', ' ', $role->name)) }}
-                                            </label>
-                                        </div>
-                                    </div>
+                                    <label class="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all cursor-pointer">
+                                        <input type="checkbox" 
+                                               wire:model="selectedRoles"
+                                               value="{{ $role->name }}"
+                                               id="role_{{ $role->id }}"
+                                               class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                        <span class="ml-3 text-sm font-medium text-gray-700">
+                                            {{ ucfirst(str_replace('-', ' ', $role->name)) }}
+                                        </span>
+                                    </label>
                                 @endforeach
                             </div>
                         </div>
@@ -262,21 +261,16 @@
                 </div>
                 
                 <!-- Submit Button -->
-                <div class="mt-6 flex justify-end space-x-3">
+                <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
                     <a href="{{ route('superadmin.users.index') }}" 
-                       class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                       class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all font-medium text-sm">
                         Batal
                     </a>
                     <button type="submit" 
                             wire:loading.attr="disabled"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2">
-                        <svg wire:loading.remove class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <svg wire:loading class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                            class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center space-x-2 font-semibold text-sm">
+                        <x-lucide-check wire:loading.remove class="w-4 h-4" />
+                        <x-lucide-loader-2 wire:loading class="animate-spin w-4 h-4" />
                         <span wire:loading.remove>{{ $isEditing ? 'Update Pengguna' : 'Simpan Pengguna' }}</span>
                         <span wire:loading>Memproses...</span>
                     </button>
