@@ -1,12 +1,12 @@
 <div class="w-72 bg-white border-r border-gray-100 fixed h-full z-50 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0"
-     x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-     x-show="true" {{-- Always rendered but hidden via transform --}}
+     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+     @click.away="if (window.innerWidth < 1024) sidebarOpen = false"
      x-cloak>
     
     <!-- Logo & Brand Header -->
-    <div class="flex items-center justify-between h-20 px-6 border-b border-gray-50 bg-white relative">
+    <div class="flex items-center justify-between h-20 px-6 border-b border-gray-100 bg-white relative">
         <div class="flex items-center space-x-3">
-            <div class="p-1.5 bg-blue-50 rounded-xl">
+            <div class="p-2 bg-blue-50 rounded-xl">
                 <img src="{{ asset('images/logo-usbypkp.jpg') }}" alt="USB PKP Logo" class="w-8 h-8 rounded-lg object-cover">
             </div>
             <div class="flex flex-col">
@@ -15,10 +15,12 @@
             </div>
         </div>
 
-        <!-- Close button for mobile (Inside Sidebar) -->
-        <button @click="sidebarOpen = false" 
-                class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 focus:outline-none active:scale-95 transition-all">
-            <x-lucide-x class="w-5 h-5" />
+        <!-- Close button for mobile -->
+        <button type="button" 
+                @click.stop="sidebarOpen = false" 
+                class="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 text-gray-900 hover:bg-gray-100 focus:outline-none transition-all border border-gray-100 shadow-sm"
+                aria-label="Close Sidebar">
+            <x-lucide-x class="w-6 h-6" />
         </button>
     </div>
 
