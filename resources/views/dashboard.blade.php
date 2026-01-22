@@ -26,6 +26,17 @@
             $unitKerja = $employee?->satuan_kerja ?? $employee?->unit_kerja ?? 'Unit Kerja Belum Diatur';
             $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
             
+            @php
+                dump([
+                    'user_id' => $user->id,
+                    'active_role' => getActiveRole(),
+                    'employee_exists' => !is_null($employee),
+                    'employee_class' => $employee ? get_class($employee) : 'null',
+                    'satuan_kerja' => $employee?->satuan_kerja,
+                    'unit_kerja_alias' => $employee?->unit_kerja
+                ]);
+            @endphp
+            
             // Metrics
             $nip = $user->nip;
             $userSlipCount = \App\Models\SlipGajiDetail::where('nip', $nip)->count();
