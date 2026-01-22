@@ -1,9 +1,7 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    {{-- Breadcrumb --}}
-    <nav class="flex mb-4" aria-label="Breadcrumb">
+@section('breadcrumb')
+    <nav class="flex" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-2">
             <li class="inline-flex items-center">
                 <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
@@ -18,8 +16,10 @@
             </li>
         </ol>
     </nav>
+@endsection
 
-    {{-- Header --}}
+@section('content')
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="mb-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
