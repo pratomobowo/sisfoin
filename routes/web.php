@@ -58,6 +58,9 @@ Route::prefix('superadmin')->middleware(['auth', 'role:super-admin'])->name('sup
     // Activity Logs routes
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
+    // System Services route
+    Route::get('/system-services', App\Livewire\Superadmin\SystemServices::class)->name('system-services.index');
+
     // SMTP Management routes
     Route::get('/smtp', function () {
         return view('superadmin.smtp.index');

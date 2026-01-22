@@ -50,6 +50,13 @@
                     </x-slot>
                     Log Aktivitas
                 </x-sidebar-link>
+
+                <x-sidebar-link href="{{ route('superadmin.system-services.index') }}" :active="request()->routeIs('superadmin.system-services.index')">
+                    <x-slot name="icon">
+                        <x-lucide-cpu class="w-5 h-5" />
+                    </x-slot>
+                    System Services
+                </x-sidebar-link>
                 
                 <!-- Email Group -->
                 <div x-data="{ open: {{ request()->routeIs('superadmin.smtp.*') || request()->routeIs('superadmin.email-log.*') ? 'true' : 'false' }} }">
