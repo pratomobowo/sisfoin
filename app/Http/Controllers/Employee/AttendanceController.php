@@ -3,230 +3,170 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Employee\Attendance as EmployeeAttendance;
+use App\Models\WorkShift;
+use App\Models\Holiday;
+use App\Models\AttendanceSetting;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
     /**
-     * Display a listing of attendance records.
+     * Display staff attendance history.
      */
-    public function index(): View
+    public function index(Request $request): View
+    {
+        $month = $request->get('month', now()->month);
+        $year = $request->get('year', now()->year);
+        $statusFilter = $request->get('status', '');
+
+        $daysInMonth = $this->getDaysInMonth($year, $month);
+        $data = $this->getAttendanceData($year, $month, $statusFilter, $daysInMonth);
+
+        return view('staff.attendance-history', [
+            'history' => $data['history'],
+            'summary' => $data['summary'],
+            'months' => [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            ],
+            'years' => range(now()->year, 2024, -1),
+            'month' => $month,
+            'year' => $year,
+        ]);
+    }
+
+    private function getDaysInMonth($year, $month)
+    {
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        $days = [];
+        $current = $startDate->copy();
+        
+        // Get working days setting (1=Mon, 2=Tue, ..., 7=Sun)
+        $workingDays = AttendanceSetting::getValue('working_days', '1,2,3,4,5,6');
+        $workingDaysArray = is_array($workingDays) ? $workingDays : explode(',', $workingDays);
+
+        while ($current->lte($endDate)) {
+            $isHoliday = Holiday::isHoliday($current);
+            $holidayInfo = $isHoliday ? Holiday::getHolidayInfo($current) : null;
+            $isWorkingDay = in_array($current->dayOfWeekIso, $workingDaysArray);
+            
+            $days[] = [
+                'date' => $current->format('Y-m-d'),
+                'day' => $current->day,
+                'day_name' => $current->locale('id')->isoFormat('dddd'),
+                'formatted_date' => $current->format('d M Y'),
+                'is_weekend' => !$isWorkingDay,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayInfo?->name,
+            ];
+            
+            $current->addDay();
+        }
+
+        return collect($days)->reverse();
+    }
+
+    private function getAttendanceData($year, $month, $statusFilter, $daysInMonth)
     {
         $user = auth()->user();
-        $startDate = now()->startOfMonth();
-        $endDate = now()->endOfMonth();
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth()->format('Y-m-d');
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
 
-        $realAttendances = \App\Models\Employee\Attendance::where('user_id', $user->id)
+        // Get actual attendance records
+        $records = EmployeeAttendance::where('user_id', $user->id)
             ->whereBetween('date', [$startDate, $endDate])
-            ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->keyBy(function($item) {
+                return $item->date->format('Y-m-d');
+            });
 
-        $attendances = $realAttendances->map(function ($attendance) {
-            return [
-                'id' => $attendance->id,
-                'date' => $attendance->date->format('Y-m-d'),
-                'formatted_date' => $attendance->date->format('d/m/Y'),
-                'day_name' => $attendance->date->locale('id')->isoFormat('dddd'),
-                'check_in_time' => $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '-',
-                'check_out_time' => $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : '-',
-                'status' => $attendance->status,
-                'status_label' => $attendance->status_label,
-                'notes' => $attendance->notes,
-            ];
-        });
-
-        // Calculate summary
-        $totalDays = $realAttendances->count();
-        $presentDays = $realAttendances->whereIn('status', ['on_time', 'early_arrival', 'present', 'late'])->count();
-        $lateDays = $realAttendances->where('status', 'late')->count();
-        
+        $history = [];
         $summary = [
-            'total_days' => $totalDays,
-            'present_days' => $presentDays,
-            'late_days' => $lateDays,
-            'attendance_percentage' => $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0,
+            'present' => 0,
+            'late' => 0,
+            'incomplete' => 0,
+            'absent' => 0,
+            'holiday' => 0,
         ];
 
-        return view('staff.absensi.index', [
-            'title' => 'Riwayat Absensi',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Layanan Mandiri', 'url' => null],
-                ['name' => 'Absensi', 'url' => null],
-            ],
-            'attendances' => $attendances,
+        foreach ($daysInMonth as $day) {
+            $date = $day['date'];
+            $record = $records->get($date);
+            $status = null;
+            $statusLabel = null;
+            $statusBadge = null;
+            $checkIn = null;
+            $checkOut = null;
+            $notes = null;
+
+            if ($record) {
+                $status = $record->status;
+                $statusLabel = $record->status_label;
+                $statusBadge = $record->status_badge;
+                $checkIn = $record->check_in_time ? $record->check_in_time->format('H:i') : '-';
+                $checkOut = $record->check_out_time ? $record->check_out_time->format('H:i') : '-';
+                $notes = $record->notes;
+
+                // Simple summary mapping
+                if (in_array($status, ['on_time', 'early_arrival', 'present'])) $summary['present']++;
+                elseif ($status === 'late') { $summary['present']++; $summary['late']++; }
+                elseif ($status === 'incomplete') $summary['incomplete']++;
+                elseif ($status === 'absent') $summary['absent']++;
+            } else {
+                // Synthesis for missing records
+                $isPastDay = Carbon::parse($date)->isPast() && !Carbon::parse($date)->isToday();
+                
+                if ($day['is_holiday'] || $day['is_weekend']) {
+                    $status = 'off';
+                    $statusLabel = $day['is_holiday'] ? 'Libur' : 'Weekend';
+                    $statusBadge = 'gray';
+                    if ($day['is_holiday']) $summary['holiday']++;
+                } elseif ($isPastDay) {
+                    $status = 'absent';
+                    $statusLabel = 'Tidak Hadir';
+                    $statusBadge = 'red';
+                    $summary['absent']++;
+                }
+            }
+
+            // Apply status filter
+            if ($statusFilter && $status !== $statusFilter) {
+                if ($statusFilter === 'present' && !in_array($status, ['on_time', 'early_arrival', 'present', 'late'])) continue;
+                if ($statusFilter === 'late' && $status !== 'late') continue;
+                if ($statusFilter === 'absent' && $status !== 'absent') continue;
+                if ($statusFilter === 'incomplete' && $status !== 'incomplete') continue;
+                
+                // If filtering by specific status and it doesn't match, skip
+                if (!in_array($statusFilter, ['present', 'late', 'absent', 'incomplete'])) {
+                    continue;
+                }
+            }
+
+            $history[] = [
+                'date' => $day['date'],
+                'day_name' => $day['day_name'],
+                'formatted_date' => $day['formatted_date'],
+                'is_holiday' => $day['is_holiday'],
+                'is_weekend' => $day['is_weekend'],
+                'holiday_name' => $day['holiday_name'],
+                'status' => $status,
+                'status_label' => $statusLabel,
+                'status_badge' => $statusBadge,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'notes' => $notes,
+            ];
+        }
+
+        return [
+            'history' => $history,
             'summary' => $summary,
-        ]);
-    }
-
-    /**
-     * Get status label
-     */
-    private function getStatusLabel(string $status): string
-    {
-        return match ($status) {
-            'present' => 'Hadir',
-            'late' => 'Terlambat',
-            'absent' => 'Tidak Hadir',
-            'half_day' => 'Setengah Hari',
-            'sick' => 'Sakit',
-            'leave' => 'Cuti',
-            default => 'Unknown'
-        };
-    }
-
-    /**
-     * Get status badge class
-     */
-    private function getStatusBadge(string $status): string
-    {
-        return match ($status) {
-            'present' => 'bg-success text-white',
-            'late' => 'bg-warning text-dark',
-            'absent' => 'bg-danger text-white',
-            'half_day' => 'bg-info text-white',
-            'sick' => 'bg-secondary text-white',
-            'leave' => 'bg-primary text-white',
-            default => 'bg-secondary text-white'
-        };
-    }
-
-    /**
-     * Display the check-in/check-out form.
-     */
-    public function checkin(): View
-    {
-        return view('employee.attendance.checkin', [
-            'title' => 'Check In/Out',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Karyawan', 'url' => route('employee.dashboard')],
-                ['name' => 'Absensi', 'url' => route('employee.attendance.index')],
-                ['name' => 'Check In/Out', 'url' => null],
-            ],
-        ]);
-    }
-
-    /**
-     * Process check-in.
-     */
-    public function processCheckin(Request $request): JsonResponse
-    {
-        // TODO: Implement check-in logic
-        return response()->json([
-            'success' => true,
-            'message' => 'Check-in berhasil dicatat.',
-            'time' => now()->format('H:i:s'),
-        ]);
-    }
-
-    /**
-     * Process check-out.
-     */
-    public function processCheckout(Request $request): JsonResponse
-    {
-        // TODO: Implement check-out logic
-        return response()->json([
-            'success' => true,
-            'message' => 'Check-out berhasil dicatat.',
-            'time' => now()->format('H:i:s'),
-        ]);
-    }
-
-    /**
-     * Display attendance history.
-     */
-    public function history(): View
-    {
-        return view('employee.attendance.history', [
-            'title' => 'Riwayat Absensi',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Karyawan', 'url' => route('employee.dashboard')],
-                ['name' => 'Absensi', 'url' => route('employee.attendance.index')],
-                ['name' => 'Riwayat', 'url' => null],
-            ],
-        ]);
-    }
-
-    /**
-     * Generate attendance report.
-     */
-    public function report(): View
-    {
-        return view('employee.attendance.report', [
-            'title' => 'Laporan Absensi',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Karyawan', 'url' => route('employee.dashboard')],
-                ['name' => 'Absensi', 'url' => route('employee.attendance.index')],
-                ['name' => 'Laporan', 'url' => null],
-            ],
-        ]);
-    }
-
-    /**
-     * Show the form for creating a manual attendance record.
-     */
-    public function create(): View
-    {
-        return view('employee.attendance.create', [
-            'title' => 'Tambah Absensi Manual',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Karyawan', 'url' => route('employee.dashboard')],
-                ['name' => 'Absensi', 'url' => route('employee.attendance.index')],
-                ['name' => 'Tambah', 'url' => null],
-            ],
-        ]);
-    }
-
-    /**
-     * Store a manually created attendance record.
-     */
-    public function store(Request $request): RedirectResponse
-    {
-        // TODO: Implement manual attendance creation logic
-        return redirect()->route('employee.attendance.index')
-            ->with('success', 'Data absensi berhasil ditambahkan.');
-    }
-
-    /**
-     * Show the form for editing the specified attendance record.
-     */
-    public function edit(string $id): View
-    {
-        return view('employee.attendance.edit', [
-            'title' => 'Edit Data Absensi',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('dashboard')],
-                ['name' => 'Karyawan', 'url' => route('employee.dashboard')],
-                ['name' => 'Absensi', 'url' => route('employee.attendance.index')],
-                ['name' => 'Edit', 'url' => null],
-            ],
-        ]);
-    }
-
-    /**
-     * Update the specified attendance record.
-     */
-    public function update(Request $request, string $id): RedirectResponse
-    {
-        // TODO: Implement attendance update logic
-        return redirect()->route('employee.attendance.index')
-            ->with('success', 'Data absensi berhasil diperbarui.');
-    }
-
-    /**
-     * Remove the specified attendance record.
-     */
-    public function destroy(string $id): RedirectResponse
-    {
-        // TODO: Implement attendance deletion logic
-        return redirect()->route('employee.attendance.index')
-            ->with('success', 'Data absensi berhasil dihapus.');
+        ];
     }
 }
