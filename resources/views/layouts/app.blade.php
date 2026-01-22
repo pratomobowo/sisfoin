@@ -74,7 +74,7 @@
                                             Dasbor Utama
                                         </a>
                                         
-                                        <a href="{{ route('profile.edit') }}" 
+                                        <a href="{{ isActiveRole('staff|employee') ? route('staff.profile') : route('profile.edit') }}" 
                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             Pengaturan Profil
                                         </a>

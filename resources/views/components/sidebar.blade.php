@@ -89,7 +89,7 @@
         <div>
             <p class="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Modul Sistem</p>
             <div class="space-y-2">
-                @if(isActiveRole('super-admin') || isActiveRole('admin-sdm'))
+                @if(isActiveRole('super-admin|admin-sdm'))
                 <div x-data="{ open: {{ request()->routeIs('sdm.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-blue-50/50 transition-all duration-200">
@@ -119,7 +119,7 @@
                 </div>
                 @endif
 
-                @if(isActiveRole('employee') || isActiveRole('staff'))
+                @if(isActiveRole('employee|staff'))
                 <div x-data="{ open: {{ request()->routeIs('staff.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-emerald-50/50 transition-all duration-200">

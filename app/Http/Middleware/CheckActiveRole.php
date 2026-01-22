@@ -30,55 +30,52 @@ class CheckActiveRole
         }
 
         $user = auth()->user();
-
-        // Super-admin bypasses all role checks
-        if ($user->hasRole('super-admin')) {
-            \Log::info('User is super-admin, bypassing role check');
-            return $next($request);
-        }
-
-        // Check if user has the required role
-        if (! $user->hasRole($role)) {
-            \Log::info('User does not have required role', [
-                'required_role' => $role,
-                'user_roles' => $user->roles->pluck('name')->toArray(),
-            ]);
-            abort(403, 'Access denied. You do not have the required role.');
-        }
+        $requiredRoles = explode('|', $role);
 
         // Get active role with fallback
         $activeRole = getActiveRole();
-        
-        // If no active role is set, set the first available role that matches the required role
-        if (!$activeRole && $user->hasRole($role)) {
-            setActiveRole($role);
-            $activeRole = $role;
-            \Log::info('No active role set, setting to required role', [
-                'set_role' => $role,
-            ]);
-        }
 
-        // Check if the active role matches the required role
-        if ($activeRole !== $role) {
-            \Log::info('Active role does not match required role', [
-                'active_role' => $activeRole,
-                'required_role' => $role,
-                'user_roles' => $user->roles->pluck('name')->toArray(),
-            ]);
-            
-            // If user has the required role but active role doesn't match, 
-            // allow them to switch automatically if they have permission
-            if ($user->hasRole($role)) {
-                setActiveRole($role);
+        // 1. Automatic Role Switching
+        // If the current active role doesn't match the required role(s), 
+        // but the user HAS one of the required roles, switch to it automatically.
+        if (!in_array($activeRole, $requiredRoles)) {
+            $matchedRole = null;
+            foreach ($requiredRoles as $r) {
+                if ($user->hasRole($r)) {
+                    $matchedRole = $r;
+                    break;
+                }
+            }
+
+            if ($matchedRole) {
+                setActiveRole($matchedRole);
+                $activeRole = $matchedRole;
                 \Log::info('Automatically switched active role to match required role', [
-                    'switched_to' => $role,
+                    'switched_to' => $matchedRole,
                 ]);
-            } else {
-                abort(403, 'Access denied. Please switch to the correct role.');
             }
         }
 
-        \Log::info('Role check passed');
+        // 2. Permission Check
+        // User passes if:
+        // - Their active role is one of the required roles
+        // - They are a super-admin (bypass)
+        if (in_array($activeRole, $requiredRoles) || $user->hasRole('super-admin')) {
+            \Log::info('Role check passed', [
+                'active_role' => $activeRole,
+                'is_super_admin' => $user->hasRole('super-admin'),
+            ]);
+            return $next($request);
+        }
+
+        // 3. Access Denied
+        \Log::info('Role check failed', [
+            'active_role' => $activeRole,
+            'required_roles' => $requiredRoles,
+            'user_roles' => $user->roles->pluck('name')->toArray(),
+        ]);
+        
+        abort(403, 'Access denied. Please switch to the correct role.');
 
         return $next($request);
     }
