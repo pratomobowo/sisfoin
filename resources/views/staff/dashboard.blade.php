@@ -63,7 +63,7 @@
                     <p class="card-text text-muted mb-4">
                         Lihat data kehadiran, jam masuk, jam keluar, dan informasi lembur Anda.
                     </p>
-                    <a href="{{ route('staff.absensi.index') }}" class="btn btn-primary btn-lg w-100">
+                    <a href="{{ route('staff.attendance.index') }}" class="btn btn-primary btn-lg w-100">
                         <i class="fas fa-eye me-2"></i>
                         Lihat Absensi
                     </a>

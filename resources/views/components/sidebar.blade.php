@@ -147,7 +147,7 @@
                     </button>
                     <div x-show="open" x-cloak class="mt-2 ml-10 space-y-1 border-l border-emerald-100 pl-4">
                         <a href="{{ route('staff.penggajian.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.penggajian.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Informasi Gaji</a>
-                        <a href="{{ route('staff.absensi.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.absensi.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Riwayat Absensi</a>
+                        <a href="{{ route('staff.attendance.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.attendance.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Riwayat Absensi</a>
                         <a href="{{ route('staff.pengumuman.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.pengumuman.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Pengumuman</a>
                     </div>
                 </div>

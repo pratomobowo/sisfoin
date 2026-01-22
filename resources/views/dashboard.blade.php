@@ -105,7 +105,7 @@
                 <p class="text-xs sm:text-sm font-medium text-gray-500 mb-1">Absensi & Riwayat</p>
                 <p class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Monitoring Absensi</p>
                 <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-                    <a href="{{ route('staff.absensi.index') }}" class="group inline-flex items-center text-xs sm:text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+                    <a href="{{ route('staff.attendance.index') }}" class="group inline-flex items-center text-xs sm:text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
                         Buka Riwayat
                         <x-lucide-move-right class="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                     </a>
