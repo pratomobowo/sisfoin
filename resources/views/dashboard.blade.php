@@ -38,7 +38,7 @@
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        @if(isActiveRole('super-admin')))
+        @if(isActiveRole('super-admin'))
         <!-- Total Users -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -55,7 +55,7 @@
         </div>
         @endif
 
-        @if(isActiveRole('super-admin|admin-sdm|sdm')))
+        @if(isActiveRole('super-admin|admin-sdm|sdm'))
         <!-- Total Employees -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -103,7 +103,7 @@
         </div>
         @endif
 
-        @if(isActiveRole('staff|employee')))
+        @if(isActiveRole('staff|employee'))
         <!-- Staff Personal Info Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -170,7 +170,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Akses Cepat Modul</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @if(isActiveRole('super-admin')))
+            @if(isActiveRole('super-admin'))
             <!-- User Management -->
             <a href="{{ route('superadmin.users.index') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
@@ -240,7 +240,7 @@
             </a>
             @endif
 
-            @if(isActiveRole('staff|employee')))
+            @if(isActiveRole('staff|employee'))
             <!-- Staff Profile -->
             <a href="{{ route('staff.profile') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
@@ -274,7 +274,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Aksi Cepat</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            @if(isActiveRole('super-admin')))
+            @if(isActiveRole('super-admin'))
             <a href="{{ route('superadmin.users.index') }}" class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
                 <svg class="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -312,7 +312,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Aktivitas Terbaru</h2>
         <div class="space-y-4">
-            @if(isActiveRole('super-admin')))
+            @if(isActiveRole('super-admin'))
             @php
                 $recentUsers = App\Models\User::latest()->take(3)->get();
             @endphp
