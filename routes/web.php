@@ -190,7 +190,7 @@ Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->grou
 
     // Staff Absensi routes (view only)
     Route::prefix('absensi')->name('absensi.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Employee\AttendanceController::class, 'index'])->name('index');
+        Route::get('/', App\Livewire\Staff\AttendanceHistory::class)->name('index');
     });
 
     // Staff Pengumuman routes (view only)
