@@ -14,26 +14,6 @@
         </div>
     @endif
 
-    <!-- Flash Messages -->
-    @if(session()->has('success') || session()->has('error') || session()->has('info') || session()->has('warning'))
-        <div class="mb-6">
-            @if(session('success'))
-                <x-alert type="success" :message="session('success')" dismissible />
-            @endif
-            
-            @if(session('error'))
-                <x-alert type="error" :message="session('error')" dismissible />
-            @endif
-            
-            @if(session('info'))
-                <x-alert type="info" :message="session('info')" dismissible />
-            @endif
-            
-            @if(session('warning'))
-                <x-alert type="warning" :message="session('warning')" dismissible />
-            @endif
-        </div>
-    @endif
 
     <!-- Main Content -->
     <div class="row">

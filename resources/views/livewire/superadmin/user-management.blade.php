@@ -17,26 +17,6 @@
     </x-page-header>
 
     <div class="space-y-6 mt-6">
-        <!-- Flash Messages (Temporary until global toast is fully verified) -->
-        @if(session()->has('success'))
-            <div class="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
-                <x-lucide-check-circle class="w-5 h-5 mr-3 text-green-500" />
-                <p class="text-sm font-medium">{{ session('success') }}</p>
-                <button type="button" onclick="this.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
-                    <x-lucide-x class="w-4 h-4" />
-                </button>
-            </div>
-        @endif
-
-        @if(session()->has('error'))
-            <div class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
-                <x-lucide-alert-circle class="w-5 h-5 mr-3 text-red-500" />
-                <p class="text-sm font-medium">{{ session('error') }}</p>
-                <button type="button" onclick="this.parentElement.remove()" class="ml-auto text-red-500 hover:text-red-700">
-                    <x-lucide-x class="w-4 h-4" />
-                </button>
-            </div>
-        @endif
 
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
