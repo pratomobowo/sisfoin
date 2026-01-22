@@ -83,10 +83,13 @@ class User extends Authenticatable
      */
     public function getEmployeeDataAttribute()
     {
-        if ($this->employee_type === 'employee' && $this->employee) {
-            return $this->employee;
-        } elseif ($this->employee_type === 'dosen' && $this->dosen) {
+        if ($this->employee_type === 'dosen' && $this->dosen) {
             return $this->dosen;
+        }
+
+        // Default to employee relationship for all other types (employee, PNS, PPPK, Honorer, etc)
+        if ($this->employee) {
+            return $this->employee;
         }
 
         return null;
@@ -97,12 +100,15 @@ class User extends Authenticatable
      */
     public function getFullNameWithTitleAttribute()
     {
-        if ($this->employeeData) {
-            if ($this->employee_type === 'employee') {
-                return $this->employee->nama_lengkap_with_gelar;
-            } elseif ($this->employee_type === 'dosen') {
-                return $this->dosen->nama_lengkap_with_gelar;
+        $employeeData = $this->employeeData;
+
+        if ($employeeData) {
+            if ($this->employee_type === 'dosen') {
+                return $this->dosen->nama_lengkap_with_gelar ?? $this->name;
             }
+            
+            // For all other types that use the Employee model
+            return $this->employee->nama_lengkap_with_gelar ?? $this->name;
         }
 
         return $this->name;
