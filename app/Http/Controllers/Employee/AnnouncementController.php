@@ -111,11 +111,14 @@ class AnnouncementController extends Controller
     /**
      * Mark announcement as read.
      */
-    public function markAsRead(string $id): RedirectResponse
+    public function markAsRead(string $id): JsonResponse
     {
-        // TODO: Implement mark as read logic
-        return redirect()->back()
-            ->with('success', 'Pengumuman ditandai sebagai sudah dibaca.');
+        // TODO: Implement actual database logic when real data is available
+        // For now, just return success response
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengumuman ditandai sebagai sudah dibaca.'
+        ]);
     }
 
     /**

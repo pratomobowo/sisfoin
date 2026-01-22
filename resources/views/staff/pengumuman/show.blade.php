@@ -210,36 +210,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Quick Actions Card --}}
-            <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-100">
-                    <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center">
-                        <x-lucide-zap class="w-5 h-5 mr-2 text-blue-600" />
-                        Aksi Cepat
-                    </h3>
-                </div>
-                <div class="p-4 sm:p-5 space-y-2 sm:space-y-3">
-                    @if(!$announcement['read_status'])
-                        <button onclick="markAsRead()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-emerald-600 text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm">
-                            <x-lucide-check class="w-4 h-4 mr-2" />
-                            Tandai Sebagai Dibaca
-                        </button>
-                    @endif
-                    <button onclick="window.print()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-                        <x-lucide-printer class="w-4 h-4 mr-2" />
-                        Cetak Pengumuman
-                    </button>
-                    <button onclick="shareAnnouncement()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-                        <x-lucide-share-2 class="w-4 h-4 mr-2" />
-                        Bagikan
-                    </button>
-                    <a href="{{ route('staff.pengumuman.index') }}" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-                        <x-lucide-list class="w-4 h-4 mr-2" />
-                        Lihat Semua Pengumuman
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -252,27 +222,45 @@ function markAsRead() {
     button.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Memproses...';
     button.disabled = true;
     
-    setTimeout(() => {
+    // Make AJAX call to backend
+    fetch('{{ route("staff.pengumuman.mark-as-read", $announcement["id"] ?? 1) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
         // Remove unread badges
         const unreadBadges = document.querySelectorAll('[class*="Belum Dibaca"]');
         unreadBadges.forEach(badge => badge.remove());
         
-        // Update status badge
-        const statusBadges = document.querySelectorAll('[class*="Status Baca"]');
-        statusBadges.forEach(container => {
-            const badge = container.querySelector('span:last-child');
-            if (badge) {
-                badge.className = 'inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold border border-emerald-100';
-                badge.innerHTML = '<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Sudah Dibaca';
+        // Update status badge in sidebar
+        const statusContainers = document.querySelectorAll('.p-4.sm\\:p-5');
+        statusContainers.forEach(container => {
+            if (container.textContent.includes('Status Baca')) {
+                const badge = container.querySelector('span:last-child');
+                if (badge) {
+                    badge.className = 'inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold border border-emerald-100';
+                    badge.innerHTML = '<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Sudah Dibaca';
+                }
             }
         });
         
-        // Remove mark as read buttons
+        // Remove all mark as read buttons
         const markButtons = document.querySelectorAll('button[onclick="markAsRead()"]');
         markButtons.forEach(btn => btn.remove());
         
         showToast('Pengumuman berhasil ditandai sebagai sudah dibaca', 'success');
-    }, 1000);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        showToast('Gagal menandai pengumuman. Silakan coba lagi.', 'error');
+    });
 }
 
 function downloadAttachment(filename) {
