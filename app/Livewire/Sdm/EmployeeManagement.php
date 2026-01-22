@@ -564,94 +564,98 @@ class EmployeeManagement extends Component
 
     public function save()
     {
-        $validatedData = $this->validate();
+        $rules = [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'nip' => 'nullable|string|max:255',
+            'fingerprint_pin' => 'nullable|string|max:255',
+            'jenis_kelamin' => 'nullable|string|max:10',
+            'satuan_kerja' => 'nullable|string|max:255',
+            'status_aktif' => 'nullable|string|max:255',
+            'jabatan_struktural' => 'nullable|string|max:255',
+        ];
+
+        $validatedData = $this->validate($rules);
 
         try {
             DB::beginTransaction();
 
+            $employeeData = [
+                'nama' => $this->nama,
+                'email' => $this->email,
+                'nip' => $this->nip,
+                'jenis_kelamin' => $this->jenis_kelamin,
+                'satuan_kerja' => $this->satuan_kerja,
+                'status_aktif' => $this->status_aktif ?: 'Aktif',
+                'jabatan_struktural' => $this->jabatan_struktural,
+                'last_sync_at' => now(), // Mark as manual/updated
+            ];
+
             if ($this->employee_id) {
                 // Update existing employee
                 $employee = Employee::findOrFail($this->employee_id);
-                $employee->update($validatedData);
+                $employee->update($employeeData);
 
-                // Update associated user if email exists
-                if ($employee->email) {
-                    $user = \App\Models\User::where('email', $employee->email)->first();
-                    if ($user) {
-                        $user->update([
-                            'name' => $employee->nama,
-                            'employee_id' => $employee->id,
-                            'employee_type' => 'employee',
-                            'fingerprint_pin' => $this->fingerprint_pin,
-                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
-                        ]);
-                    }
+                // Update associated user
+                $user = \App\Models\User::where('employee_id', $employee->id)
+                    ->where('employee_type', 'employee')
+                    ->first();
+                
+                if ($user) {
+                    $user->update([
+                        'name' => $this->nama,
+                        'email' => $this->email,
+                        'fingerprint_pin' => $this->fingerprint_pin,
+                        'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
+                    ]);
                 }
-
-                // Log activity
-                activity('employee_management')
-                    ->causedBy(auth()->user())
-                    ->performedOn($employee)
-                    ->withProperties([
-                        'updated_data' => $validatedData,
-                    ])
-                    ->log('Employee updated');
 
                 session()->flash('success', 'Data karyawan berhasil diperbarui.');
+                $this->dispatch('notify', ['message' => 'Data karyawan berhasil diperbarui', 'type' => 'success']);
             } else {
                 // Create new employee
-                $employee = Employee::create($validatedData);
+                $employee = Employee::create($employeeData);
 
-                // Create associated user if email exists
-                if ($employee->email) {
-                    $user = \App\Models\User::where('email', $employee->email)->first();
-                    if (!$user) {
-                        $user = \App\Models\User::create([
-                            'name' => $employee->nama,
-                            'email' => $employee->email,
-                            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                            'employee_id' => $employee->id,
-                            'employee_type' => 'employee',
-                            'fingerprint_pin' => $this->fingerprint_pin,
-                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
-                            'email_verified_at' => now(),
-                        ]);
+                // Create associated user
+                $user = \App\Models\User::where('email', $this->email)->first();
+                if (!$user) {
+                    $user = \App\Models\User::create([
+                        'name' => $this->nama,
+                        'email' => $this->email,
+                        'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                        'employee_id' => $employee->id,
+                        'employee_type' => 'employee',
+                        'fingerprint_pin' => $this->fingerprint_pin,
+                        'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
+                        'email_verified_at' => now(),
+                    ]);
 
-                        // Assign staff role
-                        $staffRole = \Spatie\Permission\Models\Role::where('name', 'staff')->first();
-                        if ($staffRole) {
-                            $user->assignRole($staffRole);
-                        }
-                    } else {
-                        // Link existing user
-                        $user->update([
-                            'employee_id' => $employee->id,
-                            'employee_type' => 'employee',
-                            'fingerprint_pin' => $this->fingerprint_pin,
-                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
-                        ]);
+                    $staffRole = \Spatie\Permission\Models\Role::where('name', 'staff')->first();
+                    if ($staffRole) {
+                        $user->assignRole($staffRole);
                     }
+                } else {
+                    // Link existing user
+                    $user->update([
+                        'employee_id' => $employee->id,
+                        'employee_type' => 'employee',
+                        'fingerprint_pin' => $this->fingerprint_pin,
+                        'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
+                    ]);
                 }
 
-                // Log activity
-                activity('employee_management')
-                    ->causedBy(auth()->user())
-                    ->performedOn($employee)
-                    ->withProperties([
-                        'created_data' => $validatedData,
-                    ])
-                    ->log('Employee created');
-
-                session()->flash('success', 'Data karyawan dan user akun berhasil dibuat.');
+                session()->flash('success', 'Data karyawan manual berhasil dibuat.');
+                $this->dispatch('notify', ['message' => 'Data karyawan manual berhasil dibuat', 'type' => 'success']);
             }
 
             DB::commit();
             $this->closeEditModal();
-            $this->resetInputFields();
             $this->dispatch('refreshEmployees');
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Gagal menyimpan data karyawan: '.$e->getMessage());
+            Log::error('Error saving manual employee: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menyimpan: ' . $e->getMessage());
+            $this->dispatch('notify', ['message' => 'Gagal menyimpan: ' . $e->getMessage(), 'type' => 'error']);
         }
     }
 

@@ -571,6 +571,13 @@
                                 </button>
                             </div>
 
+                            @if (session()->has('error'))
+                                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start">
+                                    <x-lucide-alert-circle class="w-4 h-4 mr-2 mt-0.5" />
+                                    {{ session('error') }}
+                                </div>
+                            @endif
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <!-- Nama -->
                                 <div class="col-span-2">
