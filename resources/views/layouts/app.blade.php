@@ -17,13 +17,25 @@
         <!-- Livewire Styles -->
         @livewireStyles
     </head>
-    <body class="font-sans antialiased bg-gray-50">
+    <body class="font-sans antialiased bg-gray-50" x-data="{ sidebarOpen: false }">
         <div class="min-h-screen flex bg-gray-50/50">
             <!-- Sidebar -->
             <x-sidebar />
 
+            <!-- Backdrop for mobile -->
+            <div x-show="sidebarOpen" 
+                 x-transition:enter="transition-opacity ease-linear duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition-opacity ease-linear duration-300"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="sidebarOpen = false"
+                 class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30 lg:hidden"
+                 x-cloak></div>
+
             <!-- Main Content Area -->
-            <div class="flex-1 ml-72 flex flex-col min-h-screen">
+            <div class="flex-1 lg:ml-72 flex flex-col min-h-screen transition-all duration-300">
                 <!-- Header (Placeholder for later) -->
                 <!-- Top bar -->
                 <header class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 font-medium font-sans">
@@ -31,6 +43,12 @@
 
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div class="flex justify-between items-center h-16">
+                            <!-- Mobile menu button -->
+                            <div class="flex items-center lg:hidden">
+                                <button @click="sidebarOpen = true" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none">
+                                    <x-lucide-menu class="w-6 h-6" />
+                                </button>
+                            </div>
                             <!-- Breadcrumb -->
                             @hasSection('breadcrumb')
                                 <div class="flex-1 flex items-center">
