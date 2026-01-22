@@ -558,10 +558,24 @@ class EmployeeManagement extends Component
         $validatedData = $this->validate();
 
         try {
+            DB::beginTransaction();
+
             if ($this->employee_id) {
                 // Update existing employee
                 $employee = Employee::findOrFail($this->employee_id);
                 $employee->update($validatedData);
+
+                // Update associated user if email exists
+                if ($employee->email) {
+                    $user = \App\Models\User::where('email', $employee->email)->first();
+                    if ($user) {
+                        $user->update([
+                            'name' => $employee->nama,
+                            'employee_id' => $employee->id,
+                            'employee_type' => 'employee'
+                        ]);
+                    }
+                }
 
                 // Log activity
                 activity('employee_management')
@@ -577,6 +591,33 @@ class EmployeeManagement extends Component
                 // Create new employee
                 $employee = Employee::create($validatedData);
 
+                // Create associated user if email exists
+                if ($employee->email) {
+                    $user = \App\Models\User::where('email', $employee->email)->first();
+                    if (!$user) {
+                        $user = \App\Models\User::create([
+                            'name' => $employee->nama,
+                            'email' => $employee->email,
+                            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                            'employee_id' => $employee->id,
+                            'employee_type' => 'employee',
+                            'email_verified_at' => now(),
+                        ]);
+
+                        // Assign staff role
+                        $staffRole = \Spatie\Permission\Models\Role::where('name', 'staff')->first();
+                        if ($staffRole) {
+                            $user->assignRole($staffRole);
+                        }
+                    } else {
+                        // Link existing user
+                        $user->update([
+                            'employee_id' => $employee->id,
+                            'employee_type' => 'employee'
+                        ]);
+                    }
+                }
+
                 // Log activity
                 activity('employee_management')
                     ->causedBy(auth()->user())
@@ -586,13 +627,34 @@ class EmployeeManagement extends Component
                     ])
                     ->log('Employee created');
 
-                session()->flash('success', 'Data karyawan berhasil dibuat.');
+                session()->flash('success', 'Data karyawan dan user akun berhasil dibuat.');
             }
 
+            DB::commit();
             $this->closeEditModal();
             $this->resetInputFields();
+            $this->dispatch('refreshEmployees');
         } catch (\Exception $e) {
+            DB::rollBack();
             session()->flash('error', 'Gagal menyimpan data karyawan: '.$e->getMessage());
+        }
+    }
+
+    public function delete($id)
+    {
+        try {
+            $employee = Employee::findOrFail($id);
+            $employee->delete();
+
+            activity('employee_management')
+                ->causedBy(auth()->user())
+                ->performedOn($employee)
+                ->log('Employee deleted');
+
+            session()->flash('success', 'Data karyawan berhasil dihapus.');
+            $this->dispatch('refreshEmployees');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menghapus data karyawan: '.$e->getMessage());
         }
     }
 

@@ -5,11 +5,17 @@
         :breadcrumbs="['Dashboard' => route('dashboard'), 'SDM' => '#', 'Karyawan' => route('sdm.employees.index')]"
     >
         <x-slot name="actions">
-            <x-button variant="success" wire:click="syncSevima" wire:loading.attr="disabled" :loading="$isSyncing">
-                <x-lucide-refresh-cw wire:loading.remove class="h-4 w-4 mr-2" />
-                <span wire:loading.remove>Sinkronisasi Data Sevima</span>
-                <span wire:loading>Memproses...</span>
-            </x-button>
+            <div class="flex items-center space-x-3">
+                <x-button variant="primary" wire:click="create">
+                    <x-lucide-plus class="h-4 w-4 mr-2" />
+                    Tambah Karyawan
+                </x-button>
+                <x-button variant="success" wire:click="syncSevima" wire:loading.attr="disabled" :loading="$isSyncing">
+                    <x-lucide-refresh-cw wire:loading.remove class="h-4 w-4 mr-2" />
+                    <span wire:loading.remove>Sinkronisasi Data Sevima</span>
+                    <span wire:loading>Memproses...</span>
+                </x-button>
+            </div>
         </x-slot>
     </x-page-header>
 
@@ -225,11 +231,26 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end">
+                                    <!-- Edit -->
+                                    <button wire:click="edit({{ $employee->id }})" 
+                                            title="Edit Karyawan" aria-label="Edit Karyawan"
+                                            class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-yellow-600">
+                                        <x-lucide-pencil class="w-5 h-5" />
+                                    </button>
+
                                     <!-- View -->
                                     <button wire:click="view({{ $employee->id }})" 
                                             title="Lihat Detail" aria-label="Lihat Detail"
                                             class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-blue-600">
                                         <x-lucide-eye class="w-5 h-5" />
+                                    </button>
+
+                                    <!-- Delete -->
+                                    <button wire:click="delete({{ $employee->id }})" 
+                                            onclick="confirm('Apakah Anda yakin ingin menghapus data karyawan ini?') || event.stopImmediatePropagation()"
+                                            title="Hapus Karyawan" aria-label="Hapus Karyawan"
+                                            class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-red-600">
+                                        <x-lucide-trash-2 class="w-5 h-5" />
                                     </button>
                                 </div>
                             </td>
@@ -525,6 +546,121 @@
                             Tutup
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Edit/Create Modal -->
+    @if($showEditModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeEditModal"></div>
+                
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                    <form wire:submit.prevent="save">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="flex items-center justify-between mb-4 pb-4 border-b">
+                                <h3 class="text-lg leading-6 font-bold text-gray-900">
+                                    {{ $employee_id ? 'Edit Data Karyawan' : 'Tambah Karyawan Manual' }}
+                                </h3>
+                                <button type="button" wire:click="closeEditModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <x-lucide-x class="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <!-- Nama -->
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model="nama" required
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('nama') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- NIP -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">NIP/Username Absensi <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model="nip" required
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('nip') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Email -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Email (untuk Login) <span class="text-red-500">*</span></label>
+                                    <input type="email" wire:model="email" required
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    <p class="text-[10px] text-gray-400 mt-1 italic">Default password: password123</p>
+                                </div>
+
+                                <!-- Jenis Kelamin -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Jenis Kelamin</label>
+                                    <select wire:model="jenis_kelamin"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Pilih</option>
+                                        <option value="L">Laki-laki</option>
+                                        <option value="P">Perempuan</option>
+                                    </select>
+                                    @error('jenis_kelamin') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Satuan Kerja -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Unit Kerja / Satker</label>
+                                    <input type="text" wire:model="satuan_kerja" list="unit-suggestions"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <datalist id="unit-suggestions">
+                                        @foreach($unitKerjaList as $unit)
+                                            <option value="{{ $unit }}">
+                                        @endforeach
+                                    </datalist>
+                                    @error('satuan_kerja') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Status Aktif -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Status Keaktifan</label>
+                                    <select wire:model="status_aktif"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="Aktif">Aktif</option>
+                                        <option value="Tidak Aktif">Tidak Aktif</option>
+                                        <option value="Outsourcing">Outsourcing</option>
+                                    </select>
+                                    @error('status_aktif') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Jabatan -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan Struktural</label>
+                                    <input type="text" wire:model="jabatan_struktural"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('jabatan_struktural') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start">
+                                <x-lucide-info class="w-5 h-5 text-blue-500 mr-3 mt-0.5" />
+                                <p class="text-xs text-blue-700 leading-relaxed">
+                                    <strong>Catatan:</strong> Menambahkan karyawan secara manual akan otomatis membuatkan akun pengguna (User) di sistem dengan <strong>Role Staff</strong> jika email belum terdaftar.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg gap-2">
+                            <x-button variant="primary" type="submit" wire:loading.attr="disabled">
+                                <span wire:loading.remove>Simpan Data</span>
+                                <span wire:loading>Menyimpan...</span>
+                            </x-button>
+                            <x-button variant="secondary" type="button" wire:click="closeEditModal">
+                                Batal
+                            </x-button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
