@@ -582,10 +582,20 @@
 
                                 <!-- NIP -->
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">NIP/Username Absensi <span class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="nip" required
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">NIP (Opsional)</label>
+                                    <input type="text" wire:model="nip"
                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     @error('nip') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    <p class="text-[10px] text-gray-400 mt-1 italic">Kosongkan jika tidak ada NIP dari kampus</p>
+                                </div>
+
+                                <!-- Fingerprint PIN -->
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">PIN Mesin Fingerprint</label>
+                                    <input type="text" wire:model="fingerprint_pin"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('fingerprint_pin') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    <p class="text-[10px] text-gray-400 mt-1 italic">ID yang terdaftar di mesin (angka)</p>
                                 </div>
 
                                 <!-- Email -->

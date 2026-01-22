@@ -174,6 +174,8 @@ class EmployeeManagement extends Component
 
     public $last_sync_at;
 
+    public $fingerprint_pin;
+
     protected $listeners = ['refreshEmployees' => '$refresh'];
 
     protected function rules()
@@ -240,6 +242,7 @@ class EmployeeManagement extends Component
             'is_deleted' => 'nullable|string|max:10',
             'id_sso' => 'nullable|string|max:255',
             'last_sync_at' => 'nullable|date',
+            'fingerprint_pin' => 'nullable|string|max:255',
         ];
     }
 
@@ -550,6 +553,12 @@ class EmployeeManagement extends Component
         $this->id_sso = $employee->id_sso;
         $this->last_sync_at = $employee->last_sync_at;
 
+        // Load fingerprint_pin from User
+        $user = \App\Models\User::where('employee_id', $employee->id)
+            ->where('employee_type', 'employee')
+            ->first();
+        $this->fingerprint_pin = $user ? $user->fingerprint_pin : '';
+
         $this->showEditModal = true;
     }
 
@@ -572,7 +581,9 @@ class EmployeeManagement extends Component
                         $user->update([
                             'name' => $employee->nama,
                             'employee_id' => $employee->id,
-                            'employee_type' => 'employee'
+                            'employee_type' => 'employee',
+                            'fingerprint_pin' => $this->fingerprint_pin,
+                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
                         ]);
                     }
                 }
@@ -601,6 +612,8 @@ class EmployeeManagement extends Component
                             'password' => \Illuminate\Support\Facades\Hash::make('password123'),
                             'employee_id' => $employee->id,
                             'employee_type' => 'employee',
+                            'fingerprint_pin' => $this->fingerprint_pin,
+                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
                             'email_verified_at' => now(),
                         ]);
 
@@ -613,7 +626,9 @@ class EmployeeManagement extends Component
                         // Link existing user
                         $user->update([
                             'employee_id' => $employee->id,
-                            'employee_type' => 'employee'
+                            'employee_type' => 'employee',
+                            'fingerprint_pin' => $this->fingerprint_pin,
+                            'fingerprint_enabled' => $this->fingerprint_pin ? true : false,
                         ]);
                     }
                 }
@@ -729,6 +744,7 @@ class EmployeeManagement extends Component
         $this->is_deleted = '';
         $this->id_sso = '';
         $this->last_sync_at = '';
+        $this->fingerprint_pin = '';
         $this->resetValidation();
     }
 
