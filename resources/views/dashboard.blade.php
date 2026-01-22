@@ -34,34 +34,27 @@
             $statusAktif = $employee->status_aktif ?? 'Aktif';
         @endphp
 
-        <!-- Header Section: Personal Info -->
-        <div class="relative overflow-hidden bg-white rounded-[3rem] shadow-sm border border-gray-100 p-12 lg:p-20">
-            <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-10">
-                <div class="space-y-6">
-                    <div class="inline-flex items-center px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100/50">
-                        Selamat Datang Kembali
-                    </div>
-                    <div>
-                        <h1 class="text-5xl lg:text-6xl font-black text-gray-900 tracking-tight mb-4">
-                            {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
-                        </h1>
-                        <p class="text-xl font-bold text-gray-400 flex items-center">
-                            <x-lucide-building-2 class="w-6 h-6 mr-3 text-blue-500" />
-                            {{ $unitKerja }}
-                        </p>
+        <!-- Header Section: Personal Info (Admin Style) -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <div class="space-y-2">
+                    <p class="text-blue-200 text-sm font-medium uppercase tracking-wider">Selamat Datang Kembali</p>
+                    <h1 class="text-3xl font-bold">
+                        {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
+                    </h1>
+                    <div class="flex items-center text-blue-100">
+                        <x-lucide-building-2 class="w-5 h-5 mr-2" />
+                        <span class="text-lg">{{ $unitKerja }}</span>
                     </div>
                 </div>
-                <div class="hidden lg:block pb-2">
-                    <div class="text-right">
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Hari Ini</p>
-                        <p class="text-2xl font-black text-gray-900 tracking-tight">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
-                    </div>
+                <div class="hidden md:block text-right">
+                    <p class="text-blue-200 text-sm font-medium uppercase tracking-wider mb-1">Hari Ini</p>
+                    <p class="text-xl font-bold">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
                 </div>
             </div>
             
-            <!-- Abstract background shape -->
-            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-50 rounded-full opacity-50 blur-3xl"></div>
-            <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-emerald-50 rounded-full opacity-30 blur-2xl"></div>
+            <!-- Subtle decoration -->
+            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </div>
 
         <!-- Attendance Monitoring -->
@@ -69,114 +62,111 @@
             <livewire:staff.today-attendance-card />
         </div>
 
-        <!-- Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <!-- Metrics Grid (Admin Style) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Salary Card -->
-            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-receipt class="w-8 h-8" />
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <x-lucide-receipt class="w-6 h-6" />
                     </div>
-                    <a href="{{ route('staff.penggajian.index') }}" class="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors">Lihat Detail</a>
+                    <a href="{{ route('staff.penggajian.index') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Detail</a>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Gaji Terakhir</p>
-                <p class="text-3xl font-black text-gray-900 tracking-tight">Rp {{ number_format($lastSalary, 0, ',', '.') }}</p>
-                <div class="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Slip Gaji</span>
-                    <span class="px-3 py-1 bg-gray-50 text-gray-600 text-[10px] font-black rounded-lg border border-gray-100 uppercase tracking-widest">{{ $userSlipCount }} Dokumen</span>
+                <p class="text-sm font-medium text-gray-500 mb-1">Gaji Terakhir</p>
+                <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($lastSalary, 0, ',', '.') }}</p>
+                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Total Slip Gaji</span>
+                    <span class="text-xs font-bold text-gray-900">{{ $userSlipCount }} Dokumen</span>
                 </div>
             </div>
 
             <!-- Profile Info / Status Card -->
-            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-user-check class="w-8 h-8" />
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+                        <x-lucide-user-check class="w-6 h-6" />
                     </div>
-                    <div class="flex items-center space-x-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100/50">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span class="text-[10px] font-black uppercase tracking-widest">Aktif</span>
-                    </div>
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                        {{ $statusAktif }}
+                    </span>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Status Kepegawaian</p>
-                <p class="text-3xl font-black text-gray-900 tracking-tight">{{ $employee?->status_kepegawaian ?? 'Karyawan' }}</p>
-                <div class="mt-6 pt-6 border-t border-gray-50">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIP: <span class="text-gray-900 ml-2">{{ $nip }}</span></p>
+                <p class="text-sm font-medium text-gray-500 mb-1">Status Kepegawaian</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $employee?->status_kepegawaian ?? 'Karyawan' }}</p>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-500">NIP: <span class="font-bold text-gray-900 ml-1">{{ $nip }}</span></p>
                 </div>
             </div>
 
             <!-- Quick Link / Shortcut Card -->
-            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-calendar-check-2 class="w-8 h-8" />
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                        <x-lucide-calendar-check-2 class="w-6 h-6" />
                     </div>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Absensi & Riwayat</p>
-                <p class="text-3xl font-black text-gray-900 tracking-tight">Monitoring Absensi</p>
-                <div class="mt-6 pt-6 border-t border-gray-50">
-                    <a href="{{ route('staff.absensi.index') }}" class="group/btn inline-flex items-center text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-700">
-                        Buka Riwayat Absensi
-                        <x-lucide-move-right class="w-4 h-4 ml-3 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                <p class="text-sm font-medium text-gray-500 mb-1">Absensi & Riwayat</p>
+                <p class="text-2xl font-bold text-gray-900">Monitoring Absensi</p>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="{{ route('staff.absensi.index') }}" class="group inline-flex items-center text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                        Buka Riwayat
+                        <x-lucide-move-right class="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Announcements Panel -->
-        <div class="bg-white rounded-[3rem] border border-gray-100 overflow-hidden shadow-sm">
-            <div class="p-10 lg:p-14 border-b border-gray-50 flex items-center justify-between">
-                <div class="flex items-center gap-6">
-                    <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 border border-amber-100/50">
-                        <x-lucide-megaphone class="w-8 h-8" />
+        <!-- Announcements Panel (Admin Style) -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
+                        <x-lucide-megaphone class="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-1">Pengumuman Terbaru</h2>
-                        <p class="text-sm font-bold text-gray-400">Informasi dan update terkini untuk Anda</p>
+                        <h2 class="text-lg font-bold text-gray-900">Pengumuman Terbaru</h2>
+                        <p class="text-xs text-gray-500">Informasi dan update terkini untuk Anda</p>
                     </div>
                 </div>
-                <a href="{{ route('staff.pengumuman.index') }}" class="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors">Lihat Semua</a>
+                <a href="{{ route('staff.pengumuman.index') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Lihat Semua</a>
             </div>
-            <div class="p-6 lg:p-10 bg-gray-50/20">
-                <div class="space-y-6">
+            <div class="p-6">
+                <div class="space-y-4">
                     @forelse($announcements as $announcement)
-                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-white p-8 lg:p-10 rounded-3xl border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-100 group">
-                            <div class="mr-8 hidden sm:block">
-                                <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300
+                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-gray-50/50 p-4 rounded-xl border border-gray-100 transition-all duration-300 hover:bg-white hover:shadow-md hover:border-blue-100 group">
+                            <div class="mr-4 hidden sm:block">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105
                                     {{ $announcement->priority === 'high' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600' }}">
                                     @if($announcement->priority === 'high')
-                                        <x-lucide-alert-circle class="w-8 h-8" />
+                                        <x-lucide-alert-circle class="w-5 h-5" />
                                     @else
-                                        <x-lucide-info class="w-8 h-8" />
+                                        <x-lucide-info class="w-5 h-5" />
                                     @endif
                                 </div>
                             </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs text-gray-500">
                                         {{ $announcement->published_at->diffForHumans() }}
                                     </span>
                                     @if($announcement->is_pinned)
-                                        <span class="px-3 py-1 bg-amber-50 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-amber-100">PINNED</span>
+                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full uppercase tracking-tight">PINNED</span>
                                     @endif
                                 </div>
-                                <h3 class="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors leading-snug mb-3">
+                                <h3 class="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                                     {{ $announcement->title }}
                                 </h3>
-                                <p class="text-base text-gray-500 line-clamp-2 leading-relaxed font-medium">
+                                <p class="text-sm text-gray-600 line-clamp-1">
                                     {{ strip_tags($announcement->content) }}
                                 </p>
                             </div>
-                            <div class="ml-6 flex-shrink-0 self-center">
-                                <div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-50 text-gray-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all duration-300 border border-gray-100">
-                                    <x-lucide-chevron-right class="w-6 h-6" />
-                                </div>
+                            <div class="ml-4 flex-shrink-0 self-center">
+                                <x-lucide-chevron-right class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                             </div>
                         </a>
                     @empty
-                        <div class="flex flex-col items-center justify-center p-20 text-center bg-white rounded-[2.5rem] border border-dashed border-gray-200">
-                            <x-lucide-inbox class="w-16 h-16 text-gray-200 mb-6" />
-                            <p class="text-base font-bold text-gray-400 uppercase tracking-widest">Belum ada pengumuman</p>
+                        <div class="flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                            <x-lucide-inbox class="w-12 h-12 text-gray-300 mb-3" />
+                            <p class="text-sm font-medium text-gray-500">Belum ada pengumuman</p>
                         </div>
                     @endforelse
                 </div>
