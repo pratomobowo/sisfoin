@@ -35,25 +35,25 @@
         @endphp
 
         <!-- Header Section: Personal Info -->
-        <div class="relative overflow-hidden bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 sm:p-12">
-            <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div class="space-y-4">
-                    <div class="inline-flex items-center px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100/50">
+        <div class="relative overflow-hidden bg-white rounded-[3rem] shadow-sm border border-gray-100 p-12 lg:p-20">
+            <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-10">
+                <div class="space-y-6">
+                    <div class="inline-flex items-center px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100/50">
                         Selamat Datang Kembali
                     </div>
                     <div>
-                        <h1 class="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2">
+                        <h1 class="text-5xl lg:text-6xl font-black text-gray-900 tracking-tight mb-4">
                             {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
                         </h1>
-                        <p class="text-lg font-bold text-gray-400 flex items-center">
-                            <x-lucide-building-2 class="w-5 h-5 mr-2 text-blue-500" />
+                        <p class="text-xl font-bold text-gray-400 flex items-center">
+                            <x-lucide-building-2 class="w-6 h-6 mr-3 text-blue-500" />
                             {{ $unitKerja }}
                         </p>
                     </div>
                 </div>
-                <div class="hidden lg:block">
+                <div class="hidden lg:block pb-2">
                     <div class="text-right">
-                        <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Hari Ini</p>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Hari Ini</p>
                         <p class="text-2xl font-black text-gray-900 tracking-tight">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
                     </div>
                 </div>
@@ -65,116 +65,118 @@
         </div>
 
         <!-- Attendance Monitoring -->
-        <livewire:staff.today-attendance-card />
+        <div class="py-2">
+            <livewire:staff.today-attendance-card />
+        </div>
 
         <!-- Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
             <!-- Salary Card -->
-            <div class="group bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-receipt class="w-7 h-7" />
+            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                        <x-lucide-receipt class="w-8 h-8" />
                     </div>
                     <a href="{{ route('staff.penggajian.index') }}" class="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors">Lihat Detail</a>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Gaji Terakhir</p>
-                <p class="text-2xl font-black text-gray-900 tracking-tight">Rp {{ number_format($lastSalary, 0, ',', '.') }}</p>
-                <div class="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-gray-400">Total Slip Gaji</span>
-                    <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-[10px] font-black rounded-lg border border-gray-100">{{ $userSlipCount }} Dokumen</span>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Gaji Terakhir</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tight">Rp {{ number_format($lastSalary, 0, ',', '.') }}</p>
+                <div class="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Slip Gaji</span>
+                    <span class="px-3 py-1 bg-gray-50 text-gray-600 text-[10px] font-black rounded-lg border border-gray-100 uppercase tracking-widest">{{ $userSlipCount }} Dokumen</span>
                 </div>
             </div>
 
             <!-- Profile Info / Status Card -->
-            <div class="group bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-user-check class="w-7 h-7" />
+            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+                        <x-lucide-user-check class="w-8 h-8" />
                     </div>
-                    <div class="flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50">
-                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div class="flex items-center space-x-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100/50">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         <span class="text-[10px] font-black uppercase tracking-widest">Aktif</span>
                     </div>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Status Kepegawaian</p>
-                <p class="text-2xl font-black text-gray-900 tracking-tight">{{ $employee?->status_kepegawaian ?? 'Karyawan' }}</p>
-                <div class="mt-4 pt-4 border-t border-gray-50">
-                    <p class="text-[10px] font-bold text-gray-400">NIP: <span class="text-gray-900">{{ $nip }}</span></p>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Status Kepegawaian</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tight">{{ $employee?->status_kepegawaian ?? 'Karyawan' }}</p>
+                <div class="mt-6 pt-6 border-t border-gray-50">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIP: <span class="text-gray-900 ml-2">{{ $nip }}</span></p>
                 </div>
             </div>
 
             <!-- Quick Link / Shortcut Card -->
-            <div class="group bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-                        <x-lucide-calendar-check-2 class="w-7 h-7" />
+            <div class="group bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                        <x-lucide-calendar-check-2 class="w-8 h-8" />
                     </div>
                 </div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Absensi & Riwayat</p>
-                <p class="text-2xl font-black text-gray-900 tracking-tight">Monitoring Absensi</p>
-                <div class="mt-4 pt-4 border-t border-gray-50">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Absensi & Riwayat</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tight">Monitoring Absensi</p>
+                <div class="mt-6 pt-6 border-t border-gray-50">
                     <a href="{{ route('staff.absensi.index') }}" class="group/btn inline-flex items-center text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-700">
                         Buka Riwayat Absensi
-                        <x-lucide-move-right class="w-3.5 h-3.5 ml-2 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                        <x-lucide-move-right class="w-4 h-4 ml-3 transition-transform duration-300 group-hover/btn:translate-x-1" />
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- Announcements Panel -->
-        <div class="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
-            <div class="p-8 sm:p-10 border-b border-gray-50 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-                        <x-lucide-megaphone class="w-6 h-6" />
+        <div class="bg-white rounded-[3rem] border border-gray-100 overflow-hidden shadow-sm">
+            <div class="p-10 lg:p-14 border-b border-gray-50 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 border border-amber-100/50">
+                        <x-lucide-megaphone class="w-8 h-8" />
                     </div>
                     <div>
-                        <h2 class="text-xl font-black text-gray-900 tracking-tight">Pengumuman Terbaru</h2>
-                        <p class="text-xs font-bold text-gray-400">Informasi dan update terkini untuk Anda</p>
+                        <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-1">Pengumuman Terbaru</h2>
+                        <p class="text-sm font-bold text-gray-400">Informasi dan update terkini untuk Anda</p>
                     </div>
                 </div>
                 <a href="{{ route('staff.pengumuman.index') }}" class="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors">Lihat Semua</a>
             </div>
-            <div class="p-4 sm:p-6 bg-gray-50/30">
-                <div class="space-y-4">
+            <div class="p-6 lg:p-10 bg-gray-50/20">
+                <div class="space-y-6">
                     @forelse($announcements as $announcement)
-                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-100 group">
-                            <div class="mr-6 hidden sm:block">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300
+                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-white p-8 lg:p-10 rounded-3xl border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-100 group">
+                            <div class="mr-8 hidden sm:block">
+                                <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300
                                     {{ $announcement->priority === 'high' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600' }}">
                                     @if($announcement->priority === 'high')
-                                        <x-lucide-alert-circle class="w-6 h-6" />
+                                        <x-lucide-alert-circle class="w-8 h-8" />
                                     @else
-                                        <x-lucide-info class="w-6 h-6" />
+                                        <x-lucide-info class="w-8 h-8" />
                                     @endif
                                 </div>
                             </div>
                             <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                                         {{ $announcement->published_at->diffForHumans() }}
                                     </span>
                                     @if($announcement->is_pinned)
-                                        <span class="px-2 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-amber-100">PINNED</span>
+                                        <span class="px-3 py-1 bg-amber-50 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-amber-100">PINNED</span>
                                     @endif
                                 </div>
-                                <h3 class="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors leading-tight mb-2">
+                                <h3 class="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors leading-snug mb-3">
                                     {{ $announcement->title }}
                                 </h3>
-                                <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                                <p class="text-base text-gray-500 line-clamp-2 leading-relaxed font-medium">
                                     {{ strip_tags($announcement->content) }}
                                 </p>
                             </div>
-                            <div class="ml-4 flex-shrink-0">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 text-gray-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all duration-300">
-                                    <x-lucide-chevron-right class="w-5 h-5" />
+                            <div class="ml-6 flex-shrink-0 self-center">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-50 text-gray-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all duration-300 border border-gray-100">
+                                    <x-lucide-chevron-right class="w-6 h-6" />
                                 </div>
                             </div>
                         </a>
                     @empty
-                        <div class="flex flex-col items-center justify-center p-12 text-center bg-white rounded-3xl border border-dashed border-gray-200">
-                            <x-lucide-inbox class="w-12 h-12 text-gray-200 mb-4" />
-                            <p class="text-sm font-bold text-gray-400">Belum ada pengumuman untuk ditampilkan</p>
+                        <div class="flex flex-col items-center justify-center p-20 text-center bg-white rounded-[2.5rem] border border-dashed border-gray-200">
+                            <x-lucide-inbox class="w-16 h-16 text-gray-200 mb-6" />
+                            <p class="text-base font-bold text-gray-400 uppercase tracking-widest">Belum ada pengumuman</p>
                         </div>
                     @endforelse
                 </div>
