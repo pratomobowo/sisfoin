@@ -25,7 +25,7 @@
             <div>
                 <h1 class="text-3xl font-bold mb-2">Selamat Datang, {{ auth()->user()->name }}!</h1>
                 <p class="text-blue-100 text-lg">Sistem Informasi Manajemen USBYPKP</p>
-                <p class="text-blue-200 text-sm mt-1">{{ now()->format('l, d F Y') }}</p>
+                <p class="text-blue-200 text-sm mt-1">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
             </div>
             <div class="hidden md:block">
                 <svg class="w-24 h-24 text-blue-300" fill="currentColor" viewBox="0 0 20 20">
@@ -35,6 +35,11 @@
             </div>
         </div>
     </div>
+
+    @if(isActiveRole('staff|employee'))
+    <!-- Today Attendance Section -->
+    <livewire:staff.today-attendance-card />
+    @endif
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -103,22 +108,6 @@
         </div>
         @endif
 
-    @if(isActiveRole('staff|employee'))
-    <!-- Today Attendance Section -->
-    <livewire:staff.today-attendance-card />
-    @endif
-
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        @if(isActiveRole('super-admin'))
-        <!-- Total Users -->
-        ...
-        @endif
-
-        @if(isActiveRole('super-admin|admin-sdm|sdm'))
-        ...
-        @endif
-
         @if(isActiveRole('staff|employee'))
         <!-- Staff Personal Info Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -142,8 +131,11 @@
                     <p class="text-sm font-medium text-gray-600">Slip Gaji Saya</p>
                     @php
                         $userSlipCount = 0;
-                        if (auth()->user()->employee) {
-                            $userSlipCount = App\Models\SlipGajiDetail::where('employee_id', auth()->user()->employee->id)->count();
+                        $employee = auth()->user()->employee;
+                        if ($employee) {
+                            $userSlipCount = App\Models\SlipGajiDetail::where('nip', $employee->nip)->count();
+                        } else {
+                            $userSlipCount = App\Models\SlipGajiDetail::where('nip', auth()->user()->nip)->count();
                         }
                     @endphp
                     <p class="text-3xl font-bold text-gray-900">{{ $userSlipCount }}</p>
@@ -163,8 +155,9 @@
                     <p class="text-sm font-medium text-gray-600">Gaji Terakhir</p>
                     @php
                         $lastSalary = 0;
-                        if (auth()->user()->employee) {
-                            $lastSlip = App\Models\SlipGajiDetail::where('employee_id', auth()->user()->employee->id)
+                        $nip = auth()->user()->nip;
+                        if ($nip) {
+                            $lastSlip = App\Models\SlipGajiDetail::where('nip', $nip)
                                 ->latest('created_at')
                                 ->first();
                             $lastSalary = $lastSlip ? $lastSlip->penerimaan_bersih : 0;
@@ -180,7 +173,6 @@
             </div>
         </div>
         @endif
-    </div>
     </div>
 
     <!-- Quick Access Modules -->
@@ -272,7 +264,7 @@
             </a>
 
             <!-- Staff Slip Gaji -->
-            <a href="{{ route('staff.slip-gaji.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group">
+            <a href="{{ route('staff.penggajian.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group">
                 <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-4">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -281,6 +273,17 @@
                 <div>
                     <h3 class="font-medium text-gray-900 group-hover:text-green-600">Slip Gaji Saya</h3>
                     <p class="text-sm text-gray-500">Lihat riwayat slip gaji</p>
+                </div>
+            </a>
+
+            <!-- Staff Absensi -->
+            <a href="{{ route('staff.absensi.index') }}" class="flex items-center p-4 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors group">
+                <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center mr-4">
+                    <x-lucide-calendar-check class="w-5 h-5 text-white" />
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-900 group-hover:text-emerald-600">Riwayat Absensi</h3>
+                    <p class="text-sm text-gray-500">Lihat catatan kehadiran Anda</p>
                 </div>
             </a>
             @endif
@@ -292,7 +295,7 @@
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Aksi Cepat</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             @if(isActiveRole('super-admin'))
-            <a href="{{ route('superadmin.users.index') }}" class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
+            <a href="{{ route('superadmin.users.create') }}" class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
                 <svg class="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
