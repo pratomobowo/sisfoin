@@ -1,5 +1,22 @@
 <div class="space-y-6">
-    <!-- Info Card -->
+    {{-- Breadcrumb --}}
+    <nav class="flex mb-2" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-2">
+            <li class="inline-flex items-center">
+                <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Dashboard
+                </a>
+                <span class="text-gray-400 mx-2">&gt;</span>
+            </li>
+            <li>
+                <span class="text-sm font-semibold text-gray-900">
+                    Penggajian
+                </span>
+            </li>
+        </ol>
+    </nav>
+
+    {{-- Info Card --}}
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
         <div class="flex items-start gap-3">
             <div class="flex-shrink-0">

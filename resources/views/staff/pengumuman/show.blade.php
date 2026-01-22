@@ -2,6 +2,29 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-4 sm:space-y-6">
+    {{-- Breadcrumb --}}
+    <nav class="flex" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-2">
+            <li class="inline-flex items-center">
+                <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Dashboard
+                </a>
+                <span class="text-gray-400 mx-2">&gt;</span>
+            </li>
+            <li class="inline-flex items-center">
+                <a href="{{ route('staff.pengumuman.index') }}" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Pengumuman
+                </a>
+                <span class="text-gray-400 mx-2">&gt;</span>
+            </li>
+            <li>
+                <span class="text-sm font-semibold text-gray-900">
+                    Detail
+                </span>
+            </li>
+        </ol>
+    </nav>
+
     {{-- Header Section --}}
     <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-4 sm:p-6 lg:p-8">
