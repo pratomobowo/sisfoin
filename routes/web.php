@@ -198,9 +198,7 @@ Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->grou
         Route::get('/', function () {
             return view('staff.pengumuman.index');
         })->name('index');
-        Route::get('/{id}', function ($id) {
-            return view('staff.pengumuman.show', compact('id'));
-        })->name('show');
+        Route::get('/{id}', [App\Http\Controllers\Employee\AnnouncementController::class, 'show'])->name('show');
     });
 
     // Staff Slip Gaji routes (view only) - kept for backward compatibility
