@@ -143,6 +143,7 @@ class Attendance extends Model
             'absent' => 'red',
             'sick' => 'gray',
             'leave' => 'purple',
+            'incomplete' => 'orange',
             default => 'gray'
         };
     }
@@ -160,6 +161,7 @@ class Attendance extends Model
             'absent' => 'Tidak Hadir',
             'sick' => 'Sakit',
             'leave' => 'Cuti',
+            'incomplete' => 'Absen Tidak Lengkap',
             default => 'Unknown'
         };
     }

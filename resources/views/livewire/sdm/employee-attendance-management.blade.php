@@ -160,6 +160,7 @@
                     <option value="absent">Tidak Hadir</option>
                     <option value="sick">Sakit</option>
                     <option value="leave">Cuti</option>
+                    <option value="incomplete">Absen Tidak Lengkap</option>
                 </select>
             </div>
         </div>
@@ -335,6 +336,7 @@
                                     <option value="sick">Sakit</option>
                                     <option value="leave">Cuti</option>
                                     <option value="absent">Mangkir</option>
+                                    <option value="incomplete">Absen Tidak Lengkap</option>
                                     <option value="checkout-only">Cek Pulang Saja</option>
                                 </select>
                                 @error('status_form') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror

@@ -75,9 +75,13 @@ class AttendanceService
 
                 // 2. Determine Check-In and Check-Out
                 // We fetch ALL logs for this user/date (including previously processed) 
-                // to ensure we identify the correct first/last tap
+                // to ensure we identify the correct first/last tap.
+                // We use whereBetween with start/end of day to handle timezone crossings (UTC vs Local)
+                $startOfDay = Carbon::parse($date)->startOfDay();
+                $endOfDay = Carbon::parse($date)->endOfDay();
+                
                 $allLogsForDay = AttendanceLog::where('user_id', $uid)
-                    ->whereDate('datetime', $date)
+                    ->whereBetween('datetime', [$startOfDay, $endOfDay])
                     ->orderBy('datetime')
                     ->get();
 
@@ -124,68 +128,102 @@ class AttendanceService
 
     private function calculateAttendanceTimes(EmployeeAttendance $attendance, $logs)
     {
+        if ($logs->isEmpty()) {
+            $attendance->check_in_time = null;
+            $attendance->check_out_time = null;
+            return;
+        }
+
         $shift = $attendance->effective_shift;
+        $date = $attendance->date->format('Y-m-d');
+        
+        // Define midpoint for basic grouping (12:00 PM fallback)
         $cutoffHour = 12;
 
         if ($shift && $shift->start_time && $shift->end_time) {
-            $start = Carbon::parse($shift->start_time);
-            $end = Carbon::parse($shift->end_time);
-            if ($end->lt($start)) $end->addDay();
+            $start = Carbon::parse($date . ' ' . $shift->start_time);
+            $end = Carbon::parse($date . ' ' . $shift->end_time);
+            
+            // Handle shifts crossing midnight
+            if ($end->lt($start)) {
+                $end->addDay();
+            }
             
             $duration = $start->diffInMinutes($end);
             $midpoint = $start->copy()->addMinutes($duration / 2);
             $cutoffHour = $midpoint->hour;
         }
 
-        $firstTap = null;
-        $lastTap = null;
-
-        foreach ($logs as $log) {
-            $time = $log->datetime;
+        $allTaps = $logs->pluck('datetime')->sort()->values();
+        
+        if ($allTaps->count() === 1) {
+            $tap = $allTaps->first();
             
-            // Assign to check-in if before midpoint and earlier than current check-in
-            if ($time->hour < $cutoffHour) {
-                if (!$firstTap || $time->lt($firstTap)) {
-                    $firstTap = $time;
+            // If shift exists, check which one it's closer to
+            if ($shift && $shift->start_time && $shift->end_time) {
+                $start = Carbon::parse($date . ' ' . $shift->start_time);
+                $end = Carbon::parse($date . ' ' . $shift->end_time);
+                
+                $diffToStart = abs($tap->diffInMinutes($start));
+                $diffToEnd = abs($tap->diffInMinutes($end));
+                
+                if ($diffToStart <= $diffToEnd) {
+                    $attendance->check_in_time = $tap;
+                    $attendance->check_out_time = null;
+                } else {
+                    $attendance->check_in_time = null;
+                    $attendance->check_out_time = $tap;
                 }
-            } 
-            // Assign to check-out if after midpoint and later than current check-out
-            else {
-                if (!$lastTap || $time->gt($lastTap)) {
-                    $lastTap = $time;
-                }
-            }
-        }
-
-        // Rule 4: Checkout-only scenario
-        // If only tap after 2 PM (14:00) and no shift, treat as checkout-only (not counted as attendance)
-        if (!$firstTap && $lastTap && !$shift) {
-            if ($lastTap->hour >= 14) {
-                // This is checkout-only, don't count as check-in
-                $attendance->check_in_time = null;
-                $attendance->check_out_time = $lastTap;
-                return;
-            }
-        }
-
-        // If only one tap exists and it's before cutoff, assign as check-in
-        if (!$firstTap && !$lastTap && $logs->isNotEmpty()) {
-            $singleTap = $logs->first()->datetime;
-            if ($singleTap->hour < $cutoffHour) {
-                $firstTap = $singleTap;
             } else {
-                $lastTap = $singleTap;
+                // Default fallback based on cutoff
+                if ($tap->hour < $cutoffHour) {
+                    $attendance->check_in_time = $tap;
+                    $attendance->check_out_time = null;
+                } else {
+                    $attendance->check_in_time = null;
+                    $attendance->check_out_time = $tap;
+                }
             }
+            return;
         }
 
+        // Multiple taps: First is check-in, Last is check-out
+        $firstTap = $allTaps->first();
+        $lastTap = $allTaps->last();
+        
         $attendance->check_in_time = $firstTap;
-        $attendance->check_out_time = $lastTap;
+        
+        // Rule: Check-out must be at least 30 minutes after check-in
+        // This prevents accidental double-taps from being recorded as premature check-outs
+        if (abs($lastTap->diffInMinutes($firstTap)) >= 30) {
+            $attendance->check_out_time = $lastTap;
+        } else {
+            $attendance->check_out_time = null;
+        }
     }
 
     private function determineStatus(EmployeeAttendance $attendance)
     {
-        if (!$attendance->check_in_time) {
+        $isPastDate = $attendance->date->isPast() && !$attendance->date->isToday();
+        
+        // Case: No Logs at all
+        if (!$attendance->check_in_time && !$attendance->check_out_time) {
             return 'absent';
+        }
+
+        // Case: Only Check-Out exists
+        if (!$attendance->check_in_time && $attendance->check_out_time) {
+            return 'incomplete';
+        }
+
+        // Case: Only Check-In exists
+        if ($attendance->check_in_time && !$attendance->check_out_time) {
+            // If it's a past date, it's incomplete because they missed checkout
+            if ($isPastDate) {
+                return 'incomplete';
+            }
+            // If it's today, it's still "on_time" (pending checkout) or "late"
+            // We use the normal check-in status logic below
         }
 
         $shift = $attendance->effective_shift;
@@ -203,6 +241,7 @@ class AttendanceService
 
         $checkInTime = $attendance->check_in_time;
         
+        // Final Status check based on Check-In time (since we have one)
         // Rule 1: Early arrival - 20 minutes or more before work start time
         $earlyThreshold = $workStartTime->copy()->subMinutes(20);
         if ($checkInTime->lte($earlyThreshold)) {

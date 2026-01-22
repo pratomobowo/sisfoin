@@ -99,7 +99,7 @@ class AttendanceRecap extends Component
             $days[] = [
                 'date' => $current->format('Y-m-d'),
                 'day' => $current->day,
-                'weekday' => $current->isoFormat('ddd'),
+                'weekday' => $current->locale('id')->isoFormat('ddd'),
                 'is_weekend' => !$isWorkingDay,
                 'is_holiday' => $isHoliday,
                 'holiday_name' => $holidayInfo?->name,
@@ -181,13 +181,31 @@ class AttendanceRecap extends Component
                             return $item->date->format('Y-m-d') === $date;
                        })->first();
 
-                $dailyStatus[$day['day']] = $record ? [
-                    'status' => $record->status,
-                    'badge' => $record->status_badge,
-                    'short_label' => $this->getShortStatusLabel($record->status),
-                    'check_in' => $record->formatted_check_in,
-                    'check_out' => $record->formatted_check_out,
-                ] : null;
+                if ($record) {
+                    $dailyStatus[$day['day']] = [
+                        'status' => $record->status,
+                        'badge' => $record->status_badge,
+                        'short_label' => $this->getShortStatusLabel($record->status),
+                        'check_in' => $record->formatted_check_in,
+                        'check_out' => $record->formatted_check_out,
+                    ];
+                } else {
+                    // Synthesis: If no record, check if it's a past working day
+                    $isPastDay = Carbon::parse($day['date'])->isPast() && !Carbon::parse($day['date'])->isToday();
+                    $isWorkingDay = !$day['is_weekend'] && !$day['is_holiday'];
+                    
+                    if ($isPastDay && $isWorkingDay) {
+                        $dailyStatus[$day['day']] = [
+                            'status' => 'absent',
+                            'badge' => 'red',
+                            'short_label' => 'A',
+                            'check_in' => null,
+                            'check_out' => null,
+                        ];
+                    } else {
+                        $dailyStatus[$day['day']] = null;
+                    }
+                }
             }
             
             $attendanceMatrix[$employee->id] = $dailyStatus;
@@ -238,6 +256,7 @@ class AttendanceRecap extends Component
             'half_day' => 'HD', // Half Day
             'sick' => 'S', // Sakit
             'leave' => 'C', // Cuti
+            'incomplete' => '?', // Absen Tidak Lengkap
             default => '?'
         };
     }

@@ -110,10 +110,11 @@
         <div class="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-500">
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> Hadir</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Terlambat</div>
-            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Alpha</div>
+            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Data Tidak Lengkap</div>
+            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Tidak Hadir</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Setengah Hari</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span> Sakit</div>
-            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span> Cuti</div>
+            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-pink-400 mr-2"></span> Cuti</div>
         </div>
 
         <div class="overflow-auto flex-grow h-[600px]">
@@ -141,7 +142,7 @@
                     @forelse($employees as $employee)
                         <tr class="hover:bg-blue-50/30 transition-colors group">
                             <!-- Sticky Employee Name -->
-                            <td class="sticky left-0 z-20 bg-white group-hover:bg-blue-50/30 px-6 py-4 whitespace-nowrap border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                            <td class="sticky left-0 z-20 bg-white group-hover:bg-blue-50 px-6 py-4 whitespace-nowrap border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                                         {{ strtoupper(substr(($employee->name ?? 'U'), 0, 2)) }}
@@ -166,9 +167,10 @@
                                             'present', 'on_time', 'early_arrival' => 'bg-green-500 text-white font-bold',
                                             'late' => 'bg-yellow-400 text-white font-bold',
                                             'absent' => 'bg-red-500 text-white font-bold',
+                                            'incomplete' => 'bg-purple-600 text-white font-bold',
                                             'half_day' => 'bg-blue-400 text-white font-bold',
                                             'sick' => 'bg-gray-400 text-white font-bold',
-                                            'leave' => 'bg-purple-400 text-white font-bold',
+                                            'leave' => 'bg-pink-400 text-white font-bold',
                                             default => ''
                                         };
                                     }
