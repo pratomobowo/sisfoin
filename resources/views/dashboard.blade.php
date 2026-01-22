@@ -32,11 +32,13 @@
                     'employee_id_raw' => $user->employee_id,
                     'employee_type_raw' => $user->employee_type,
                     'active_role' => getActiveRole(),
+                    'db_connection' => \Illuminate\Support\Facades\DB::getName(),
+                    'db_database' => \Illuminate\Support\Facades\DB::getDatabaseName(),
+                    'employee_model_table' => (new \App\Models\Employee)->getTable(),
                     'employee_rel_null' => is_null($user->employee),
-                    'dosen_rel_null' => is_null($user->dosen),
                     'employee_exists' => !is_null($employee),
-                    'employee_class' => $employee ? get_class($employee) : 'null',
                     'satuan_kerja' => $employee?->satuan_kerja,
+                    'found_via_find' => !is_null(\App\Models\Employee::find($user->employee_id)),
                 ]);
             
             // Metrics
