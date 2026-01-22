@@ -1,6 +1,6 @@
-<div class="w-72 bg-white border-r border-gray-100 fixed h-full z-50 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0"
-     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-     @click.away="if (window.innerWidth < 1024) sidebarOpen = false"
+<div class="w-72 bg-white border-r border-gray-100 fixed h-full z-50 flex flex-col transform transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0"
+     x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+     x-on:click.away="if (window.innerWidth < 1024) sidebarOpen = false"
      x-cloak>
     
     <!-- Logo & Brand Header -->
@@ -17,10 +17,12 @@
 
         <!-- Close button for mobile -->
         <button type="button" 
-                @click.stop="sidebarOpen = false" 
+                x-on:click.stop="sidebarOpen = false" 
                 class="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 text-gray-900 hover:bg-gray-100 focus:outline-none transition-all border border-gray-100 shadow-sm"
                 aria-label="Close Sidebar">
-            <x-lucide-x class="w-6 h-6" />
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
         </button>
     </div>
 
