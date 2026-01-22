@@ -23,7 +23,7 @@
         @php
             $user = auth()->user();
             $employee = $user->employeeData; // From User.php relationship/accessor
-            $unitKerja = $employee->satuan_kerja ?? 'Unit Kerja Belum Diatur';
+            $unitKerja = $employee?->satuan_kerja ?? 'Unit Kerja Belum Diatur';
             $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
             
             // Metrics
@@ -43,7 +43,7 @@
                     </div>
                     <div>
                         <h1 class="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2">
-                            {{ $employee->nama_lengkap_with_gelar ?? $user->name }}
+                            {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
                         </h1>
                         <p class="text-lg font-bold text-gray-400 flex items-center">
                             <x-lucide-building-2 class="w-5 h-5 mr-2 text-blue-500" />
@@ -97,7 +97,7 @@
                     </div>
                 </div>
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Status Kepegawaian</p>
-                <p class="text-2xl font-black text-gray-900 tracking-tight">{{ $employee->status_kepegawaian ?? 'Karyawan' }}</p>
+                <p class="text-2xl font-black text-gray-900 tracking-tight">{{ $employee?->status_kepegawaian ?? 'Karyawan' }}</p>
                 <div class="mt-4 pt-4 border-t border-gray-50">
                     <p class="text-[10px] font-bold text-gray-400">NIP: <span class="text-gray-900">{{ $nip }}</span></p>
                 </div>
