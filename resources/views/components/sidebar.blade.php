@@ -127,7 +127,7 @@
                             <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg mr-3">
                                 <x-lucide-user class="w-5 h-5" />
                             </div>
-                            Self Service
+                            Layanan Mandiri
                         </div>
                         <x-lucide-chevron-down class="w-4 h-4 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
                     </button>
