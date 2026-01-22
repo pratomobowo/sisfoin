@@ -195,9 +195,7 @@ Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->grou
 
     // Staff Pengumuman routes (view only)
     Route::prefix('pengumuman')->name('pengumuman.')->group(function () {
-        Route::get('/', function () {
-            return view('staff.pengumuman.index');
-        })->name('index');
+        Route::get('/', [App\Http\Controllers\Employee\AnnouncementController::class, 'index'])->name('index');
         Route::get('/{id}', [App\Http\Controllers\Employee\AnnouncementController::class, 'show'])->name('show');
         Route::post('/{id}/mark-as-read', [App\Http\Controllers\Employee\AnnouncementController::class, 'markAsRead'])->name('mark-as-read');
     });
