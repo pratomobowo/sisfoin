@@ -1,9 +1,20 @@
-<div class="w-72 bg-white border-r border-gray-100 fixed h-full z-40 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+<div class="w-72 bg-white border-r border-gray-100 fixed h-full z-50 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0"
      x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
      x-show="true" {{-- Always rendered but hidden via transform --}}
      x-cloak>
+    
+    <!-- Close button for mobile (Floating) -->
+    <button @click="sidebarOpen = false" 
+            class="lg:hidden absolute -right-12 top-4 p-2 bg-white rounded-lg text-gray-600 shadow-lg border border-gray-100 focus:outline-none active:scale-95 transition-transform"
+            x-show="sidebarOpen"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 -translate-x-4"
+            x-transition:enter-end="opacity-100 translate-x-0">
+        <x-lucide-x class="w-6 h-6" />
+    </button>
+
     <!-- Logo & Brand -->
-    <div class="flex items-center justify-between h-20 px-6 border-b border-gray-50">
+    <div class="flex items-center h-20 px-6 border-b border-gray-50 bg-white">
         <div class="flex items-center space-x-3">
             <div class="p-1.5 bg-blue-50 rounded-xl">
                 <img src="{{ asset('images/logo-usbypkp.jpg') }}" alt="USB PKP Logo" class="w-8 h-8 rounded-lg object-cover">
@@ -13,11 +24,6 @@
                 <span class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">Administration</span>
             </div>
         </div>
-        
-        <!-- Close button for mobile -->
-        <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100">
-            <x-lucide-x class="w-5 h-5" />
-        </button>
     </div>
 
     <!-- Navigation -->
