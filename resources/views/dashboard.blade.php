@@ -103,10 +103,23 @@
         </div>
         @endif
 
-        @if(isActiveRole('staff|employee'))
-        <!-- Today Attendance Card -->
-        <livewire:staff.today-attendance-card />
+    @if(isActiveRole('staff|employee'))
+    <!-- Today Attendance Section -->
+    <livewire:staff.today-attendance-card />
+    @endif
 
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        @if(isActiveRole('super-admin'))
+        <!-- Total Users -->
+        ...
+        @endif
+
+        @if(isActiveRole('super-admin|admin-sdm|sdm'))
+        ...
+        @endif
+
+        @if(isActiveRole('staff|employee'))
         <!-- Staff Personal Info Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -167,6 +180,7 @@
             </div>
         </div>
         @endif
+    </div>
     </div>
 
     <!-- Quick Access Modules -->

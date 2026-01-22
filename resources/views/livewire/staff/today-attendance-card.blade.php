@@ -1,87 +1,76 @@
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="p-5 border-b border-gray-50 flex justify-between items-center">
-        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center">
-            <x-lucide-clock class="w-4 h-4 mr-2 text-blue-600" />
-            Kehadiran Hari Ini
-        </h3>
-        <span class="text-[10px] font-bold py-1 px-2 bg-blue-50 text-blue-700 rounded-full uppercase tracking-tighter">
-            {{ now()->locale('id')->isoFormat('D MMMM YYYY') }}
-        </span>
-    </div>
-    
-    <div class="p-6">
-        @if($shift)
-            <div class="mb-6 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <div class="flex items-center justify-between mb-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Shift Anda:</span>
-                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{{ $shift->name }}</span>
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+    <div class="p-8 sm:p-10">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <!-- Left: Current Time & Shift -->
+            <div class="flex items-center space-x-6 pr-8 lg:border-r border-gray-100">
+                <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
+                    <x-lucide-clock class="w-8 h-8" />
                 </div>
-                <div class="flex items-center space-x-2 text-sm font-black text-gray-700">
-                    <x-lucide-calendar-range class="w-4 h-4 text-gray-400" />
-                    <span>{{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }}</span>
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Kehadiran Hari Ini</h3>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl font-black text-gray-900 tracking-tight">{{ now()->format('H:i') }}</span>
+                        <div class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg border border-blue-100 uppercase tracking-wider">
+                            {{ $shift->name }}
+                        </div>
+                    </div>
                 </div>
             </div>
-        @endif
 
-        <div class="grid grid-cols-2 gap-4">
-            <!-- Check In -->
-            <div class="space-y-2">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Jam Masuk</span>
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $attendance && $attendance->check_in_time ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-300' }}">
-                        <x-lucide-log-in class="w-5 h-5" />
+            <!-- Middle: Check In & Check Out -->
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
+                <!-- Check In -->
+                <div class="flex items-center space-x-5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center 
+                        {{ $attendance && $attendance->check_in_time ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-300' }} shadow-inner">
+                        <x-lucide-log-in class="w-6 h-6" />
                     </div>
                     <div>
-                        <p class="text-lg font-black {{ $attendance && $attendance->check_in_time ? 'text-gray-900' : 'text-gray-300' }}">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Jam Masuk</p>
+                        <p class="text-xl font-black {{ $attendance && $attendance->check_in_time ? 'text-gray-900' : 'text-gray-200' }}">
                             {{ $attendance && $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '--:--' }}
                         </p>
-                        @if($attendance && $attendance->check_in_time)
-                            <span class="text-[9px] font-bold text-emerald-500 uppercase">Tercatat</span>
-                        @else
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">Belum Absen</span>
-                        @endif
                     </div>
                 </div>
-            </div>
 
-            <!-- Check Out -->
-            <div class="space-y-2">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Jam Keluar</span>
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $attendance && $attendance->check_out_time ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-300' }}">
-                        <x-lucide-log-out class="w-5 h-5" />
+                <!-- Check Out -->
+                <div class="flex items-center space-x-5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center 
+                        {{ $attendance && $attendance->check_out_time ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-300' }} shadow-inner">
+                        <x-lucide-log-out class="w-6 h-6" />
                     </div>
                     <div>
-                        <p class="text-lg font-black {{ $attendance && $attendance->check_out_time ? 'text-gray-900' : 'text-gray-300' }}">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Jam Keluar</p>
+                        <p class="text-xl font-black {{ $attendance && $attendance->check_out_time ? 'text-gray-900' : 'text-gray-200' }}">
                             {{ $attendance && $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : '--:--' }}
                         </p>
-                        @if($attendance && $attendance->check_out_time)
-                            <span class="text-[9px] font-bold text-blue-500 uppercase">Tercatat</span>
-                        @else
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">Belum Absen</span>
-                        @endif
                     </div>
                 </div>
             </div>
-        </div>
 
-        @if($attendance && $attendance->status)
-            <div class="mt-6 pt-5 border-t border-gray-50 flex items-center justify-between">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Status Saat Ini:</span>
-                @php
-                    $statusColors = [
-                        'on_time' => 'bg-emerald-100 text-emerald-700',
-                        'early_arrival' => 'bg-emerald-100 text-emerald-700',
-                        'late' => 'bg-amber-100 text-amber-700',
-                        'incomplete' => 'bg-purple-100 text-purple-700',
-                        'absent' => 'bg-rose-100 text-rose-700',
-                    ];
-                    $statusClass = $statusColors[$attendance->status] ?? 'bg-gray-100 text-gray-700';
-                @endphp
-                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider {{ $statusClass }}">
-                    {{ $attendance->status_label }}
-                </span>
+            <!-- Right: Status Badge -->
+            <div class="lg:pl-8 lg:border-l border-gray-100 flex flex-col items-center lg:items-end justify-center">
+                @if($attendance && $attendance->status)
+                    @php
+                        $statusColors = [
+                            'on_time' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
+                            'early_arrival' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
+                            'late' => 'bg-amber-50 text-amber-700 ring-amber-600/10',
+                            'incomplete' => 'bg-purple-50 text-purple-700 ring-purple-600/10',
+                            'absent' => 'bg-rose-50 text-rose-700 ring-rose-600/10',
+                        ];
+                        $statusClass = $statusColors[$attendance->status] ?? 'bg-gray-50 text-gray-700 ring-gray-600/10';
+                    @endphp
+                    <span class="px-5 py-2 rounded-2xl text-xs font-black uppercase tracking-widest ring-1 ring-inset {{ $statusClass }} shadow-sm">
+                        {{ $attendance->status_label }}
+                    </span>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase mt-2">Status Kehadiran</p>
+                @else
+                    <div class="text-center lg:text-right">
+                        <span class="text-xs font-bold text-gray-300 italic">Belum ada data absensi hari ini</span>
+                    </div>
+                @endif
             </div>
-        @endif
+        </div>
     </div>
 </div>
