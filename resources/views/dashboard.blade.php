@@ -243,7 +243,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Absensi Hari Ini</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\AttendanceLog::whereDate('scan_date', today())->count() }}</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\AttendanceLog::whereDate('datetime', today())->count() }}</p>
                         <p class="text-xs text-gray-500 mt-1">Log absensi</p>
                     </div>
                     <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
