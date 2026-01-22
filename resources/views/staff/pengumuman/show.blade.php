@@ -1,254 +1,243 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0 text-gray-800">{{ $title }}</h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            @foreach($breadcrumbs as $breadcrumb)
-                                @if($breadcrumb['url'])
-                                    <li class="breadcrumb-item">
-                                        <a href="{{ $breadcrumb['url'] }}">{{ $breadcrumb['name'] }}</a>
-                                    </li>
-                                @else
-                                    <li class="breadcrumb-item active" aria-current="page">{{ $breadcrumb['name'] }}</li>
-                                @endif
-                            @endforeach
-                        </ol>
-                    </nav>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-4 sm:space-y-6">
+    {{-- Header Section --}}
+    <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                    {{-- Badges --}}
+                    <div class="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
+                        @if($announcement['is_pinned'])
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-amber-100">
+                                <x-lucide-pin class="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                                Disematkan
+                            </span>
+                        @endif
+                        @if(!$announcement['read_status'])
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-blue-100">
+                                <div class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 animate-pulse"></div>
+                                Belum Dibaca
+                            </span>
+                        @endif
+                        @php
+                            $typeBadges = [
+                                'tausiyah' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                                'kajian' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
+                                'pengumuman' => 'bg-blue-50 text-blue-700 border-blue-100',
+                                'himbauan' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                'undangan' => 'bg-purple-50 text-purple-700 border-purple-100',
+                            ];
+                            $typeClass = $typeBadges[$announcement['type']] ?? 'bg-gray-50 text-gray-700 border-gray-100';
+                            
+                            $priorityBadges = [
+                                'low' => 'bg-gray-50 text-gray-700 border-gray-100',
+                                'normal' => 'bg-blue-50 text-blue-700 border-blue-100',
+                                'high' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                'urgent' => 'bg-rose-50 text-rose-700 border-rose-100',
+                            ];
+                            $priorityClass = $priorityBadges[$announcement['priority']] ?? 'bg-gray-50 text-gray-700 border-gray-100';
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider border {{ $typeClass }}">
+                            {{ ucfirst($announcement['type']) }}
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider border {{ $priorityClass }}">
+                            Prioritas {{ ucfirst($announcement['priority']) }}
+                        </span>
+                    </div>
+
+                    {{-- Title --}}
+                    <h1 class="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight mb-2">
+                        {{ $announcement['title'] }}
+                    </h1>
+
+                    {{-- Meta Info --}}
+                    <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                        <div class="flex items-center">
+                            <x-lucide-user class="w-4 h-4 mr-1.5 flex-shrink-0" />
+                            <span class="font-medium">{{ $announcement['created_by'] }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <x-lucide-calendar class="w-4 h-4 mr-1.5 flex-shrink-0" />
+                            <span>{{ \Carbon\Carbon::parse($announcement['published_at'])->format('d F Y, H:i') }} WIB</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="d-flex gap-2">
+
+                {{-- Action Buttons --}}
+                <div class="flex flex-wrap items-center gap-2">
                     @if(!$announcement['read_status'])
-                    <button onclick="markAsRead()" class="btn btn-success">
-                        <i class="fas fa-check me-2"></i>
-                        Tandai Dibaca
-                    </button>
+                        <button onclick="markAsRead()" class="inline-flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm">
+                            <x-lucide-check class="w-4 h-4 mr-1.5" />
+                            <span class="hidden sm:inline">Tandai Dibaca</span>
+                            <span class="sm:hidden">Dibaca</span>
+                        </button>
                     @endif
-                    <button onclick="window.print()" class="btn btn-outline-primary">
-                        <i class="fas fa-print me-2"></i>
-                        Cetak
+                    <button onclick="window.print()" class="inline-flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                        <x-lucide-printer class="w-4 h-4 sm:mr-1.5" />
+                        <span class="hidden sm:inline">Cetak</span>
                     </button>
-                    <a href="{{ route('staff.pengumuman.index') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Kembali
+                    <a href="{{ route('staff.pengumuman.index') }}" class="inline-flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                        <x-lucide-arrow-left class="w-4 h-4 sm:mr-1.5" />
+                        <span class="hidden sm:inline">Kembali</span>
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Announcement Detail -->
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Main Content -->
-            <div class="card border-0 shadow-sm mb-4">
-                <!-- Header -->
-                <div class="card-header bg-white border-bottom py-4">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center mb-2">
-                                @if($announcement['is_pinned'])
-                                    <i class="fas fa-thumbtack text-warning me-2"></i>
-                                @endif
-                                @if(!$announcement['read_status'])
-                                    <div class="bg-primary rounded-circle me-2" style="width: 10px; height: 10px;"></div>
-                                @endif
-                                <h4 class="mb-0 text-dark">{{ $announcement['title'] }}</h4>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                <span class="badge {{ getTypeBadge($announcement['type']) }} fs-6">
-                                    <i class="fas fa-tag me-1"></i>
-                                    {{ ucfirst($announcement['type']) }}
-                                </span>
-                                <span class="badge {{ getPriorityBadge($announcement['priority']) }} fs-6">
-                                    <i class="fas fa-flag me-1"></i>
-                                    Prioritas {{ ucfirst($announcement['priority']) }}
-                                </span>
-                                @if($announcement['is_pinned'])
-                                <span class="badge bg-warning fs-6">
-                                    <i class="fas fa-thumbtack me-1"></i>
-                                    Disematkan
-                                </span>
-                                @endif
-                            </div>
-                        </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {{-- Main Content --}}
+        <div class="lg:col-span-2 space-y-4 sm:space-y-6">
+            {{-- Content Card --}}
+            <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 sm:p-8 lg:p-10">
+                    <div class="prose prose-sm sm:prose lg:prose-lg max-w-none">
+                        <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $announcement['content'] }}</div>
                     </div>
                 </div>
 
-                <!-- Content -->
-                <div class="card-body p-4">
-                    <div class="announcement-content">
-                        {!! nl2br(e($announcement['content'])) !!}
-                    </div>
-
-                    @if(count($announcement['attachments']) > 0)
-                    <!-- Attachments -->
-                    <div class="mt-4 pt-4 border-top">
-                        <h6 class="text-muted mb-3">
-                            <i class="fas fa-paperclip me-2"></i>
+                @if(count($announcement['attachments']) > 0)
+                    <div class="px-6 sm:px-8 lg:px-10 pb-6 sm:pb-8 lg:pb-10 border-t border-gray-100">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center mt-6">
+                            <x-lucide-paperclip class="w-5 h-5 mr-2 text-blue-600" />
                             Lampiran ({{ count($announcement['attachments']) }})
-                        </h6>
-                        <div class="row g-3">
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             @foreach($announcement['attachments'] as $attachment)
-                            <div class="col-md-6">
-                                <div class="card border border-light">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                @if(Str::endsWith($attachment, '.pdf'))
-                                                    <i class="fas fa-file-pdf fa-2x text-danger"></i>
-                                                @elseif(Str::endsWith($attachment, ['.jpg', '.jpeg', '.png']))
-                                                    <i class="fas fa-file-image fa-2x text-success"></i>
-                                                @elseif(Str::endsWith($attachment, ['.doc', '.docx']))
-                                                    <i class="fas fa-file-word fa-2x text-primary"></i>
-                                                @else
-                                                    <i class="fas fa-file fa-2x text-muted"></i>
-                                                @endif
+                                <div class="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors group">
+                                    <div class="flex-shrink-0 mr-3">
+                                        @if(Str::endsWith($attachment, '.pdf'))
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                                                <x-lucide-file-text class="w-5 h-5 sm:w-6 sm:h-6" />
                                             </div>
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1">{{ $attachment }}</h6>
-                                                <small class="text-muted">
-                                                    @if(Str::endsWith($attachment, '.pdf'))
-                                                        Dokumen PDF
-                                                    @elseif(Str::endsWith($attachment, ['.jpg', '.jpeg', '.png']))
-                                                        Gambar
-                                                    @elseif(Str::endsWith($attachment, ['.doc', '.docx']))
-                                                        Dokumen Word
-                                                    @else
-                                                        File
-                                                    @endif
-                                                </small>
+                                        @elseif(Str::endsWith($attachment, ['.jpg', '.jpeg', '.png']))
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                                <x-lucide-image class="w-5 h-5 sm:w-6 sm:h-6" />
                                             </div>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="downloadAttachment('{{ $attachment }}')">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
+                                        @elseif(Str::endsWith($attachment, ['.doc', '.docx']))
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                <x-lucide-file-text class="w-5 h-5 sm:w-6 sm:h-6" />
+                                            </div>
+                                        @else
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center">
+                                                <x-lucide-file class="w-5 h-5 sm:w-6 sm:h-6" />
+                                            </div>
+                                        @endif
                                     </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $attachment }}</h4>
+                                        <p class="text-[10px] sm:text-xs text-gray-500">
+                                            @if(Str::endsWith($attachment, '.pdf'))
+                                                Dokumen PDF
+                                            @elseif(Str::endsWith($attachment, ['.jpg', '.jpeg', '.png']))
+                                                Gambar
+                                            @elseif(Str::endsWith($attachment, ['.doc', '.docx']))
+                                                Dokumen Word
+                                            @else
+                                                File
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <button onclick="downloadAttachment('{{ $attachment }}')" class="flex-shrink-0 ml-2 p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <x-lucide-download class="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </button>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
                     </div>
-                    @endif
-                </div>
-
-                <!-- Footer -->
-                <div class="card-footer bg-light border-top-0 py-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <small class="text-muted">
-                                <i class="fas fa-user me-1"></i>
-                                Dibuat oleh: <strong>{{ $announcement['created_by'] }}</strong>
-                            </small>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <small class="text-muted">
-                                <i class="fas fa-calendar me-1"></i>
-                                {{ \Carbon\Carbon::parse($announcement['published_at'])->format('d F Y, H:i') }} WIB
-                            </small>
-                        </div>
-                    </div>
-                </div>
+                @endif
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <!-- Info Card -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Informasi Pengumuman
-                    </h6>
+        {{-- Sidebar --}}
+        <div class="space-y-4 sm:space-y-6">
+            {{-- Info Card --}}
+            <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 sm:p-6 bg-gradient-to-r from-blue-600 to-blue-700">
+                    <h3 class="text-base sm:text-lg font-bold text-white flex items-center">
+                        <x-lucide-info class="w-5 h-5 mr-2" />
+                        Informasi
+                    </h3>
                 </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Jenis</span>
-                            <span class="badge {{ getTypeBadge($announcement['type']) }}">
-                                {{ ucfirst($announcement['type']) }}
+                <div class="divide-y divide-gray-100">
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Jenis</span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider border {{ $typeClass }}">
+                            {{ ucfirst($announcement['type']) }}
+                        </span>
+                    </div>
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Prioritas</span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider border {{ $priorityClass }}">
+                            {{ ucfirst($announcement['priority']) }}
+                        </span>
+                    </div>
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Status</span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-emerald-100">
+                            {{ ucfirst($announcement['status']) }}
+                        </span>
+                    </div>
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Tanggal Publikasi</span>
+                        <span class="text-xs sm:text-sm font-bold text-gray-900">{{ \Carbon\Carbon::parse($announcement['published_at'])->format('d M Y') }}</span>
+                    </div>
+                    @if($announcement['expires_at'])
+                        <div class="p-4 sm:p-5 flex items-center justify-between">
+                            <span class="text-xs sm:text-sm text-gray-500 font-medium">Berakhir</span>
+                            <span class="text-xs sm:text-sm font-bold text-amber-600">{{ \Carbon\Carbon::parse($announcement['expires_at'])->format('d M Y') }}</span>
+                        </div>
+                    @endif
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Lampiran</span>
+                        <span class="text-xs sm:text-sm font-bold text-gray-900">{{ count($announcement['attachments']) }} file</span>
+                    </div>
+                    <div class="p-4 sm:p-5 flex items-center justify-between">
+                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Status Baca</span>
+                        @if($announcement['read_status'])
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold border border-emerald-100">
+                                <x-lucide-check class="w-3 h-3 mr-1" />
+                                Sudah Dibaca
                             </span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Prioritas</span>
-                            <span class="badge {{ getPriorityBadge($announcement['priority']) }}">
-                                {{ ucfirst($announcement['priority']) }}
+                        @else
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] sm:text-xs font-bold border border-amber-100">
+                                <x-lucide-mail class="w-3 h-3 mr-1" />
+                                Belum Dibaca
                             </span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Status</span>
-                            <span class="badge bg-success">
-                                {{ ucfirst($announcement['status']) }}
-                            </span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Tanggal Publikasi</span>
-                            <span>{{ \Carbon\Carbon::parse($announcement['published_at'])->format('d M Y') }}</span>
-                        </div>
-                        @if($announcement['expires_at'])
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Berakhir</span>
-                            <span class="text-warning">
-                                {{ \Carbon\Carbon::parse($announcement['expires_at'])->format('d M Y') }}
-                            </span>
-                        </div>
                         @endif
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Lampiran</span>
-                            <span>{{ count($announcement['attachments']) }} file</span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Status Baca</span>
-                            @if($announcement['read_status'])
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>
-                                    Sudah Dibaca
-                                </span>
-                            @else
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-envelope me-1"></i>
-                                    Belum Dibaca
-                                </span>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Actions Card -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fas fa-cogs me-2"></i>
-                        Aksi
-                    </h6>
+            {{-- Quick Actions Card --}}
+            <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-100">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center">
+                        <x-lucide-zap class="w-5 h-5 mr-2 text-blue-600" />
+                        Aksi Cepat
+                    </h3>
                 </div>
-                <div class="card-body p-3">
-                    <div class="d-grid gap-2">
-                        @if(!$announcement['read_status'])
-                        <button onclick="markAsRead()" class="btn btn-success">
-                            <i class="fas fa-check me-2"></i>
+                <div class="p-4 sm:p-5 space-y-2 sm:space-y-3">
+                    @if(!$announcement['read_status'])
+                        <button onclick="markAsRead()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-emerald-600 text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm">
+                            <x-lucide-check class="w-4 h-4 mr-2" />
                             Tandai Sebagai Dibaca
                         </button>
-                        @endif
-                        <button onclick="window.print()" class="btn btn-outline-primary">
-                            <i class="fas fa-print me-2"></i>
-                            Cetak Pengumuman
-                        </button>
-                        <button onclick="shareAnnouncement()" class="btn btn-outline-info">
-                            <i class="fas fa-share me-2"></i>
-                            Bagikan
-                        </button>
-                        <a href="{{ route('staff.pengumuman.index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-list me-2"></i>
-                            Lihat Semua Pengumuman
-                        </a>
-                    </div>
+                    @endif
+                    <button onclick="window.print()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                        <x-lucide-printer class="w-4 h-4 mr-2" />
+                        Cetak Pengumuman
+                    </button>
+                    <button onclick="shareAnnouncement()" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                        <x-lucide-share-2 class="w-4 h-4 mr-2" />
+                        Bagikan
+                    </button>
+                    <a href="{{ route('staff.pengumuman.index') }}" class="w-full flex items-center justify-center px-4 py-2.5 sm:py-3 bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                        <x-lucide-list class="w-4 h-4 mr-2" />
+                        Lihat Semua Pengumuman
+                    </a>
                 </div>
             </div>
         </div>
@@ -257,23 +246,26 @@
 
 <script>
 function markAsRead() {
-    const button = event.target;
+    const button = event.target.closest('button');
     const originalContent = button.innerHTML;
     
-    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
+    button.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Memproses...';
     button.disabled = true;
     
     setTimeout(() => {
-        // Remove unread indicators
-        const unreadDots = document.querySelectorAll('.bg-primary.rounded-circle');
-        unreadDots.forEach(dot => dot.remove());
+        // Remove unread badges
+        const unreadBadges = document.querySelectorAll('[class*="Belum Dibaca"]');
+        unreadBadges.forEach(badge => badge.remove());
         
         // Update status badge
-        const statusBadge = document.querySelector('.list-group-item:last-child .badge');
-        if (statusBadge) {
-            statusBadge.className = 'badge bg-success';
-            statusBadge.innerHTML = '<i class="fas fa-check me-1"></i>Sudah Dibaca';
-        }
+        const statusBadges = document.querySelectorAll('[class*="Status Baca"]');
+        statusBadges.forEach(container => {
+            const badge = container.querySelector('span:last-child');
+            if (badge) {
+                badge.className = 'inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold border border-emerald-100';
+                badge.innerHTML = '<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Sudah Dibaca';
+            }
+        });
         
         // Remove mark as read buttons
         const markButtons = document.querySelectorAll('button[onclick="markAsRead()"]');
@@ -284,18 +276,7 @@ function markAsRead() {
 }
 
 function downloadAttachment(filename) {
-    const button = event.target;
-    const originalContent = button.innerHTML;
-    
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    button.disabled = true;
-    
-    setTimeout(() => {
-        button.innerHTML = originalContent;
-        button.disabled = false;
-        
-        showToast(`File ${filename} akan segera diunduh`, 'info');
-    }, 1000);
+    showToast(`File ${filename} akan segera diunduh`, 'info');
 }
 
 function shareAnnouncement() {
@@ -306,7 +287,6 @@ function shareAnnouncement() {
             url: window.location.href
         });
     } else {
-        // Fallback: copy to clipboard
         navigator.clipboard.writeText(window.location.href).then(() => {
             showToast('Link pengumuman berhasil disalin ke clipboard', 'success');
         });
@@ -314,14 +294,26 @@ function shareAnnouncement() {
 }
 
 function showToast(message, type = 'info') {
+    const bgColors = {
+        'success': 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        'info': 'bg-blue-50 border-blue-200 text-blue-800',
+        'warning': 'bg-amber-50 border-amber-200 text-amber-800',
+        'error': 'bg-rose-50 border-rose-200 text-rose-800'
+    };
+    
     const toast = document.createElement('div');
-    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-xl border shadow-lg ${bgColors[type]} animate-slide-in-right max-w-sm`;
     toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+            </svg>
+            <span class="text-sm font-medium">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
         </div>
     `;
     
@@ -336,87 +328,33 @@ function showToast(message, type = 'info') {
 </script>
 
 <style>
-.announcement-content {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #333;
-}
-
-.announcement-content p {
-    margin-bottom: 1.5rem;
-}
-
 @media print {
-    .btn, .breadcrumb, .card-footer {
+    .no-print, button, a[href] {
         display: none !important;
-    }
-    
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    .card-header {
-        background-color: #f8f9fa !important;
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
     }
     
     body {
         font-size: 12px;
     }
     
-    .announcement-content {
+    .prose {
         font-size: 14px;
     }
 }
 
-.card {
-    transition: transform 0.2s ease-in-out;
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
-.card:hover {
-    transform: translateY(-1px);
-}
-
-.badge {
-    font-size: 0.8rem;
-}
-
-.list-group-item {
-    border-left: none;
-    border-right: none;
-}
-
-.list-group-item:first-child {
-    border-top: none;
-}
-
-.list-group-item:last-child {
-    border-bottom: none;
+.animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
 }
 </style>
-
-@php
-function getTypeBadge($type) {
-    return match($type) {
-        'tausiyah' => 'bg-success',
-        'kajian' => 'bg-info',
-        'pengumuman' => 'bg-primary',
-        'himbauan' => 'bg-warning',
-        'undangan' => 'bg-purple',
-        default => 'bg-secondary'
-    };
-}
-
-function getPriorityBadge($priority) {
-    return match($priority) {
-        'low' => 'bg-secondary',
-        'normal' => 'bg-primary',
-        'high' => 'bg-warning',
-        'urgent' => 'bg-danger',
-        default => 'bg-secondary'
-    };
-}
-@endphp
 @endsection
