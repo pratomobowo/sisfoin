@@ -96,7 +96,7 @@ class EmployeeAttendanceManagement extends Component
     {
         $query = EmployeeAttendance::with(['employee'])
             ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc');
+            ->orderBy('check_in_time', 'desc');
 
         // Apply filters
         if ($this->search) {
