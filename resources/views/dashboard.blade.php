@@ -39,7 +39,8 @@
                     'employee_exists' => !is_null($employee),
                     'satuan_kerja' => $employee?->satuan_kerja,
                     'found_via_find' => !is_null(\App\Models\Employee::find($user->employee_id)),
-                    'search_by_name' => \App\Models\Employee::where('nama', 'like', '%Pratomo Bowo Leksono%')->first()?->only(['id', 'nama', 'satuan_kerja']),
+                    'found_via_find_with_trashed' => !is_null(\App\Models\Employee::withTrashed()->find($user->employee_id)),
+                    'search_by_name_result' => \App\Models\Employee::where('nama', 'like', '%Pratomo Bowo Leksono%')->first()?->id,
                 ]);
             
             // Metrics
