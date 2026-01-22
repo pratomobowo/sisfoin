@@ -18,7 +18,7 @@
 @endsection
 
 @section('content')
-<div class="space-y-8">
+<div class="space-y-6 sm:space-y-8">
     @if(isActiveRole('staff|employee'))
         @php
             $user = auth()->user();
@@ -34,17 +34,16 @@
             $statusAktif = $employee->status_aktif ?? 'Aktif';
         @endphp
 
-        <!-- Header Section: Personal Info (Admin Style) -->
-        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                <div class="space-y-2">
-                    <p class="text-blue-200 text-sm font-medium uppercase tracking-wider">Selamat Datang Kembali</p>
-                    <h1 class="text-3xl font-bold">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 sm:p-8 text-white relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative z-10">
+                <div class="space-y-1 sm:space-y-2">
+                    <p class="text-blue-200 text-xs sm:text-sm font-medium uppercase tracking-wider">Selamat Datang Kembali</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold leading-tight">
                         {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
                     </h1>
-                    <div class="flex items-center text-blue-100">
-                        <x-lucide-building-2 class="w-5 h-5 mr-2" />
-                        <span class="text-lg">{{ $unitKerja }}</span>
+                    <div class="flex items-center text-blue-100/90">
+                        <x-lucide-building-2 class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                        <span class="text-base sm:text-lg font-medium">{{ $unitKerja }}</span>
                     </div>
                 </div>
                 <div class="hidden md:block text-right">
@@ -62,10 +61,9 @@
             <livewire:staff.today-attendance-card />
         </div>
 
-        <!-- Metrics Grid (Admin Style) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <!-- Salary Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
                         <x-lucide-receipt class="w-6 h-6" />
@@ -81,7 +79,7 @@
             </div>
 
             <!-- Profile Info / Status Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
                         <x-lucide-user-check class="w-6 h-6" />
@@ -98,7 +96,7 @@
             </div>
 
             <!-- Quick Link / Shortcut Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
                         <x-lucide-calendar-check-2 class="w-6 h-6" />
@@ -129,10 +127,10 @@
                 </div>
                 <a href="{{ route('staff.pengumuman.index') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Lihat Semua</a>
             </div>
-            <div class="p-6">
-                <div class="space-y-4">
+            <div class="p-5 sm:p-6">
+                <div class="space-y-3 sm:space-y-4">
                     @forelse($announcements as $announcement)
-                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-gray-50/50 p-4 rounded-xl border border-gray-100 transition-all duration-300 hover:bg-white hover:shadow-md hover:border-blue-100 group">
+                        <a href="{{ route('staff.pengumuman.show', $announcement->id) }}" class="flex items-start bg-gray-50/50 p-3 sm:p-4 rounded-xl border border-gray-100 transition-all duration-300 hover:bg-white hover:shadow-md hover:border-blue-100 group">
                             <div class="mr-4 hidden sm:block">
                                 <div class="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105
                                     {{ $announcement->priority === 'high' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600' }}">
