@@ -27,9 +27,19 @@ function hasRole(string $role): bool
 /**
  * Check if the current active role matches the specified role
  */
-function isActiveRole(string $role): bool
+function isActiveRole(string|array $roles): bool
 {
-    return getActiveRole() === $role;
+    $activeRole = getActiveRole();
+    
+    if (is_array($roles)) {
+        return in_array($activeRole, $roles);
+    }
+    
+    if (str_contains($roles, '|')) {
+        return in_array($activeRole, explode('|', $roles));
+    }
+    
+    return $activeRole === $roles;
 }
 
 /**

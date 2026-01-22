@@ -38,7 +38,7 @@
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        @hasanyrole('super-admin')
+        @if(isActiveRole('super-admin')))
         <!-- Total Users -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -53,9 +53,9 @@
                 </div>
             </div>
         </div>
-        @endhasanyrole
+        @endif
 
-        @hasanyrole('super-admin|sdm')
+        @if(isActiveRole('super-admin|admin-sdm|sdm')))
         <!-- Total Employees -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -101,9 +101,9 @@
                 </div>
             </div>
         </div>
-        @endhasanyrole
+        @endif
 
-        @hasanyrole('staff')
+        @if(isActiveRole('staff|employee')))
         <!-- Staff Personal Info Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -163,14 +163,14 @@
                 </div>
             </div>
         </div>
-        @endhasanyrole
+        @endif
     </div>
 
     <!-- Quick Access Modules -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Akses Cepat Modul</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @hasanyrole('super-admin')
+            @if(isActiveRole('super-admin')))
             <!-- User Management -->
             <a href="{{ route('superadmin.users.index') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
@@ -196,9 +196,9 @@
                     <p class="text-sm text-gray-500">Kelola peran dan hak akses</p>
                 </div>
             </a>
-            @endhasanyrole
+            @endif
 
-            @hasanyrole('super-admin|sdm')
+            @if(isActiveRole('super-admin|sdm'))
             <!-- Employee Management -->
             <a href="{{ route('sdm.employees.index') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors group">
                 <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
@@ -238,9 +238,9 @@
                     <p class="text-sm text-gray-500">Kelola slip gaji karyawan</p>
                 </div>
             </a>
-            @endhasanyrole
+            @endif
 
-            @hasanyrole('staff')
+            @if(isActiveRole('staff|employee')))
             <!-- Staff Profile -->
             <a href="{{ route('staff.profile') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
@@ -266,7 +266,7 @@
                     <p class="text-sm text-gray-500">Lihat riwayat slip gaji</p>
                 </div>
             </a>
-            @endhasanyrole
+            @endif
         </div>
     </div>
 
@@ -274,16 +274,16 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Aksi Cepat</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            @hasanyrole('super-admin')
+            @if(isActiveRole('super-admin')))
             <a href="{{ route('superadmin.users.index') }}" class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
                 <svg class="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
                 <span class="text-sm font-medium text-gray-700 group-hover:text-blue-600">Tambah Pengguna</span>
             </a>
-            @endhasanyrole
+            @endif
 
-            @hasanyrole('super-admin|sdm')
+            @if(isActiveRole('super-admin|sdm'))
             <a href="{{ route('sdm.employees.create') }}" class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors group">
                 <svg class="w-8 h-8 text-gray-400 group-hover:text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -304,7 +304,7 @@
                 </svg>
                 <span class="text-sm font-medium text-gray-700 group-hover:text-yellow-600">Buat Slip Gaji</span>
             </a>
-            @endhasanyrole
+            @endif
         </div>
     </div>
 
@@ -312,7 +312,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Aktivitas Terbaru</h2>
         <div class="space-y-4">
-            @hasanyrole('super-admin')
+            @if(isActiveRole('super-admin')))
             @php
                 $recentUsers = App\Models\User::latest()->take(3)->get();
             @endphp
@@ -329,9 +329,9 @@
             @empty
             <p class="text-gray-500 text-center py-4">Belum ada aktivitas terbaru</p>
             @endforelse
-            @endhasanyrole
+            @endif
 
-            @hasanyrole('super-admin|sdm')
+            @if(isActiveRole('super-admin|sdm'))
             @php
                 $recentSlipGaji = App\Models\SlipGajiHeader::latest()->take(3)->get();
             @endphp
@@ -350,7 +350,7 @@
             @empty
             <p class="text-gray-500 text-center py-4">Belum ada slip gaji terbaru</p>
             @endforelse
-            @endhasanyrole
+            @endif
         </div>
     </div>
 </div>

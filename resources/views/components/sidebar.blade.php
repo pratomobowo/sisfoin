@@ -26,7 +26,7 @@
         </div>
 
         <!-- Admin Section -->
-        @if(auth()->user()->hasRole('super-admin'))
+        @if(isActiveRole('super-admin'))
         <div>
             <p class="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Administrasi</p>
             <div class="space-y-1">
@@ -89,7 +89,7 @@
         <div>
             <p class="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Modul Sistem</p>
             <div class="space-y-2">
-                @can('employee.view')
+                @if(isActiveRole('super-admin') || isActiveRole('admin-sdm'))
                 <div x-data="{ open: {{ request()->routeIs('sdm.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-blue-50/50 transition-all duration-200">
@@ -117,10 +117,10 @@
                         <a href="{{ route('sdm.absensi.settings') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.settings') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Pengaturan</a>
                     </div>
                 </div>
-                @endcan
+                @endif
 
-                @hasrole('employee')
-                <div x-data="{ open: {{ request()->routeIs('employee.*') ? 'true' : 'false' }} }">
+                @if(isActiveRole('employee') || isActiveRole('staff'))
+                <div x-data="{ open: {{ request()->routeIs('staff.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-emerald-50/50 transition-all duration-200">
                         <div class="flex items-center">
@@ -132,13 +132,12 @@
                         <x-lucide-chevron-down class="w-4 h-4 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
                     </button>
                     <div x-show="open" x-cloak class="mt-2 ml-10 space-y-1 border-l border-emerald-100 pl-4">
-                        @can('employee.payroll.view')
-                        <a href="{{ route('employee.payroll.index') }}" class="block py-2 text-sm {{ request()->routeIs('employee.payroll.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Informasi Gaji</a>
-                        @endcan
-                        <a href="{{ route('employee.attendance.index') }}" class="block py-2 text-sm {{ request()->routeIs('employee.attendance.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Riwayat Absensi</a>
+                        <a href="{{ route('staff.penggajian.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.penggajian.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Informasi Gaji</a>
+                        <a href="{{ route('staff.absensi.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.absensi.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Riwayat Absensi</a>
+                        <a href="{{ route('staff.pengumuman.index') }}" class="block py-2 text-sm {{ request()->routeIs('staff.pengumuman.*') ? 'text-emerald-600 font-semibold' : 'text-gray-500 hover:text-emerald-600 transition-colors' }}">Pengumuman</a>
                     </div>
                 </div>
-                @endhasrole
+                @endif
             </div>
         </div>
     </div>
@@ -151,7 +150,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-gray-900 truncate">{{ auth()->user()->name }}</p>
-                <p class="text-[10px] font-medium text-gray-500 truncate uppercase">{{ auth()->user()->getRoleNames()->first() ?? 'User' }}</p>
+                <p class="text-[10px] font-medium text-gray-500 truncate uppercase">{{ ucfirst(str_replace('-', ' ', getActiveRole())) }}</p>
             </div>
         </div>
     </div>
