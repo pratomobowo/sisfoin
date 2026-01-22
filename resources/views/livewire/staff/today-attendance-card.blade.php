@@ -21,7 +21,7 @@
         </div>
 
         <!-- BLOCK 2: ABSEN MASUK -->
-        <div class="flex flex-col pl-6 border-l-2 {{ $attendance && $attendance->check_in_time ? 'border-emerald-500' : 'border-gray-100' }}">
+        <div class="flex flex-col pl-5 border-l-2 {{ $attendance && $attendance->check_in_time ? 'border-emerald-500' : 'border-gray-100' }}">
             <span class="text-xs font-medium {{ $attendance && $attendance->check_in_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wider">Jam Masuk</span>
             <span class="text-2xl font-bold {{ $attendance && $attendance->check_in_time ? 'text-gray-900' : 'text-gray-200' }}">
                 {{ $attendance && $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '--:--' }}
@@ -37,7 +37,7 @@
         </div>
 
         <!-- BLOCK 3: ABSEN PULANG -->
-        <div class="flex flex-col pl-6 border-l-2 {{ $attendance && $attendance->check_out_time ? 'border-indigo-500' : 'border-gray-100' }}">
+        <div class="flex flex-col pl-5 border-l-2 {{ $attendance && $attendance->check_out_time ? 'border-indigo-500' : 'border-gray-100' }}">
             <span class="text-xs font-medium {{ $attendance && $attendance->check_out_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wider">Jam Pulang</span>
             <span class="text-2xl font-bold {{ $attendance && $attendance->check_out_time ? 'text-gray-900' : 'text-gray-200' }}">
                 {{ $attendance && $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : '--:--' }}
