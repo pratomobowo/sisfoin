@@ -4,7 +4,7 @@
             <th style="font-weight: bold; text-align: left; vertical-align: middle; width: 300px; border: 1px solid #000000;">Karyawan</th>
             <th style="font-weight: bold; text-align: left; vertical-align: middle; width: 150px; border: 1px solid #000000;">NIP</th>
             @foreach($days as $day)
-                <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 80px; border: 1px solid #000000; {{ $day['is_holiday'] ? 'background-color: #fee2e2; color: #dc2626;' : ($day['is_weekend'] ? 'background-color: #fef2f2; color: #f87171;' : 'background-color: #f9fafb; color: #9ca3af;') }}">
+                <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; {{ $day['is_holiday'] ? 'background-color: #fee2e2; color: #dc2626;' : ($day['is_weekend'] ? 'background-color: #fef2f2; color: #f87171;' : 'background-color: #f9fafb; color: #9ca3af;') }}">
                     {{ $day['day'] }}<br>
                     {{ $day['weekday'] }}
                 </th>
@@ -79,9 +79,7 @@
                     @endphp
                     <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; {{ $bgStyle }} {{ $textStyle }}">
                         @if($data)
-                            <div style="font-size: 10px;">{{ $data['short_label'] }}</div>
-                            <div style="font-size: 8px;">{{ $data['check_in'] ?? '--:--' }}</div>
-                            <div style="font-size: 8px;">{{ $data['check_out'] ?? '--:--' }}</div>
+                            <div style="font-size: 8px;">{{ $data['short_label'] }} {{ $data['check_in'] ?? '--:--' }}-{{ $data['check_out'] ?? '--:--' }}</div>
                         @endif
                     </td>
                 @endforeach
