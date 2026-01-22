@@ -26,7 +26,6 @@
             $unitKerja = $employee?->satuan_kerja ?? $employee?->unit_kerja ?? 'Unit Kerja Belum Diatur';
             $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
             
-            @php
                 dump([
                     'user_id' => $user->id,
                     'active_role' => getActiveRole(),
@@ -35,7 +34,6 @@
                     'satuan_kerja' => $employee?->satuan_kerja,
                     'unit_kerja_alias' => $employee?->unit_kerja
                 ]);
-            @endphp
             
             // Metrics
             $nip = $user->nip;
