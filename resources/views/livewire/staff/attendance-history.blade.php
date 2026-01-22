@@ -1,102 +1,102 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
     <!-- Header Section -->
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="p-8 sm:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div class="space-y-2">
-                <div class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-2">
+    <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 sm:p-6 lg:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
+            <div class="space-y-1 sm:space-y-2">
+                <div class="inline-flex items-center px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2">
                     Layanan Mandiri
                 </div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Riwayat Absensi</h1>
-                <p class="text-gray-500 text-sm max-w-md leading-relaxed">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">Riwayat Absensi</h1>
+                <p class="text-gray-500 text-xs sm:text-sm max-w-md leading-relaxed">
                     Pantau kehadiran Anda setiap bulan. Data diperbarui otomatis dari sistem mesin absensi.
                 </p>
             </div>
             
             <!-- Filters -->
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <div class="relative group">
-                    <select wire:model.live="month" class="pl-4 pr-10 py-2.5 bg-gray-50 border-none rounded-2xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+                <div class="relative group flex-1 sm:flex-none">
+                    <select wire:model.live="month" class="w-full sm:w-auto pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-2.5 bg-gray-50 border-none rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
                         @foreach($months as $num => $name)
                             <option value="{{ $num }}">{{ $name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-4 h-4" />
+                    <div class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <x-lucide-chevron-down class="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                 </div>
 
-                <div class="relative group">
-                    <select wire:model.live="year" class="pl-4 pr-10 py-2.5 bg-gray-50 border-none rounded-2xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
+                <div class="relative group flex-1 sm:flex-none">
+                    <select wire:model.live="year" class="w-full sm:w-auto pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-2.5 bg-gray-50 border-none rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
                         @foreach($years as $y)
                             <option value="{{ $y }}">{{ $y }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-4 h-4" />
+                    <div class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <x-lucide-chevron-down class="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                 </div>
 
-                <a href="{{ route('dashboard') }}" class="p-2.5 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm">
-                    <x-lucide-layout-dashboard class="w-5 h-5" />
+                <a href="{{ route('dashboard') }}" class="p-2 sm:p-2.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm">
+                    <x-lucide-layout-dashboard class="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
             </div>
         </div>
     </div>
 
     <!-- Summary Statistics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <!-- Present Card -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl shadow-inner">
-                <x-lucide-check-circle class="w-6 h-6" />
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
+            <div class="p-2.5 sm:p-3 lg:p-4 bg-emerald-50 text-emerald-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
+                <x-lucide-check-circle class="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Hadir</p>
+            <div class="min-w-0">
+                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1">Hadir</p>
                 <div class="flex items-baseline space-x-1">
-                    <span class="text-2xl font-black text-gray-900">{{ $summary['present'] }}</span>
-                    <span class="text-xs text-gray-400 font-medium">Hari</span>
+                    <span class="text-xl sm:text-2xl font-black text-gray-900">{{ $summary['present'] }}</span>
+                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
                 </div>
             </div>
         </div>
 
         <!-- Late Card -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-4 bg-amber-50 text-amber-600 rounded-2xl shadow-inner">
-                <x-lucide-clock class="w-6 h-6" />
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
+            <div class="p-2.5 sm:p-3 lg:p-4 bg-amber-50 text-amber-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
+                <x-lucide-clock class="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Terlambat</p>
+            <div class="min-w-0">
+                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1 truncate">Terlambat</p>
                 <div class="flex items-baseline space-x-1">
-                    <span class="text-2xl font-black text-amber-600">{{ $summary['late'] }}</span>
-                    <span class="text-xs text-gray-400 font-medium">Kali</span>
+                    <span class="text-xl sm:text-2xl font-black text-amber-600">{{ $summary['late'] }}</span>
+                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Kali</span>
                 </div>
             </div>
         </div>
 
         <!-- Incomplete Card -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-4 bg-purple-50 text-purple-600 rounded-2xl shadow-inner">
-                <x-lucide-alert-triangle class="w-6 h-6" />
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
+            <div class="p-2.5 sm:p-3 lg:p-4 bg-purple-50 text-purple-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
+                <x-lucide-alert-triangle class="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Tdk Lengkap</p>
+            <div class="min-w-0">
+                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1 truncate">Tdk Lengkap</p>
                 <div class="flex items-baseline space-x-1">
-                    <span class="text-2xl font-black text-purple-600">{{ $summary['incomplete'] }}</span>
-                    <span class="text-xs text-gray-400 font-medium">Hari</span>
+                    <span class="text-xl sm:text-2xl font-black text-purple-600">{{ $summary['incomplete'] }}</span>
+                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
                 </div>
             </div>
         </div>
 
         <!-- Absent Card -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-4 bg-rose-50 text-rose-600 rounded-2xl shadow-inner">
-                <x-lucide-x-circle class="w-6 h-6" />
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
+            <div class="p-2.5 sm:p-3 lg:p-4 bg-rose-50 text-rose-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
+                <x-lucide-x-circle class="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Alpa</p>
+            <div class="min-w-0">
+                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1">Alpa</p>
                 <div class="flex items-baseline space-x-1">
-                    <span class="text-2xl font-black text-rose-600">{{ $summary['absent'] }}</span>
-                    <span class="text-xs text-gray-400 font-medium">Hari</span>
+                    <span class="text-xl sm:text-2xl font-black text-rose-600">{{ $summary['absent'] }}</span>
+                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
                 </div>
             </div>
         </div>
