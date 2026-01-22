@@ -31,7 +31,7 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  @click="sidebarOpen = false"
-                 class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30 lg:hidden"
+                 class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden"
                  x-cloak></div>
 
             <!-- Main Content Area -->
