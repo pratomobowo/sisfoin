@@ -611,7 +611,6 @@ class EmployeeManagement extends Component
                 }
 
                 session()->flash('success', 'Data karyawan berhasil diperbarui.');
-                $this->dispatch('notify', ['message' => 'Data karyawan berhasil diperbarui', 'type' => 'success']);
             } else {
                 // Create new employee
                 $employee = Employee::create($employeeData);
@@ -645,7 +644,6 @@ class EmployeeManagement extends Component
                 }
 
                 session()->flash('success', 'Data karyawan manual berhasil dibuat.');
-                $this->dispatch('notify', ['message' => 'Data karyawan manual berhasil dibuat', 'type' => 'success']);
             }
 
             DB::commit();
@@ -655,7 +653,6 @@ class EmployeeManagement extends Component
             DB::rollBack();
             Log::error('Error saving manual employee: ' . $e->getMessage());
             session()->flash('error', 'Gagal menyimpan: ' . $e->getMessage());
-            $this->dispatch('notify', ['message' => 'Gagal menyimpan: ' . $e->getMessage(), 'type' => 'error']);
         }
     }
 
@@ -664,11 +661,6 @@ class EmployeeManagement extends Component
         try {
             $employee = Employee::findOrFail($id);
             $employee->delete();
-
-            activity('employee_management')
-                ->causedBy(auth()->user())
-                ->performedOn($employee)
-                ->log('Employee deleted');
 
             session()->flash('success', 'Data karyawan berhasil dihapus.');
             $this->dispatch('refreshEmployees');
