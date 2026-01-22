@@ -19,7 +19,7 @@
 
 @section('content')
 <div class="space-y-6 sm:space-y-8">
-    @if(isActiveRole('super-admin|admin-sdm|sdm'))
+    @if(isActiveRole('staff|employee'))
         <!-- Admin/Superadmin Dashboard -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
             <div class="flex items-center justify-between relative z-10">
@@ -152,7 +152,7 @@
             </div>
         </div>
 
-    @elseif(isActiveRole('staff|employee'))
+    @elseif(isActiveRole('super-admin|admin-sdm|sdm'))
         <!-- Original Dashboard for Admin/Superadmin (Kept Intact but wrapped in common layout) -->
         <!-- Welcome Section -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white">
