@@ -8,23 +8,86 @@ use Illuminate\Http\Request;
 class PayrollController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display staff payroll page with slip gaji list.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $nip = $user->nip;
 
-        // Get slip gaji data for current user
-        $slipGaji = $this->getSlipGajiData($user);
+        // Initialize default values
+        $slipGaji = collect();
+        $totalGajiBersih = 0;
+        $totalPotongan = 0;
+        $totalHonor = 0;
+        $totalPajakKurangPotong = 0;
+        $availableSlips = 0;
+        $totalSlips = 0;
+        $slipGajiDetails = null;
 
-        return view('staff.penggajian.index', [
-            'title' => 'Penggajian',
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('staff.dashboard')],
-                ['name' => 'Penggajian', 'url' => null],
-            ],
+        if ($nip) {
+            // Get search parameter
+            $search = $request->get('search', '');
+            $perPage = $request->get('per_page', 10);
+
+            // Get slip gaji data for this NIP
+            $query = \App\Models\SlipGajiDetail::where('nip', $nip)
+                ->with(['header', 'employee', 'dosen'])
+                ->orderBy('created_at', 'desc');
+
+            // Apply search if exists
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('header', function ($subQuery) use ($search) {
+                        $subQuery->where('periode', 'like', '%' . $search . '%');
+                    });
+                });
+            }
+
+            $slipGajiDetails = $query->paginate($perPage)->withQueryString();
+
+            // Prepare data for view
+            $slipGaji = $slipGajiDetails->map(function ($detail) {
+                return [
+                    'id' => $detail->id,
+                    'period' => $detail->header->periode,
+                    'period_name' => $detail->header->formatted_periode,
+                    'created_at' => $detail->created_at,
+                    'gaji_bersih' => $detail->penerimaan_bersih,
+                    'total_potongan' => $detail->total_potongan,
+                    'total_honor' => ($detail->honor_tetap ?? 0) + ($detail->honor_tunai ?? 0) + ($detail->insentif_golongan ?? 0),
+                    'pajak_kurang_potong' => $detail->pph21_kurang_dipotong ?? 0,
+                    'can_download' => true,
+                    'header_id' => $detail->header_id,
+                ];
+            });
+
+            // Calculate summary data
+            $allSlips = \App\Models\SlipGajiDetail::where('nip', $nip)
+                ->with(['header', 'employee', 'dosen'])
+                ->get();
+
+            $totalGajiBersih = $allSlips->where('status', 'Tersedia')->sum('penerimaan_bersih');
+            $totalPotongan = $allSlips->where('status', 'Tersedia')->sum('total_potongan');
+            $totalHonor = $allSlips->where('status', 'Tersedia')->sum(function ($detail) {
+                return ($detail->honor_tetap ?? 0) + ($detail->honor_tunai ?? 0) + ($detail->insentif_golongan ?? 0);
+            });
+            $totalPajakKurangPotong = $allSlips->where('status', 'Tersedia')->sum('pph21_kurang_dipotong');
+            $availableSlips = $allSlips->where('status', 'Tersedia')->count();
+            $totalSlips = $allSlips->count();
+        }
+
+        return view('staff.penggajian', [
             'slipGaji' => $slipGaji,
-            'hasSlipGaji' => ! empty($slipGaji),
+            'pagination' => $slipGajiDetails,
+            'totalGajiBersih' => $totalGajiBersih,
+            'totalPotongan' => $totalPotongan,
+            'totalHonor' => $totalHonor,
+            'totalPajakKurangPotong' => $totalPajakKurangPotong,
+            'availableSlips' => $availableSlips,
+            'totalSlips' => $totalSlips,
+            'search' => $request->get('search', ''),
+            'perPage' => $request->get('per_page', 10),
         ]);
     }
 
