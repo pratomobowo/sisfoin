@@ -180,17 +180,15 @@ Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->grou
     Route::get('/profile/edit', [ProfileController::class, 'staffEdit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'staffUpdate'])->name('profile.update');
 
-    // Staff Penggajian routes (view only) - hanya download PDF saja
+    // Staff Penggajian routes (view only)
     Route::prefix('penggajian')->name('penggajian.')->group(function () {
-        Route::get('/', function () {
-            return view('staff.penggajian.index');
-        })->name('index');
+        Route::get('/', [App\Http\Controllers\Employee\PayrollController::class, 'index'])->name('index');
         Route::get('/{header}/download-pdf', [SlipGajiController::class, 'staffDownloadPdf'])->name('download-pdf');
     });
 
-    // Staff Absensi routes (view only)
-    Route::prefix('absensi')->name('absensi.')->group(function () {
-        Route::get('/', App\Livewire\Staff\AttendanceHistory::class)->name('index');
+    // Staff Attendance routes (view only)
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Employee\AttendanceController::class, 'index'])->name('index');
     });
 
     // Staff Pengumuman routes (view only)
