@@ -28,11 +28,15 @@
             
                 dump([
                     'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'employee_id_raw' => $user->employee_id,
+                    'employee_type_raw' => $user->employee_type,
                     'active_role' => getActiveRole(),
+                    'employee_rel_null' => is_null($user->employee),
+                    'dosen_rel_null' => is_null($user->dosen),
                     'employee_exists' => !is_null($employee),
                     'employee_class' => $employee ? get_class($employee) : 'null',
                     'satuan_kerja' => $employee?->satuan_kerja,
-                    'unit_kerja_alias' => $employee?->unit_kerja
                 ]);
             
             // Metrics
