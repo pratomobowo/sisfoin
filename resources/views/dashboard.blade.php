@@ -26,23 +26,6 @@
             $unitKerja = $employee?->satuan_kerja ?? $employee?->unit_kerja ?? 'Unit Kerja Belum Diatur';
             $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
             
-                dump([
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'employee_id_raw' => $user->employee_id,
-                    'employee_type_raw' => $user->employee_type,
-                    'active_role' => getActiveRole(),
-                    'db_connection' => \Illuminate\Support\Facades\DB::getName(),
-                    'db_database' => \Illuminate\Support\Facades\DB::getDatabaseName(),
-                    'employee_model_table' => (new \App\Models\Employee)->getTable(),
-                    'employee_rel_null' => is_null($user->employee),
-                    'employee_exists' => !is_null($employee),
-                    'satuan_kerja' => $employee?->satuan_kerja,
-                    'found_via_find' => !is_null(\App\Models\Employee::find($user->employee_id)),
-                    'found_via_find_with_trashed' => !is_null(\App\Models\Employee::withTrashed()->find($user->employee_id)),
-                    'search_by_name_result' => \App\Models\Employee::where('nama', 'like', '%Pratomo Bowo Leksono%')->first()?->id,
-                ]);
-            
             // Metrics
             $nip = $user->nip;
             $userSlipCount = \App\Models\SlipGajiDetail::where('nip', $nip)->count();
