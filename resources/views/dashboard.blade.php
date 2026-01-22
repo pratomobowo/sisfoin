@@ -19,41 +19,22 @@
 
 @section('content')
 <div class="space-y-6 sm:space-y-8">
-    @if(isActiveRole('staff|employee'))
-        @php
-            $user = auth()->user();
-            $employee = $user->employeeData; // From User.php relationship/accessor
-            $unitKerja = $employee?->satuan_kerja ?? $employee?->unit_kerja ?? 'Unit Kerja Belum Diatur';
-            $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
-            
-            // Metrics
-            $nip = $user->nip;
-            $userSlipCount = \App\Models\SlipGajiDetail::where('nip', $nip)->count();
-            $lastSlip = \App\Models\SlipGajiDetail::where('nip', $nip)->latest('created_at')->first();
-            $lastSalary = $lastSlip ? $lastSlip->penerimaan_bersih : 0;
-            $statusAktif = $employee->status_aktif ?? 'Aktif';
-        @endphp
-
-        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 sm:p-8 text-white relative overflow-hidden">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative z-10">
-                <div class="space-y-1 sm:space-y-2">
-                    <p class="text-blue-200 text-xs sm:text-sm font-medium uppercase tracking-wider">Selamat Datang Kembali</p>
-                    <h1 class="text-2xl sm:text-3xl font-bold leading-tight">
-                        {{ $employee?->nama_lengkap_with_gelar ?? $user->name }}
-                    </h1>
-                    <div class="flex items-center text-blue-100/90">
-                        <x-lucide-building-2 class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        <span class="text-base sm:text-lg font-medium">{{ $unitKerja }}</span>
-                    </div>
+    @if(isActiveRole('super-admin|admin-sdm|sdm'))
+        <!-- Admin/Superadmin Dashboard -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
+            <div class="flex items-center justify-between relative z-10">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Selamat Datang, {{ auth()->user()->name }}!</h1>
+                    <p class="text-blue-100 text-lg">Sistem Informasi Manajemen USBYPKP</p>
+                    <p class="text-blue-200 text-sm mt-1">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
                 </div>
-                <div class="hidden md:block text-right">
-                    <p class="text-blue-200 text-sm font-medium uppercase tracking-wider mb-1">Hari Ini</p>
-                    <p class="text-xl font-bold">{{ now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
+                <div class="hidden md:block">
+                    <svg class="w-24 h-24 text-blue-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"></path>
+                    </svg>
                 </div>
             </div>
-            
-            <!-- Subtle decoration -->
-            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </div>
 
         <!-- Attendance Monitoring -->
@@ -171,7 +152,7 @@
             </div>
         </div>
 
-    @else
+    @elseif(isActiveRole('staff|employee'))
         <!-- Original Dashboard for Admin/Superadmin (Kept Intact but wrapped in common layout) -->
         <!-- Welcome Section -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-8 text-white">
