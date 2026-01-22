@@ -98,6 +98,12 @@ class Employee extends Model
         return $nama;
     }
     
+    // Accessor untuk unit kerja (alias satuan_kerja)
+    public function getUnitKerjaAttribute()
+    {
+        return $this->satuan_kerja;
+    }
+
     // Accessor untuk nama lengkap (kompatibilitas)
     public function getNamaLengkapAttribute()
     {

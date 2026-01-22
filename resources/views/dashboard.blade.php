@@ -23,7 +23,7 @@
         @php
             $user = auth()->user();
             $employee = $user->employeeData; // From User.php relationship/accessor
-            $unitKerja = $employee?->satuan_kerja ?? 'Unit Kerja Belum Diatur';
+            $unitKerja = $employee?->satuan_kerja ?? $employee?->unit_kerja ?? 'Unit Kerja Belum Diatur';
             $announcements = \App\Models\Employee\Announcement::active()->latest()->take(5)->get();
             
             // Metrics

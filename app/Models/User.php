@@ -92,6 +92,15 @@ class User extends Authenticatable
             return $this->employee;
         }
 
+        // Final fallback: check for any related data if employee_id exists
+        if ($this->employee_id) {
+            $e = Employee::find($this->employee_id);
+            if ($e) return $e;
+            
+            $d = Dosen::find($this->employee_id);
+            if ($d) return $d;
+        }
+
         return null;
     }
 
@@ -103,12 +112,11 @@ class User extends Authenticatable
         $employeeData = $this->employeeData;
 
         if ($employeeData) {
-            if ($this->employee_type === 'dosen') {
-                return $this->dosen->nama_lengkap_with_gelar ?? $this->name;
-            }
-            
-            // For all other types that use the Employee model
-            return $this->employee->nama_lengkap_with_gelar ?? $this->name;
+            // Try different possible attribute names for the full name with title
+            return $employeeData->nama_lengkap_with_gelar 
+                ?? $employeeData->nama_lengkap 
+                ?? $employeeData->nama 
+                ?? $this->name;
         }
 
         return $this->name;
