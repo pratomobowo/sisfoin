@@ -213,7 +213,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Total Karyawan</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\Employee\Employee::count() }}</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\Employee::count() }}</p>
                         <p class="text-xs text-gray-500 mt-1">Data karyawan</p>
                     </div>
                     <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
@@ -227,7 +227,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Total Dosen</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\Employee\Dosen::count() }}</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ App\Models\Dosen::count() }}</p>
                         <p class="text-xs text-gray-500 mt-1">Data dosen</p>
                     </div>
                     <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
