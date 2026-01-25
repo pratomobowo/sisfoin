@@ -20,11 +20,11 @@ class QueueManagement extends Component
     {
         $command = "ps aux | grep 'artisan queue:work' | grep -v grep";
         $output = [];
-        exec($command, $output);
+        \exec($command, $output);
 
         $this->isRunning = !empty($output);
         $this->pids = [];
-        
+
         if ($this->isRunning) {
             foreach ($output as $line) {
                 // Parse PID from ps aux output (usually second column)
@@ -34,7 +34,7 @@ class QueueManagement extends Component
                 }
             }
         }
-        
+
         $this->lastUpdate = now()->format('H:i:s');
     }
 
@@ -44,18 +44,18 @@ class QueueManagement extends Component
             // Path to artisan
             $artisan = base_path('artisan');
             $php = PHP_BINARY;
-            
+
             // Command to run in background
             // We use the same parameters as the user used before
             $command = "nohup {$php} {$artisan} queue:work --queue=emails,default --tries=3 --timeout=300 > /dev/null 2>&1 & echo $!";
-            
+
             Log::info("Starting queue worker: " . $command);
-            
-            $pid = shell_exec($command);
-            
+
+            $pid = \shell_exec($command);
+
             sleep(1); // Give it a second to start
             $this->checkStatus();
-            
+
             if ($this->isRunning) {
                 session()->flash('success', 'Email queue worker berhasil dijalankan (PID: ' . trim($pid) . ')');
             } else {
@@ -71,7 +71,7 @@ class QueueManagement extends Component
     {
         try {
             $this->checkStatus();
-            
+
             if (!$this->isRunning) {
                 session()->flash('warning', 'Queue worker tidak sedang berjalan.');
                 return;
@@ -79,13 +79,13 @@ class QueueManagement extends Component
 
             foreach ($this->pids as $pid) {
                 $command = "kill -9 {$pid}";
-                exec($command);
+                \exec($command);
                 Log::info("Stopped queue worker PID: " . $pid);
             }
 
             sleep(1);
             $this->checkStatus();
-            
+
             session()->flash('success', 'Email queue worker berhasil dihentikan.');
         } catch (\Exception $e) {
             Log::error("Failed to stop queue: " . $e->getMessage());
