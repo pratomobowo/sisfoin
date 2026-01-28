@@ -21,7 +21,7 @@ class SlipGajiTemplateExport implements FromArray, WithColumnFormatting, WithCol
         // Return sample data for template
         return [
             [
-                'KARYAWAN_TETAP', // status
+                'DOSEN_PK', // status (Contoh: KARYAWAN_TETAP, DOSEN_TETAP, DOSEN_PK, dll)
                 '123456789', // nip
                 // PENDAPATAN
                 5000000, // gaji_pokok

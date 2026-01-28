@@ -95,6 +95,7 @@
                             <option value="KARYAWAN_MAGANG" {{ old('status', $detail->status) == 'KARYAWAN_MAGANG' ? 'selected' : '' }}>Karyawan Magang</option>
                             <option value="DOSEN_TETAP" {{ old('status', $detail->status) == 'DOSEN_TETAP' ? 'selected' : '' }}>Dosen Tetap</option>
                             <option value="DOSEN_DPK" {{ old('status', $detail->status) == 'DOSEN_DPK' ? 'selected' : '' }}>Dosen DPK</option>
+                            <option value="DOSEN_PK" {{ old('status', $detail->status) == 'DOSEN_PK' ? 'selected' : '' }}>Dosen Perjanjian Khusus</option>
                             <option value="DOSEN_GURU_BESAR" {{ old('status', $detail->status) == 'DOSEN_GURU_BESAR' ? 'selected' : '' }}>Guru Besar</option>
                         </select>
                     </div>
