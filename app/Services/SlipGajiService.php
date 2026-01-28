@@ -257,6 +257,7 @@ class SlipGajiService
         $pdf = Browsershot::html($html)
             ->format('A4')
             ->margins(10, 10, 10, 10)
+            ->noSandbox()
             ->showBackground()
             ->emulateMedia('print')
             ->pdf();
@@ -288,6 +289,7 @@ class SlipGajiService
         $pdf = Browsershot::html($html)
             ->format('A4')
             ->margins(10, 10, 10, 10)
+            ->noSandbox()
             ->showBackground()
             ->emulateMedia('print')
             ->pdf();
