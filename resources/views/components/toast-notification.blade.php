@@ -11,7 +11,7 @@
 <div x-data="toastManager()" 
      x-init="
         @foreach($sessionMessages as $type => $message)
-            addToast({ message: '{{ $message }}', type: '{{ $type }}' });
+            addToast({ message: @js($message), type: @js($type) });
         @endforeach
      "
      @toast-show.window="addToast($event.detail)"
