@@ -254,13 +254,22 @@ class SlipGajiService
         $html = view($template, $data)->render();
 
         // Generate PDF using Browsershot
-        $pdf = Browsershot::html($html)
+        $browsershot = Browsershot::html($html)
             ->format('A4')
             ->margins(10, 10, 10, 10)
             ->noSandbox()
             ->showBackground()
-            ->emulateMedia('print')
-            ->pdf();
+            ->emulateMedia('print');
+
+        if (env('PUPPETEER_NODE_BINARY')) {
+            $browsershot->setNodeBinary(env('PUPPETEER_NODE_BINARY'));
+        }
+
+        if (env('PUPPETEER_CHROME_PATH')) {
+            $browsershot->setChromePath(env('PUPPETEER_CHROME_PATH'));
+        }
+
+        $pdf = $browsershot->pdf();
 
         return $pdf;
     }
@@ -286,13 +295,22 @@ class SlipGajiService
         $html = view('sdm.slip-gaji.pdf-bulk', $data)->render();
 
         // Generate PDF using Browsershot
-        $pdf = Browsershot::html($html)
+        $browsershot = Browsershot::html($html)
             ->format('A4')
             ->margins(10, 10, 10, 10)
             ->noSandbox()
             ->showBackground()
-            ->emulateMedia('print')
-            ->pdf();
+            ->emulateMedia('print');
+
+        if (env('PUPPETEER_NODE_BINARY')) {
+            $browsershot->setNodeBinary(env('PUPPETEER_NODE_BINARY'));
+        }
+
+        if (env('PUPPETEER_CHROME_PATH')) {
+            $browsershot->setChromePath(env('PUPPETEER_CHROME_PATH'));
+        }
+
+        $pdf = $browsershot->pdf();
 
         return $pdf;
     }
