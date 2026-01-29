@@ -41,6 +41,7 @@ class SendSlipGajiEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('SendSlipGajiEmailJob started', ['log_id' => $this->emailLog->id]);
         try {
             // Update status to processing
             $this->emailLog->update([
@@ -58,11 +59,13 @@ class SendSlipGajiEmailJob implements ShouldQueue
             if (!$recipientEmail) {
                 throw new \Exception('No valid email found for recipient');
             }
+            Log::info('Recipient identified', ['email' => $recipientEmail]);
 
             // Generate PDF
             $slipGajiService = app(SlipGajiService::class);
             $pdfContent = $slipGajiService->generatePdfSlip($this->slipGajiDetail->id);
             $pdfFilename = $slipGajiService->generatePdfFilename($this->slipGajiDetail);
+            Log::info('PDF generated successfully', ['filename' => $pdfFilename, 'size' => strlen($pdfContent)]);
 
             // Store PDF temporarily
             $pdfPath = 'temp/slip-gaji/' . $pdfFilename;
@@ -81,6 +84,7 @@ class SendSlipGajiEmailJob implements ShouldQueue
                 'penerimaanBersih' => number_format($this->slipGajiDetail->penerimaan_bersih, 0, ',', '.'),
                 'totalPotongan' => number_format($this->slipGajiDetail->total_potongan, 0, ',', '.'),
             ];
+            Log::info('Attempting to send mail', ['to' => $recipientEmail]);
 
             // Send email
             Mail::send('emails.slip-gaji', $emailData, function ($message) use ($recipientEmail, $pdfPath, $pdfFilename, $employeeName, $periode) {
