@@ -41,7 +41,7 @@
             width: auto;
             height: auto;
             max-width: 100%;
-            max-height: 200px;
+            max-height: 2000px;
             object-fit: contain;
             margin-bottom: 10px;
         }
@@ -251,7 +251,7 @@
                             <table class="info-table">
                                 <tr><td>Unit Kerja</td><td>:</td><td>{{ $detail->dosen->satuan_kerja ?? '-' }}</td></tr>
                                 <tr><td>Jabatan Struktural</td><td>:</td><td>{{ $detail->dosen->jabatan_struktural ?? '-' }}</td></tr>
-                                <tr><td>Golongan</td><td>:</td><td>{{ $detail->dosen->id_pangkat?? '-' }}</td></tr>
+                                <tr><td>Golongan</td><td>:</td><td>{{ $detail->dosen->id_pangkat ?? '-' }}</td></tr>
                             </table>
                         </td>
                     </tr>
@@ -267,14 +267,9 @@
                         <div class="section-title">PENERIMAAN</div>
                         <table class="salary-table">
                             <tbody>
-                                <tr><td>Gaji Pokok</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->gaji_pokok ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Perbaikan Penghasilan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tpp ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Fungsional</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_fungsional ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan PMB</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pmb ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Tunjangan Golongan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_golongan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Masa Kerja</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_masa_kerja ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Rumah</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_rumah ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Pendidikan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pendidikan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Tunjangan Dosen Bantuan Kopertis</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_dosen_bantuan_kopertis ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Tunjangan PMB</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pmb ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Tunjangan Struktural</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->tunjangan_struktural ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="plus-icon">+</span></td></tr>
                                 <tr class="total-row"><td><strong>Total Penerimaan Kotor</strong></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->penerimaan_kotor ?? 0, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
                             </tbody>
@@ -292,7 +287,7 @@
                         <div class="summary-section">
                             <table class="salary-table" style="margin-bottom: 0; width: 100%;">
                                 <tbody>
-                                    <tr class="total-row" style="background-color: #f8d7da; border-bottom: 1px solid #ddd;"><td><strong>JUMLAH POTONGAN</strong><br><span class="small-text">(Total Potongan + Pajak Kurang Potong)</span></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->total_potongan ?? 0, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
+                                    <tr class="total-row" style="background-color: #f8d7da; border-bottom: 1px solid #ddd;"><td><strong>JUMLAH POTONGAN</strong><br><span class="small-text">(Total Potongan + Pajak)</span></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->total_potongan_dpk, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
                                     <tr class="net-salary-row"><td><strong>PENERIMAAN BERSIH</strong></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->penerimaan_bersih ?? 0, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
                                 </tbody>
                             </table>
@@ -302,22 +297,22 @@
                         <div class="section-title">POTONGAN</div>
                         <table class="salary-table">
                             <tbody>
-                                <tr><td>Arisan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_arisan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Koperasi</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_koperasi ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Arisan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_arisan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>BKD</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_bkd ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>LAZMaal</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_lazmaal ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>BPJS Kesehatan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->potongan_bpjs_kesehatan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>BPJS Ketenagakerjaan</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->potongan_bpjs_ketenagakerjaan ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="plus-icon">+</span></td></tr>
-                                <tr class="total-row"><td><strong>Total Potongan</strong></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->total_potongan_tanpa_pajak ?? 0, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
+                                <tr><td>LAZMaal</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->potongan_lazmaal ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="plus-icon">+</span></td></tr>
+                                <tr class="total-row"><td><strong>Total Potongan</strong></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format(
+                                    ($detail->potongan_koperasi ?? 0) +
+                                    ($detail->potongan_arisan ?? 0) +
+                                    ($detail->potongan_bkd ?? 0) +
+                                    ($detail->potongan_lazmaal ?? 0), 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
                             </tbody>
                         </table>
                         <br>
                         <div class="section-title">PERHITUNGAN PAJAK</div>
                         <table class="salary-table">
                             <tbody>
-                                <tr><td>PPh Terhutang<br><span class="small-text">(PPh Terhutang - Pajak Sudah Dipotong)</span></td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_terhutang ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Pajak Sudah Dipotong</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->pph21_sudah_dipotong ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="minus-icon">-</span></td></tr>
-                                <tr><td>Pajak Kurang Potong</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_kurang_dipotong ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Pajak</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pajak ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                             </tbody>
                         </table>
                     </td>
