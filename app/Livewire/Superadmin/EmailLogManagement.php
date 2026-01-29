@@ -188,60 +188,76 @@ class EmailLogManagement extends Component
     {
         try {
             $log = EmailLog::findOrFail($logId);
+            $this->processResend($log);
             
-            // Check if this email log is related to slip gaji
-            if ($log->slip_gaji_detail_id) {
-                // Use SlipGajiEmailService for slip gaji emails
-                $service = app(SlipGajiEmailService::class);
-                $result = $service->sendSingleEmail($log->slip_gaji_detail_id);
-                
-                if ($result['success']) {
-                    // Update original log status
-                    $log->update([
-                        'status' => 'sent',
-                        'sent_at' => now(),
-                        'error_message' => null
-                    ]);
-                    
-                    session()->flash('success', 'Email slip gaji berhasil dikirim ulang');
-                } else {
-                    $log->update([
-                        'status' => 'failed',
-                        'error_message' => $result['message']
-                    ]);
-                    
-                    session()->flash('error', 'Gagal mengirim ulang email slip gaji: ' . $result['message']);
-                }
-            } else {
-                // For general emails, create a new email log with pending status
-                $newLog = EmailLog::create([
-                    'from_email' => $log->from_email,
-                    'to_email' => $log->to_email,
-                    'subject' => $log->subject,
-                    'message' => $log->message,
-                    'status' => 'pending',
-                    'error_message' => null
-                ]);
-                
-                // Dispatch job to send email
-                // Note: For general emails, we should create a generic email job
-                // For now, we'll mark it as sent since we don't have a general email job
-                $newLog->update([
-                    'status' => 'sent',
-                    'sent_at' => now()
-                ]);
-                
-                session()->flash('success', 'Email berhasil diantrekan untuk pengiriman ulang');
-            }
+            session()->flash('success', 'Email berhasil diantrekan untuk pengiriman ulang');
             
         } catch (\Exception $e) {
             Log::error('Error resending email from EmailLogManagement', [
                 'log_id' => $logId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
             
             session()->flash('error', 'Gagal mengirim ulang email: ' . $e->getMessage());
+        }
+    }
+    
+    public function resendAllFailedEmails()
+    {
+        try {
+            $query = EmailLog::where('status', 'failed');
+            
+            // Apply same filters as render
+            if ($this->search) {
+                $query->where(function($q) {
+                    $q->where('to_email', 'like', '%' . $this->search . '%')
+                      ->orWhere('subject', 'like', '%' . $this->search . '%')
+                      ->orWhere('from_email', 'like', '%' . $this->search . '%');
+                });
+            }
+            if ($this->status) { $query->where('status', $this->status); }
+            if ($this->dateFrom) { $query->whereDate('created_at', '>=', $this->dateFrom); }
+            if ($this->dateTo) { $query->whereDate('created_at', '<=', $this->dateTo); }
+            
+            $failedLogs = $query->get();
+            $count = $failedLogs->count();
+            
+            if ($count === 0) {
+                session()->flash('warning', 'Tidak ada email gagal untuk dikirim ulang sesuai filter.');
+                return;
+            }
+            
+            foreach ($failedLogs as $log) {
+                $this->processResend($log);
+            }
+            
+            session()->flash('success', "Berhasil menjadwalkan ulang {$count} email yang gagal.");
+            
+        } catch (\Exception $e) {
+            Log::error('Error resending all failed emails', [
+                'error' => $e->getMessage()
+            ]);
+            
+            session()->flash('error', 'Gagal mengirim ulang email massal: ' . $e->getMessage());
+        }
+    }
+    
+    private function processResend(EmailLog $log)
+    {
+        if ($log->slip_gaji_detail_id) {
+            $service = app(SlipGajiEmailService::class);
+            $service->sendSingleEmail($log->slip_gaji_detail_id);
+            
+            // The service already handles creating a new log and status update
+        } else {
+            // General email resend
+            EmailLog::create([
+                'from_email' => $log->from_email,
+                'to_email' => $log->to_email,
+                'subject' => $log->subject,
+                'message' => $log->message,
+                'status' => 'pending'
+            ]);
         }
     }
     
