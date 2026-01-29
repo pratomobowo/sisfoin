@@ -129,6 +129,12 @@
                                        class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-blue-600">
                                         <x-lucide-eye class="w-4 h-4" />
                                     </a>
+                                    <!-- Export Excel -->
+                                    <button wire:click="exportExcel({{ $header->id }})" 
+                                            title="Export Excel" aria-label="Export Excel"
+                                            class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-green-600">
+                                        <x-lucide-file-spreadsheet class="w-4 h-4" />
+                                    </button>
                                     <!-- Delete -->
                                     <button wire:click="openDeleteModal({{ $header->id }})" 
                                             title="Hapus" aria-label="Hapus"

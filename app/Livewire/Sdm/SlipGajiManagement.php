@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SlipGajiTemplateExport;
+use App\Exports\SlipGajiDataExport;
 
 class SlipGajiManagement extends Component
 {
@@ -117,6 +118,19 @@ class SlipGajiManagement extends Component
         } catch (\Exception $e) {
             Log::error('Download template error: ' . $e->getMessage());
             session()->flash('error', 'Gagal mendownload template: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel($headerId)
+    {
+        try {
+            $header = SlipGajiHeader::findOrFail($headerId);
+            $filename = 'data_slip_gaji_' . str_replace(' ', '_', $header->periode) . '_' . date('YmdHis') . '.xlsx';
+            
+            return Excel::download(new SlipGajiDataExport($headerId), $filename);
+        } catch (\Exception $e) {
+            Log::error('Export Excel error: ' . $e->getMessage());
+            session()->flash('error', 'Gagal mengekspor data ke Excel: ' . $e->getMessage());
         }
     }
 
