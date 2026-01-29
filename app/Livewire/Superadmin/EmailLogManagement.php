@@ -261,6 +261,40 @@ class EmailLogManagement extends Component
         }
     }
     
+    public function deleteAllFailedLogs()
+    {
+        try {
+            $query = EmailLog::where('status', 'failed');
+            
+            // Apply current filters
+            if ($this->search) {
+                $query->where(function($q) {
+                    $q->where('to_email', 'like', '%' . $this->search . '%')
+                      ->orWhere('subject', 'like', '%' . $this->search . '%')
+                      ->orWhere('from_email', 'like', '%' . $this->search . '%');
+                });
+            }
+            if ($this->dateFrom) { $query->whereDate('created_at', '>=', $this->dateFrom); }
+            if ($this->dateTo) { $query->whereDate('created_at', '<=', $this->dateTo); }
+            
+            $count = $query->count();
+            
+            if ($count === 0) {
+                session()->flash('warning', 'Tidak ada log gagal untuk dihapus sesuai filter.');
+                return;
+            }
+            
+            $query->delete();
+            
+            session()->flash('success', "Berhasil menghapus {$count} log email yang gagal.");
+            $this->resetPage();
+            
+        } catch (\Exception $e) {
+            Log::error('Error in deleteAllFailedLogs', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Gagal menghapus log gagal massal: ' . $e->getMessage());
+        }
+    }
+    
     public function deleteLog($logId)
     {
         try {
