@@ -51,13 +51,15 @@ class QueueManagement extends Component
 
             Log::info("Starting queue worker: " . $command);
 
-            $pid = \shell_exec($command);
+            $pid_output = [];
+            \exec($command, $pid_output);
+            $pid = !empty($pid_output) ? trim($pid_output[0]) : 'Unknown';
 
             sleep(1); // Give it a second to start
             $this->checkStatus();
 
             if ($this->isRunning) {
-                session()->flash('success', 'Email queue worker berhasil dijalankan (PID: ' . trim($pid) . ')');
+                session()->flash('success', 'Email queue worker berhasil dijalankan (PID: ' . $pid . ')');
             } else {
                 session()->flash('error', 'Gagal menjalankan queue worker. Cek log untuk detail.');
             }
