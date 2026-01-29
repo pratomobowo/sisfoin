@@ -237,25 +237,9 @@
         
         <!-- Employee Info -->
         <div class="employee-info">
-            <table style="width: 100%;">
-                <tbody>
-                    <tr>
-                        <td style="width: 50%; vertical-align: top; padding-right: 15px;">
-                            <table class="info-table">
-                                <tr><td>Nama</td><td>:</td><td>{{ $detail->nama_from_relation ?? '-' }}</td></tr>
-                                <tr><td>NIP</td><td>:</td><td>{{ $detail->nip ?? '-' }}</td></tr>
-                                <tr><td>Status Karyawan</td><td>:</td><td>{{ $detail->dosen->status_kepegawaian ?? '-' }}</td></tr>
-                            </table>
-                        </td>
-                        <td style="width: 50%; vertical-align: top; padding-left: 15px;">
-                            <table class="info-table">
-                                <tr><td>Unit Kerja</td><td>:</td><td>{{ $detail->dosen->satuan_kerja ?? '-' }}</td></tr>
-                                <tr><td>Jabatan Struktural</td><td>:</td><td>{{ $detail->dosen->jabatan_struktural ?? '-' }}</td></tr>
-                                <tr><td>Golongan</td><td>:</td><td>{{ $detail->dosen->id_pangkat ?? '-' }}</td></tr>
-                            </table>
-                        </td>
-                    </tr>
-                </tbody>
+            <table class="info-table">
+                <tr><td>Nama</td><td>:</td><td>{{ $detail->nama_from_relation ?? '-' }}</td></tr>
+                <tr><td>NIP</td><td>:</td><td>{{ $detail->nip ?? '-' }}</td></tr>
             </table>
         </div>
         
