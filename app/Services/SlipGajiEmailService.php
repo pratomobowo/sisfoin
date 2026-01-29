@@ -176,6 +176,55 @@ class SlipGajiEmailService
     }
 
     /**
+     * Retry a single failed email log
+     */
+    public function retrySingleEmail(EmailLog $emailLog): array
+    {
+        try {
+            DB::beginTransaction();
+
+            // Load requirement
+            $emailLog->load('slipGajiDetail');
+
+            if (!$emailLog->slip_gaji_detail_id) {
+                throw new \Exception('Email log is not related to a slip gaji detail');
+            }
+
+            // Reset status to pending
+            $emailLog->update([
+                'status' => 'pending',
+                'error_message' => null,
+                'sent_at' => null,
+            ]);
+
+            // Dispatch job again with the SAME email log
+            SendSlipGajiEmailJob::dispatch($emailLog->slipGajiDetail, $emailLog)
+                ->onQueue('emails')
+                ->delay(now()->addSeconds(rand(1, 5)));
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Email slip gaji berhasil dijadwalkan ulang',
+                'email_log' => $emailLog,
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error retrying single slip gaji email', [
+                'log_id' => $emailLog->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal mengulangi pengiriman email: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Get email statistics for a header
      */
     public function getEmailStats(int $headerId): array

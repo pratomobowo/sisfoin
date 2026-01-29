@@ -246,9 +246,10 @@ class EmailLogManagement extends Component
     {
         if ($log->slip_gaji_detail_id) {
             $service = app(SlipGajiEmailService::class);
-            $service->sendSingleEmail($log->slip_gaji_detail_id);
+            $service->retrySingleEmail($log);
             
-            // The service already handles creating a new log and status update
+            // Note: retrySingleEmail in SlipGajiEmailService now updates the EXISTING log status
+            // to 'pending' and dispatches the job. No new log is created.
         } else {
             // General email resend
             EmailLog::create([
