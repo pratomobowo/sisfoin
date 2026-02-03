@@ -24,7 +24,7 @@ class SlipGajiController extends Controller
         $this->slipGajiService = $slipGajiService;
         $this->slipGajiEmailService = $slipGajiEmailService;
         $this->middleware('auth');
-        $this->middleware('role:super-admin|sdm')->except(['staffIndex', 'staffShow', 'staffDownloadPdf']);
+        $this->middleware('role:super-admin|admin-sdm|sekretariat')->except(['staffIndex', 'staffShow', 'staffDownloadPdf']);
         $this->middleware('role:staff')->only(['staffIndex', 'staffShow', 'staffDownloadPdf']);
     }
 
