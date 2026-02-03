@@ -2,43 +2,36 @@
     {{-- Header Section --}}
     <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-4 sm:p-6 lg:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
-            <div class="space-y-1 sm:space-y-2">
-                <div class="inline-flex items-center px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2">
+            <div class="space-y-1">
+                <div class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 sm:mb-2 text-center">
                     Layanan Mandiri
                 </div>
                 <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">Riwayat Absensi</h1>
-                <p class="text-gray-500 text-xs sm:text-sm max-w-md leading-relaxed">
-                    Pantau kehadiran Anda setiap bulan. Data diperbarui otomatis dari sistem mesin absensi.
-                </p>
             </div>
             
             <!-- Filters -->
-            <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+            <div class="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
                 <div class="relative group flex-1 sm:flex-none">
-                    <select wire:model.live="month" class="w-full sm:w-auto pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-2.5 bg-gray-50 border-none rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
+                    <select wire:model.live="month" class="w-full sm:w-auto pl-3 pr-8 py-2 bg-gray-50 border-none rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm">
                         @foreach($months as $num => $name)
                             <option value="{{ $num }}">{{ $name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-3 h-3 sm:w-4 sm:h-4" />
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <x-lucide-chevron-down class="w-4 h-4" />
                     </div>
                 </div>
 
                 <div class="relative group flex-1 sm:flex-none">
-                    <select wire:model.live="year" class="w-full sm:w-auto pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-2.5 bg-gray-50 border-none rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm group-hover:bg-gray-100">
+                    <select wire:model.live="year" class="w-full sm:w-auto pl-3 pr-8 py-2 bg-gray-50 border-none rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm">
                         @foreach($years as $y)
                             <option value="{{ $y }}">{{ $y }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-3 h-3 sm:w-4 sm:h-4" />
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <x-lucide-chevron-down class="w-4 h-4" />
                     </div>
                 </div>
-
-                <a href="{{ route('dashboard') }}" class="p-2 sm:p-2.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm">
-                    <x-lucide-layout-dashboard class="w-4 h-4 sm:w-5 sm:h-5" />
-                </a>
             </div>
         </div>
     </div>
@@ -117,7 +110,8 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-50">
                 <thead>
                     <tr class="bg-gray-50/50">
@@ -213,6 +207,71 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Mobile Stacked View -->
+        <div class="lg:hidden divide-y divide-gray-50">
+            @forelse($history as $item)
+                <div class="p-4 space-y-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center 
+                                {{ $item['is_weekend'] || $item['is_holiday'] ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600' }}">
+                                <span class="text-base font-black leading-none">{{ explode(' ', $item['formatted_date'])[0] }}</span>
+                                <span class="text-[8px] font-bold uppercase">{{ substr($item['day_name'], 0, 3) }}</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900">{{ $item['formatted_date'] }}</p>
+                                <p class="text-[10px] text-gray-500">{{ $item['day_name'] }}</p>
+                            </div>
+                        </div>
+                        
+                        @php
+                            $badgeClasses = [
+                                'blue' => 'bg-blue-50 text-blue-700 ring-blue-600/10',
+                                'green' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
+                                'yellow' => 'bg-amber-50 text-amber-700 ring-amber-600/10',
+                                'red' => 'bg-rose-50 text-rose-700 ring-rose-600/10',
+                                'orange' => 'bg-orange-50 text-orange-700 ring-orange-600/10',
+                                'purple' => 'bg-purple-50 text-purple-700 ring-purple-600/10',
+                                'gray' => 'bg-gray-50 text-gray-600 ring-gray-600/10',
+                            ];
+                            $color = $item['status_badge'] ?? 'gray';
+                            $class = $badgeClasses[$color] ?? $badgeClasses['gray'];
+                        @endphp
+                        <span class="inline-flex items-center rounded-lg px-2 py-1 text-[9px] font-bold ring-1 ring-inset {{ $class }}">
+                            {{ $item['status_label'] ?? '-' }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
+                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter mb-1">Masuk</p>
+                            <p class="text-sm font-black text-gray-900">{{ $item['check_in'] && $item['check_in'] !== '-' ? $item['check_in'] : '--:--' }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
+                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter mb-1">Pulang</p>
+                            <p class="text-sm font-black text-gray-900">{{ $item['check_out'] && $item['check_out'] !== '-' ? $item['check_out'] : '--:--' }}</p>
+                        </div>
+                    </div>
+
+                    @if($item['is_holiday'])
+                        <div class="flex items-center text-rose-500 space-x-2 bg-rose-50 p-2.5 rounded-xl border border-rose-100">
+                            <x-lucide-party-popper class="w-3.5 h-3.5" />
+                            <span class="text-[10px] font-bold italic">{{ $item['holiday_name'] }}</span>
+                        </div>
+                    @elseif($item['notes'])
+                        <div class="p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
+                            <p class="text-[10px] font-medium text-blue-700 italic">"{{ $item['notes'] }}"</p>
+                        </div>
+                    @endif
+                </div>
+            @empty
+                <div class="p-10 text-center">
+                    <p class="text-xs text-gray-400">Belum ada data periode ini.</p>
+                </div>
+            @endforelse
+        </div>
+
 
         <!-- Legend Section -->
         <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-50">

@@ -165,19 +165,38 @@
                         $date = \Carbon\Carbon::parse($dateStr);
                     @endphp
                     
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">
-                        Edit Shift
-                    </h3>
+                    <div class="flex items-center gap-3 mb-6 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {{ strtoupper(substr($employee->name, 0, 1)) }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 leading-tight truncate">{{ $employee->name }}</p>
+                            <p class="text-[10px] text-gray-500 font-mono uppercase tracking-wider">{{ $employee->nip }}</p>
+                        </div>
+                    </div>
+
                     
-                    <div class="space-y-3 mb-6">
-                        <div class="text-sm">
-                            <span class="text-gray-500">Pegawai:</span>
-                            <span class="font-semibold text-gray-900 ml-1">{{ $employee->name }}</span>
+                    <div class="space-y-4 mb-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Dari Tanggal</label>
+                                <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-900">
+                                    {{ $date->locale('id')->isoFormat('D MMM YYYY') }}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Hingga Tanggal</label>
+                                <input type="date" wire:model="quickEditEndDate" 
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500">
+                            </div>
                         </div>
-                        <div class="text-sm">
-                            <span class="text-gray-500">Tanggal:</span>
-                            <span class="font-semibold text-gray-900 ml-1">{{ $date->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
-                        </div>
+                        
+                        <button wire:click="selectWeek" type="button" class="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Pilih 1 Minggu (7 Hari)
+                        </button>
                     </div>
                     
                     <div class="space-y-2 mb-6">

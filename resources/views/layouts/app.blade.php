@@ -53,15 +53,13 @@
                             </div>
                             <!-- Breadcrumb -->
                             @hasSection('breadcrumb')
-                                <div class="flex-1 flex items-center">
+                                <div class="flex-1 flex items-center min-w-0 pr-4">
                                     @yield('breadcrumb')
                                 </div>
                             @endif
                             
                             <!-- User menu -->
                             <div class="flex items-center space-x-4">
-                                <!-- Role switcher -->
-                                <livewire:role-switcher />
 
                                 <!-- User dropdown -->
                                 <div class="relative" x-data="{ open: false }">
@@ -98,6 +96,12 @@
                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             Pengaturan Profil
                                         </a>
+
+                                        <hr class="my-1">
+                                        
+                                        <!-- Role Switcher Integrated -->
+                                        <livewire:role-switcher />
+
                                         
                                         <hr class="my-1">
                                         

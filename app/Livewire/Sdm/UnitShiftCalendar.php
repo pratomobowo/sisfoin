@@ -22,6 +22,7 @@ class UnitShiftCalendar extends Component
     // Quick edit state
     public $selectedCell = null; // Format: "userId_date"
     public $quickEditShiftId = null;
+    public $quickEditEndDate = null;
     
 
 
@@ -129,73 +130,63 @@ class UnitShiftCalendar extends Component
     public function openQuickEdit($userId, $date)
     {
         $this->selectedCell = "{$userId}_{$date}";
+        $this->quickEditEndDate = $date;
         $shift = $this->getEmployeeShiftForDate($userId, $date);
         $this->quickEditShiftId = $shift?->id ?? '';
     }
+
+    public function selectWeek()
+    {
+        if (!$this->selectedCell) return;
+        
+        [$userId, $dateStr] = explode('_', $this->selectedCell);
+        $startDate = Carbon::parse($dateStr);
+        $this->quickEditEndDate = $startDate->copy()->addDays(6)->toDateString();
+    }
+
 
     public function closeQuickEdit()
     {
         $this->selectedCell = null;
         $this->quickEditShiftId = null;
+        $this->quickEditEndDate = null;
     }
 
     public function saveQuickEdit()
     {
-        [$userId, $date] = explode('_', $this->selectedCell);
+        if (!$this->selectedCell) return;
         
-        $carbonDate = Carbon::parse($date);
-        
-        // Find existing assignment for this user on this date
-        $existingAssignment = EmployeeShiftAssignment::where('user_id', $userId)
-            ->where('start_date', '<=', $carbonDate)
-            ->where(function($q) use ($carbonDate) {
-                $q->whereNull('end_date')
-                  ->orWhere('end_date', '>=', $carbonDate);
+        [$userId, $startDate] = explode('_', $this->selectedCell);
+        $endDate = $this->quickEditEndDate ?: $startDate;
+
+        // Validation: End date cannot be before start date
+        if (Carbon::parse($endDate)->lt(Carbon::parse($startDate))) {
+            $endDate = $startDate;
+        }
+
+        // Delete existing assignments that overlap with this range for this user
+        EmployeeShiftAssignment::where('user_id', $userId)
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate)
+                        ->where('end_date', '>=', $endDate);
+                  });
             })
-            ->first();
-        
-        if ($this->quickEditShiftId === '') {
-            // Remove assignment (set to default) - delete existing if it's a single-day assignment
-            if ($existingAssignment) {
-                // If assignment is only for this date, delete it
-                if ($existingAssignment->start_date->isSameDay($carbonDate) && 
-                    $existingAssignment->end_date && 
-                    $existingAssignment->end_date->isSameDay($carbonDate)) {
-                    $existingAssignment->delete();
-                } else {
-                    // Otherwise, split the assignment
-                    if ($existingAssignment->start_date->isSameDay($carbonDate)) {
-                        // Move start date forward
-                        $existingAssignment->update(['start_date' => $carbonDate->copy()->addDay()]);
-                    } elseif ($existingAssignment->end_date && $existingAssignment->end_date->isSameDay($carbonDate)) {
-                        // Move end date backward
-                        $existingAssignment->update(['end_date' => $carbonDate->copy()->subDay()]);
-                    } else {
-                        // Split into two assignments
-                        $endDate = $existingAssignment->end_date;
-                        $existingAssignment->update(['end_date' => $carbonDate->copy()->subDay()]);
-                        
-                        EmployeeShiftAssignment::create([
-                            'user_id' => $userId,
-                            'work_shift_id' => $existingAssignment->work_shift_id,
-                            'start_date' => $carbonDate->copy()->addDay(),
-                            'end_date' => $endDate,
-                            'created_by' => auth()->id(),
-                        ]);
-                    }
-                }
-            }
-        } else {
-            // Create or update assignment for this specific date
+            ->delete();
+
+        if ($this->quickEditShiftId !== '') {
             EmployeeShiftAssignment::create([
                 'user_id' => $userId,
                 'work_shift_id' => $this->quickEditShiftId,
-                'start_date' => $carbonDate,
-                'end_date' => $carbonDate,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => 'Aktif',
                 'created_by' => auth()->id(),
             ]);
         }
-        
+
         $this->closeQuickEdit();
         session()->flash('success', 'Shift berhasil di-update!');
     }

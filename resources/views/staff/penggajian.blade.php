@@ -1,13 +1,14 @@
 @extends('layouts.app')
 
 @section('breadcrumb')
-    <nav class="flex" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-2">
+    <nav class="flex overflow-x-auto pb-1 invisible-scrollbar" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-2 whitespace-nowrap">
             <li class="inline-flex items-center">
-                <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
-                    Dashboard
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    <x-lucide-home class="w-4 h-4 sm:mr-2" />
+                    <span class="hidden sm:inline">Dashboard</span>
                 </a>
-                <span class="text-gray-400 mx-2">&gt;</span>
+                <x-lucide-chevron-right class="w-4 h-4 text-gray-400 mx-1 sm:mx-2" />
             </li>
             <li>
                 <span class="text-sm font-semibold text-gray-900">

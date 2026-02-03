@@ -17,21 +17,27 @@
     .z-dropdown {
         z-index: var(--z-dropdown);
     }
+
     .z-sticky {
         z-index: var(--z-sticky);
     }
+
     .z-fixed {
         z-index: var(--z-fixed);
     }
+
     .z-modal-backdrop {
         z-index: var(--z-modal-backdrop);
     }
+
     .z-modal {
         z-index: var(--z-modal);
     }
+
     .z-popover {
         z-index: var(--z-popover);
     }
+
     .z-notification {
         z-index: var(--z-notification);
     }
@@ -60,4 +66,14 @@
 
 [x-cloak] {
     display: none !important;
+}
+
+/* Custom Scrollbar Utilities */
+.invisible-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.invisible-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
