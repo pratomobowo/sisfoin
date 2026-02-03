@@ -82,7 +82,7 @@ Route::prefix('superadmin')->middleware(['auth', 'role:super-admin'])->name('sup
 });
 
 // SDM routes
-Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm'])->name('sdm.')->group(function () {
+Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretariat'])->name('sdm.')->group(function () {
     // SDM Dashboard
     Route::get('/', function () {
         return view('sdm.dashboard');
