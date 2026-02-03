@@ -23,8 +23,7 @@ class UnitShiftCalendar extends Component
     public $selectedCell = null; // Format: "userId_date"
     public $quickEditShiftId = null;
     
-    // View toggle
-    public $viewMode = 'calendar'; // 'calendar' or 'list'
+
 
     public function mount($unit)
     {
@@ -201,10 +200,7 @@ class UnitShiftCalendar extends Component
         session()->flash('success', 'Shift berhasil di-update!');
     }
 
-    public function toggleViewMode()
-    {
-        $this->viewMode = $this->viewMode === 'calendar' ? 'list' : 'calendar';
-    }
+
 
     public function render()
     {

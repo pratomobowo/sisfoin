@@ -11,15 +11,11 @@
     >
         <x-slot name="actions">
             <div class="flex gap-2">
-                <x-button variant="secondary" wire:click="toggleViewMode">
+                <x-button variant="secondary" onclick="window.location='{{ route('sdm.absensi.unit-list', ['unit' => $unitSlug]) }}'">
                     <x-slot name="icon">
-                        @if($viewMode === 'calendar')
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                        @else
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        @endif
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                     </x-slot>
-                    {{ $viewMode === 'calendar' ? 'List View' : 'Calendar View' }}
+                    List View
                 </x-button>
                 
                 <x-button variant="primary" onclick="window.location='{{ route('sdm.absensi.unit-detail', ['unit' => $unitSlug]) }}'">
@@ -32,7 +28,7 @@
         </x-slot>
     </x-page-header>
 
-    @if($employees->isEmpty())
+    @if($this->employees->isEmpty())
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
             <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,25 +116,37 @@
         </div>
 
         {{-- Legend --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">Legenda Shift:</h3>
-            <div class="flex flex-wrap gap-4">
+        <div class="bg-gray-50/50 rounded-xl border border-gray-100 p-6">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Legenda Shift
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 @foreach($this->shifts as $shift)
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-{{ $shift->color }}-100 border border-{{ $shift->color }}-300 flex items-center justify-center">
-                            <span class="text-xs font-bold text-{{ $shift->color }}-800">{{ $shift->code ?? substr($shift->name, 0, 1) }}</span>
+                    <div class="flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 rounded-lg bg-{{ $shift->color }}-100 border border-{{ $shift->color }}-200 flex items-center justify-center flex-shrink-0 mr-3">
+                            <span class="text-[10px] font-black text-{{ $shift->color }}-800 leading-none uppercase">{{ $shift->code ?? substr($shift->name, 0, 1) }}</span>
                         </div>
-                        <span class="text-sm text-gray-700">
-                            {{ $shift->name }} 
-                            <span class="text-gray-500">({{ substr($shift->start_time, 0, 5) }}-{{ substr($shift->end_time, 0, 5) }})</span>
-                        </span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-gray-900 truncate">{{ $shift->name }}</p>
+                            <p class="text-[11px] text-gray-500 font-medium">
+                                {{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }}
+                            </p>
+                        </div>
                     </div>
                 @endforeach
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                        <span class="text-xs font-medium text-gray-500">-</span>
+                
+                {{-- Default Legend --}}
+                <div class="flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0 mr-3">
+                        <span class="text-xs font-black text-gray-400 leading-none">-</span>
                     </div>
-                    <span class="text-sm text-gray-700">Default</span>
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-900 truncate">Default</p>
+                        <p class="text-[11px] text-gray-500 font-medium italic">Jam kerja global</p>
+                    </div>
                 </div>
             </div>
         </div>
