@@ -10,12 +10,20 @@
         ]"
     >
         <x-slot name="actions">
-            <x-button variant="primary" wire:click="openModal()">
-                <x-slot name="icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </x-slot>
-                Tambah Assignment
-            </x-button>
+            <div class="flex gap-2">
+                <x-button variant="secondary" onclick="window.location='{{ route('sdm.absensi.unit-calendar', ['unit' => $unitSlug]) }}'">
+                    <x-slot name="icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </x-slot>
+                    Kalendar View
+                </x-button>
+                <x-button variant="primary" wire:click="openModal()">
+                    <x-slot name="icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </x-slot>
+                    Tambah Assignment
+                </x-button>
+            </div>
         </x-slot>
     </x-page-header>
 

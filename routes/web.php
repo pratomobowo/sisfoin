@@ -141,6 +141,7 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
     Route::get('/absensi/shifts', App\Livewire\Sdm\WorkShiftManager::class)->name('absensi.shifts');
     Route::get('/absensi/kelola-shift', App\Livewire\Sdm\UnitShiftManagement::class)->name('absensi.kelola-shift');
     Route::get('/absensi/kelola-shift/{unit}', App\Livewire\Sdm\UnitShiftDetail::class)->name('absensi.unit-detail');
+    Route::get('/absensi/kelola-shift/{unit}/kalendar', App\Livewire\Sdm\UnitShiftCalendar::class)->name('absensi.unit-calendar');
     
     // Fingerprint management routes under sdm
     Route::prefix('fingerprint')->name('fingerprint.')->group(function () {
