@@ -7,6 +7,7 @@ use App\Models\EmployeeShiftAssignment;
 use App\Models\User;
 use App\Models\WorkShift;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -56,34 +57,44 @@ class UnitShiftDetail extends Component
 
     public function getEmployeesProperty()
     {
-        // Get user IDs who have assignments in this unit using NIP join
-        $userIdsWithAssignments = EmployeeShiftAssignment::join('users', 'employee_shift_assignments.user_id', '=', 'users.id')
-            ->join('employees', function ($join) {
-                $join->on('users.nip', '=', 'employees.nip')
-                    ->orOn('users.nip', '=', \DB::raw("TRIM(TRAILING '_' FROM employees.nip)"));
-            })
-            ->where('employees.satuan_kerja', $this->unitName)
-            ->distinct('employee_shift_assignments.user_id')
-            ->pluck('employee_shift_assignments.user_id');
+        $employees = Employee::where('satuan_kerja', $this->unitName)
+            ->where('status_aktif', 'Aktif')
+            ->orderBy('nama')
+            ->get();
+
+        if ($employees->isEmpty()) {
+            return collect();
+        }
+
+        $usersByNip = $this->mapUsersByEmployeeNips($employees);
+        if ($usersByNip->isEmpty()) {
+            return collect();
+        }
+
+        $candidateUserIds = $usersByNip
+            ->map(fn ($user) => (int) $user->getKey())
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($candidateUserIds->isEmpty()) {
+            return collect();
+        }
+
+        $userIdsWithAssignments = EmployeeShiftAssignment::query()
+            ->whereIn('user_id', $candidateUserIds)
+            ->distinct('user_id')
+            ->pluck('user_id');
 
         if ($userIdsWithAssignments->isEmpty()) {
             return collect();
         }
 
-        $employeesWithAssignments = Employee::where('satuan_kerja', $this->unitName)
-            ->where('status_aktif', 'Aktif')
-            ->whereIn('nip', function ($q) use ($userIdsWithAssignments) {
-                $q->select('nip')->from('users')->whereIn('id', $userIdsWithAssignments);
-            })
-            ->orderBy('nama')
-            ->get();
-
         // Map to display objects
         $result = [];
-        foreach ($employeesWithAssignments as $emp) {
-            $user = User::where('nip', $emp->nip)
-                ->orWhere('nip', rtrim($emp->nip, '_'))
-                ->first();
+        foreach ($employees as $emp) {
+            $user = $usersByNip->get((string) $emp->nip)
+                ?? $usersByNip->get(rtrim((string) $emp->nip, '_'));
 
             if ($user && $userIdsWithAssignments->contains($user->id)) {
                 $result[] = (object) [
@@ -103,17 +114,24 @@ class UnitShiftDetail extends Component
 
     public function getAllEmployeesInUnitProperty()
     {
-        // For the dropdown in modal: list ALL active employees in this unit who have user accounts
         $employees = Employee::where('satuan_kerja', $this->unitName)
             ->where('status_aktif', 'Aktif')
             ->orderBy('nama')
             ->get();
 
+        if ($employees->isEmpty()) {
+            return collect();
+        }
+
+        $usersByNip = $this->mapUsersByEmployeeNips($employees);
+        if ($usersByNip->isEmpty()) {
+            return collect();
+        }
+
         $result = [];
         foreach ($employees as $emp) {
-            $user = User::where('nip', $emp->nip)
-                ->orWhere('nip', rtrim($emp->nip, '_'))
-                ->first();
+            $user = $usersByNip->get((string) $emp->nip)
+                ?? $usersByNip->get(rtrim((string) $emp->nip, '_'));
 
             if ($user) {
                 $result[] = (object) [
@@ -125,6 +143,27 @@ class UnitShiftDetail extends Component
         }
 
         return collect($result);
+    }
+
+    private function mapUsersByEmployeeNips($employees)
+    {
+        $candidateNips = $employees
+            ->flatMap(function ($emp) {
+                $trimmed = rtrim((string) $emp->nip, '_');
+
+                return array_values(array_filter([(string) $emp->nip, $trimmed], fn ($nip) => $nip !== ''));
+            })
+            ->unique()
+            ->values();
+
+        if ($candidateNips->isEmpty()) {
+            return collect();
+        }
+
+        return User::query()
+            ->whereIn('nip', $candidateNips)
+            ->get(['id', 'nip'])
+            ->keyBy('nip');
     }
 
     public function getAssignmentsProperty()
@@ -216,7 +255,7 @@ class UnitShiftDetail extends Component
             'start_date' => $this->start_date,
             'end_date' => $this->end_date ?: null,
             'notes' => $this->notes,
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ];
 
         if ($this->editingId) {

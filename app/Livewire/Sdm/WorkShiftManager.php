@@ -3,9 +3,9 @@
 namespace App\Livewire\Sdm;
 
 use App\Models\WorkShift;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout;
 
 #[Layout('layouts.app')]
 class WorkShiftManager extends Component
@@ -13,18 +13,29 @@ class WorkShiftManager extends Component
     use WithPagination;
 
     public $showModal = false;
+
     public $editingId = null;
-    
+
     public $name = '';
+
     public $code = '';
+
     public $start_time = '08:00';
+
     public $end_time = '14:00';
+
     public $early_arrival_threshold = '07:40';
+
     public $late_tolerance_minutes = 5;
+
     public $work_hours = 6;
+
     public $color = 'blue';
+
     public $is_default = false;
+
     public $is_active = true;
+
     public $description = '';
 
     public $colors = [
@@ -53,7 +64,7 @@ class WorkShiftManager extends Component
     public function openModal($id = null)
     {
         $this->resetValidation();
-        
+
         if ($id) {
             $shift = WorkShift::findOrFail($id);
             $this->editingId = $id;
@@ -79,7 +90,7 @@ class WorkShiftManager extends Component
             $this->is_default = false;
             $this->is_active = true;
         }
-        
+
         $this->showModal = true;
     }
 
@@ -101,9 +112,9 @@ class WorkShiftManager extends Component
         $data = [
             'name' => $this->name,
             'code' => strtoupper($this->code),
-            'start_time' => $this->start_time . ':00',
-            'end_time' => $this->end_time . ':00',
-            'early_arrival_threshold' => $this->early_arrival_threshold . ':00',
+            'start_time' => $this->start_time.':00',
+            'end_time' => $this->end_time.':00',
+            'early_arrival_threshold' => $this->early_arrival_threshold.':00',
             'late_tolerance_minutes' => $this->late_tolerance_minutes,
             'work_hours' => $this->work_hours,
             'color' => $this->color,
@@ -125,7 +136,7 @@ class WorkShiftManager extends Component
     public function delete($id)
     {
         $shift = WorkShift::find($id);
-        if ($shift && !$shift->is_default) {
+        if ($shift && ! $shift->is_default) {
             $shift->delete();
             session()->flash('message', 'Shift berhasil dihapus!');
         } else {
@@ -135,8 +146,22 @@ class WorkShiftManager extends Component
 
     public function setAsDefault($id)
     {
+        $target = WorkShift::find($id);
+
+        if (! $target) {
+            session()->flash('error', 'Shift tidak ditemukan!');
+
+            return;
+        }
+
+        if (! $target->is_active) {
+            session()->flash('error', 'Shift nonaktif tidak dapat dijadikan default!');
+
+            return;
+        }
+
         WorkShift::where('is_default', true)->update(['is_default' => false]);
-        WorkShift::where('id', $id)->update(['is_default' => true]);
+        $target->update(['is_default' => true]);
         session()->flash('message', 'Shift berhasil diset sebagai default!');
     }
 

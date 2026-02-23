@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\WorkShift;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -44,17 +46,37 @@ class UnitShiftCalendar extends Component
 
     public function getEmployeesProperty()
     {
-        // Get all active employees in this unit who have user accounts
         $employees = Employee::where('satuan_kerja', $this->unitName)
             ->where('status_aktif', 'Aktif')
             ->orderBy('nama')
             ->get();
 
+        if ($employees->isEmpty()) {
+            return collect();
+        }
+
+        $candidateNips = $employees
+            ->flatMap(function ($emp) {
+                $trimmed = rtrim((string) $emp->nip, '_');
+
+                return array_values(array_filter([(string) $emp->nip, $trimmed], fn ($nip) => $nip !== ''));
+            })
+            ->unique()
+            ->values();
+
+        if ($candidateNips->isEmpty()) {
+            return collect();
+        }
+
+        $usersByNip = User::query()
+            ->whereIn('nip', $candidateNips)
+            ->get(['id', 'nip'])
+            ->keyBy('nip');
+
         $result = [];
         foreach ($employees as $emp) {
-            $user = User::where('nip', $emp->nip)
-                ->orWhere('nip', rtrim($emp->nip, '_'))
-                ->first();
+            $user = $usersByNip->get((string) $emp->nip)
+                ?? $usersByNip->get(rtrim((string) $emp->nip, '_'));
 
             if ($user) {
                 $result[] = (object) [
@@ -172,6 +194,23 @@ class UnitShiftCalendar extends Component
             return;
         }
 
+        $validatedShiftId = null;
+        if ($this->quickEditShiftId !== '') {
+            $candidateShiftId = (int) $this->quickEditShiftId;
+            $shift = WorkShift::query()
+                ->whereKey($candidateShiftId)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $shift) {
+                session()->flash('error', 'Shift tidak valid atau tidak aktif.');
+
+                return;
+            }
+
+            $validatedShiftId = (int) $shift->getKey();
+        }
+
         $endDate = $this->quickEditEndDate ?: $startDate;
 
         // Validation: End date cannot be before start date
@@ -179,27 +218,31 @@ class UnitShiftCalendar extends Component
             $endDate = $startDate;
         }
 
-        // Delete existing assignments that overlap with this range for this user
-        EmployeeShiftAssignment::where('user_id', $userId)
-            ->where(function ($q) use ($startDate, $endDate) {
-                $q->whereDate('start_date', '<=', $endDate)
-                    ->where(function ($q2) use ($startDate) {
-                        $q2->whereNull('end_date')
-                            ->orWhereDate('end_date', '>=', $startDate);
-                    });
-            })
-            ->delete();
+        $createdBy = Auth::id();
 
-        if ($this->quickEditShiftId !== '') {
-            EmployeeShiftAssignment::create([
-                'user_id' => $userId,
-                'work_shift_id' => $this->quickEditShiftId,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'status' => 'Aktif',
-                'created_by' => auth()->id(),
-            ]);
-        }
+        DB::transaction(function () use ($userId, $startDate, $endDate, $validatedShiftId, $createdBy) {
+            // Delete existing assignments that overlap with this range for this user
+            EmployeeShiftAssignment::where('user_id', $userId)
+                ->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereDate('start_date', '<=', $endDate)
+                        ->where(function ($q2) use ($startDate) {
+                            $q2->whereNull('end_date')
+                                ->orWhereDate('end_date', '>=', $startDate);
+                        });
+                })
+                ->delete();
+
+            if ($validatedShiftId !== null) {
+                EmployeeShiftAssignment::create([
+                    'user_id' => $userId,
+                    'work_shift_id' => $validatedShiftId,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'status' => 'Aktif',
+                    'created_by' => $createdBy,
+                ]);
+            }
+        });
 
         $this->closeQuickEdit();
         session()->flash('success', 'Shift berhasil di-update!');

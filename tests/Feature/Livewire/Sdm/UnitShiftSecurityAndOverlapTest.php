@@ -272,4 +272,113 @@ class UnitShiftSecurityAndOverlapTest extends TestCase
             'end_date' => '2026-02-14',
         ]);
     }
+
+    public function test_unit_shift_calendar_rejects_quick_edit_with_invalid_shift_id(): void
+    {
+        $actor = User::create([
+            'name' => 'Actor Invalid Shift',
+            'email' => 'actor-invalid-shift@example.com',
+            'password' => 'password',
+            'nip' => 'UNITA-3',
+        ]);
+
+        Employee::create([
+            'id_pegawai' => 'EMP-3',
+            'nip' => 'UNITA-3',
+            'nama' => 'Unit A Employee 3',
+            'satuan_kerja' => 'UNIT A',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        $this->actingAs($actor);
+
+        Livewire::test(UnitShiftCalendar::class, ['unit' => 'UNIT A'])
+            ->set('selectedCell', $actor->id.'_2026-03-01')
+            ->set('quickEditShiftId', '999999')
+            ->set('quickEditEndDate', '2026-03-01')
+            ->call('saveQuickEdit');
+
+        $this->assertDatabaseCount('employee_shift_assignments', 0);
+    }
+
+    public function test_unit_shift_calendar_rejects_quick_edit_with_inactive_shift(): void
+    {
+        $actor = User::create([
+            'name' => 'Actor Inactive Shift',
+            'email' => 'actor-inactive-shift@example.com',
+            'password' => 'password',
+            'nip' => 'UNITA-4',
+        ]);
+
+        Employee::create([
+            'id_pegawai' => 'EMP-4',
+            'nip' => 'UNITA-4',
+            'nama' => 'Unit A Employee 4',
+            'satuan_kerja' => 'UNIT A',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        $inactiveShift = WorkShift::create([
+            'name' => 'Shift Nonaktif',
+            'code' => 'NONAKTIF',
+            'start_time' => '10:00:00',
+            'end_time' => '16:00:00',
+            'early_arrival_threshold' => '09:40:00',
+            'late_tolerance_minutes' => 5,
+            'work_hours' => 6,
+            'color' => 'gray',
+            'is_default' => false,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($actor);
+
+        Livewire::test(UnitShiftCalendar::class, ['unit' => 'UNIT A'])
+            ->set('selectedCell', $actor->id.'_2026-03-02')
+            ->set('quickEditShiftId', (string) $inactiveShift->id)
+            ->set('quickEditEndDate', '2026-03-02')
+            ->call('saveQuickEdit');
+
+        $this->assertDatabaseCount('employee_shift_assignments', 0);
+    }
+
+    public function test_unit_shift_detail_resolves_trimmed_nip_variant_for_assigned_employee(): void
+    {
+        $actor = User::create([
+            'name' => 'Actor NIP Variant',
+            'email' => 'actor-nip-variant@example.com',
+            'password' => 'password',
+            'nip' => 'UNITA-5',
+        ]);
+
+        $mappedUser = User::create([
+            'name' => 'Mapped User',
+            'email' => 'mapped-user@example.com',
+            'password' => 'password',
+            'nip' => 'TRIMNIP-1',
+        ]);
+
+        Employee::create([
+            'id_pegawai' => 'EMP-5',
+            'nip' => 'TRIMNIP-1_',
+            'nama' => 'Trimmed NIP Employee',
+            'satuan_kerja' => 'UNIT A',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        $shift = WorkShift::firstOrFail();
+
+        EmployeeShiftAssignment::create([
+            'user_id' => $mappedUser->id,
+            'work_shift_id' => $shift->id,
+            'start_date' => '2026-03-01',
+            'end_date' => null,
+            'created_by' => $actor->id,
+        ]);
+
+        $this->actingAs($actor);
+
+        Livewire::test(UnitShiftDetail::class, ['unit' => 'UNIT A'])
+            ->assertSee('Trimmed NIP Employee');
+    }
 }
