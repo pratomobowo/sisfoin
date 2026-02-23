@@ -60,12 +60,13 @@ Route::prefix('superadmin')->middleware(['auth', 'role:super-admin'])->name('sup
 
     // System Services route
     Route::get('/system-services', App\Livewire\Superadmin\SystemServices::class)->name('system-services.index');
+    Route::get('/operations-console', App\Livewire\Superadmin\OperationsConsole::class)->name('operations-console.index');
 
     // SMTP Management routes
     Route::get('/smtp', function () {
         return view('superadmin.smtp.index');
     })->name('smtp.index');
-    
+
     Route::get('/email-log', function () {
         return view('superadmin.email-log.index');
     })->name('email-log.index');
@@ -76,7 +77,7 @@ Route::prefix('superadmin')->middleware(['auth', 'role:super-admin'])->name('sup
         Route::get('/attendance-logs', function () {
             return view('superadmin.attendance-logs.index');
         })->name('attendance-logs.index');
-        
+
         Route::get('/attendance-logs/{attendanceLog}', [\App\Http\Controllers\Superadmin\AttendanceLogShowController::class, 'show'])->name('attendance-logs.show');
     });
 });
@@ -118,13 +119,13 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
         Route::get('/{detail}/download-pdf-slip', [SlipGajiController::class, 'downloadPdfSlip'])->name('download-pdf-slip');
         Route::get('/{header}/download-bulk-pdf', [SlipGajiController::class, 'downloadBulkPdf'])->name('download-bulk-pdf');
         Route::delete('/{header}', [SlipGajiController::class, 'destroy'])->name('destroy');
-        
+
         // Bulk email routes
         Route::post('/{header}/send-bulk-email', [SlipGajiController::class, 'sendBulkEmail'])->name('send-bulk-email');
         Route::get('/{header}/email-logs', [SlipGajiController::class, 'showEmailLogs'])->name('email-logs');
         Route::post('/{header}/retry-failed-emails', [SlipGajiController::class, 'retryFailedEmails'])->name('retry-failed-emails');
     });
-    
+
     // Employee Attendance routes
     Route::prefix('employee-attendance')->name('employee-attendance.')->group(function () {
         Route::get('/', function () {
@@ -134,6 +135,7 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
 
     // Absensi Routes (New)
     Route::get('/absensi', App\Livewire\Sdm\EmployeeAttendanceManagement::class)->name('absensi.management');
+    Route::get('/absensi/monitor', App\Livewire\Sdm\AttendanceMonitor::class)->name('absensi.monitor');
     Route::get('/absensi/recap', App\Livewire\Sdm\AttendanceRecap::class)->name('absensi.recap');
     Route::get('/absensi/logs', App\Livewire\Superadmin\AttendanceLogs::class)->name('absensi.logs');
     Route::get('/absensi/settings', App\Livewire\Sdm\AttendanceSettingsManager::class)->name('absensi.settings');
@@ -142,7 +144,7 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
     Route::get('/absensi/kelola-shift', App\Livewire\Sdm\UnitShiftManagement::class)->name('absensi.kelola-shift');
     Route::get('/absensi/kelola-shift/{unit}', App\Livewire\Sdm\UnitShiftCalendar::class)->name('absensi.unit-detail');
     Route::get('/absensi/kelola-shift/{unit}/list', App\Livewire\Sdm\UnitShiftDetail::class)->name('absensi.unit-list');
-    
+
     // Fingerprint management routes under sdm
     Route::prefix('fingerprint')->name('fingerprint.')->group(function () {
         Route::get('/', function () {
@@ -162,7 +164,7 @@ Route::prefix('sekretariat')->middleware(['auth'])->name('sekretariat.')->group(
     Route::get('/surat-keputusan', function () {
         return view('sekretariat.surat-keputusan.index');
     })->name('surat-keputusan.index');
-    
+
     // Kegiatan Pejabat routes
     Route::get('/kegiatan-pejabat', function () {
         return view('sekretariat.kegiatan-pejabat.index');

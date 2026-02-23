@@ -2,21 +2,23 @@
 
 namespace App\Livewire\Sdm;
 
-use App\Models\Employee;
 use App\Models\Dosen;
+use App\Models\Employee;
+use App\Models\SyncRun;
+use App\Models\User;
 use App\Services\SevimaApiService;
 use App\Traits\SevimaDataMappingTrait;
+use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Exception;
 
 #[Layout('layouts.app')]
 class EmployeeManagement extends Component
 {
-    use WithPagination, SevimaDataMappingTrait;
+    use SevimaDataMappingTrait, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -34,8 +36,11 @@ class EmployeeManagement extends Component
 
     // Sync state
     public $isSyncing = false;
+
     public $syncProgress = 0;
+
     public $syncMessage = '';
+
     public $syncResults = [];
 
     // Modal state
@@ -280,27 +285,27 @@ class EmployeeManagement extends Component
 
         try {
             $startTime = microtime(true);
-            $sevimaService = new SevimaApiService();
+            $sevimaService = new SevimaApiService;
 
             // Test connection first
             $this->syncMessage = 'Menguji koneksi ke API Sevima...';
             $this->syncProgress = 10;
-            
-            if (!$sevimaService->testConnection()) {
+
+            if (! $sevimaService->testConnection()) {
                 throw new Exception('Gagal terhubung ke API Sevima. Periksa koneksi internet dan konfigurasi API.');
             }
 
             // Sync pegawai data
             $this->syncMessage = 'Mengambil data pegawai dari Sevima...';
             $this->syncProgress = 20;
-            
+
             $pegawaiResult = $this->syncPegawaiData($sevimaService);
             $this->syncProgress = 60;
 
             // Sync dosen data (with error handling)
             $this->syncMessage = 'Mengambil data dosen dari Sevima...';
             $this->syncProgress = 70;
-            
+
             try {
                 $dosenResult = $this->syncDosenData($sevimaService);
             } catch (Exception $e) {
@@ -310,7 +315,7 @@ class EmployeeManagement extends Component
                     'total_processed' => 0,
                     'total_inserted' => 0,
                     'total_errors' => 1,
-                    'errors' => ['Dosen sync failed: ' . $e->getMessage()],
+                    'errors' => ['Dosen sync failed: '.$e->getMessage()],
                     'duration' => 0,
                 ];
                 Log::warning('Dosen sync skipped due to error', ['error' => $e->getMessage()]);
@@ -320,7 +325,7 @@ class EmployeeManagement extends Component
             // Generate summary
             $summary = $this->generateSyncSummary($pegawaiResult, $dosenResult);
             $summary['duration'] = round(microtime(true) - $startTime, 2);
-            
+
             $this->logSyncResults($summary);
             $this->syncResults = $summary;
 
@@ -330,7 +335,7 @@ class EmployeeManagement extends Component
             // Show success message
             $totalInserted = $summary['pegawai']['total_inserted'] + $summary['dosen']['total_inserted'];
             $totalErrors = $summary['pegawai']['total_errors'] + $summary['dosen']['total_errors'];
-            
+
             if ($totalErrors > 0) {
                 session()->flash('warning', "Sinkronisasi selesai dengan {$totalInserted} data berhasil dan {$totalErrors} error. Lihat detail untuk informasi lebih lanjut.");
             } else {
@@ -348,7 +353,7 @@ class EmployeeManagement extends Component
 
             $this->syncMessage = 'Sinkronisasi gagal!';
             $this->syncProgress = 0;
-            
+
             // Tampilkan error yang user-friendly di popup
             $errorMessage = $this->formatUserFriendlyError($e);
             session()->flash('error', $errorMessage);
@@ -363,41 +368,42 @@ class EmployeeManagement extends Component
     private function syncPegawaiData(SevimaApiService $sevimaService)
     {
         $startTime = microtime(true);
-        
+
         try {
             // Fetch data from API
             $pegawaiData = $sevimaService->getPegawai();
-            
-            if (!is_array($pegawaiData)) {
+
+            if (! is_array($pegawaiData)) {
                 throw new Exception('Invalid pegawai data format received from API');
             }
 
             $totalApi = count($pegawaiData);
-            
+
             // Process batch data
             $batchResult = $this->processPegawaiBatch($pegawaiData);
-            
+
             // Truncate existing data and insert new data
             DB::transaction(function () use ($batchResult, $sevimaService) {
                 // Truncate table
                 Employee::query()->delete();
-                
+
                 // Insert new data
                 $inserted = 0;
                 foreach ($batchResult['processed'] as $pegawai) {
                     try {
                         $mappedData = $sevimaService->mapPegawaiToEmployee($pegawai);
-                        Employee::create($mappedData);
+                        $employee = Employee::create($mappedData);
+                        $this->relinkEmployeeUsersByMasterId($employee);
                         $inserted++;
                     } catch (Exception $e) {
                         Log::error('Failed to insert pegawai data', [
                             'error' => $e->getMessage(),
                             'data' => $pegawai,
                         ]);
-                        $batchResult['errors'][] = "Insert failed: " . $e->getMessage();
+                        $batchResult['errors'][] = 'Insert failed: '.$e->getMessage();
                     }
                 }
-                
+
                 $batchResult['total_inserted'] = $inserted;
             });
 
@@ -421,41 +427,42 @@ class EmployeeManagement extends Component
     private function syncDosenData(SevimaApiService $sevimaService)
     {
         $startTime = microtime(true);
-        
+
         try {
             // Fetch data from API
             $dosenData = $sevimaService->getDosen();
-            
-            if (!is_array($dosenData)) {
+
+            if (! is_array($dosenData)) {
                 throw new Exception('Invalid dosen data format received from API');
             }
 
             $totalApi = count($dosenData);
-            
+
             // Process batch data
             $batchResult = $this->processDosenBatch($dosenData);
-            
+
             // Truncate existing data and insert new data
             DB::transaction(function () use ($batchResult, $sevimaService) {
                 // Truncate table
                 Dosen::query()->delete();
-                
+
                 // Insert new data
                 $inserted = 0;
                 foreach ($batchResult['processed'] as $dosen) {
                     try {
                         $mappedData = $sevimaService->mapDosenToDosen($dosen);
-                        Dosen::create($mappedData);
+                        $dosenRecord = Dosen::create($mappedData);
+                        $this->relinkDosenUsersByMasterId($dosenRecord);
                         $inserted++;
                     } catch (Exception $e) {
                         Log::error('Failed to insert dosen data', [
                             'error' => $e->getMessage(),
                             'data' => $dosen,
                         ]);
-                        $batchResult['errors'][] = "Insert failed: " . $e->getMessage();
+                        $batchResult['errors'][] = 'Insert failed: '.$e->getMessage();
                     }
                 }
-                
+
                 $batchResult['total_inserted'] = $inserted;
             });
 
@@ -471,6 +478,44 @@ class EmployeeManagement extends Component
             ]);
             throw $e;
         }
+    }
+
+    private function relinkEmployeeUsersByMasterId(Employee $employee): void
+    {
+        if (empty($employee->id_pegawai)) {
+            return;
+        }
+
+        $historicalIds = Employee::withTrashed()
+            ->where('id_pegawai', $employee->id_pegawai)
+            ->pluck('id');
+
+        if ($historicalIds->isEmpty()) {
+            return;
+        }
+
+        User::where('employee_type', 'employee')
+            ->whereIn('employee_id', $historicalIds)
+            ->update(['employee_id' => $employee->id]);
+    }
+
+    private function relinkDosenUsersByMasterId(Dosen $dosen): void
+    {
+        if (empty($dosen->id_pegawai)) {
+            return;
+        }
+
+        $historicalIds = Dosen::withTrashed()
+            ->where('id_pegawai', $dosen->id_pegawai)
+            ->pluck('id');
+
+        if ($historicalIds->isEmpty()) {
+            return;
+        }
+
+        User::where('employee_type', 'dosen')
+            ->whereIn('employee_id', $historicalIds)
+            ->update(['employee_id' => $dosen->id]);
     }
 
     public function view($id)
@@ -600,7 +645,7 @@ class EmployeeManagement extends Component
                 $user = \App\Models\User::where('employee_id', $employee->id)
                     ->where('employee_type', 'employee')
                     ->first();
-                
+
                 if ($user) {
                     $user->update([
                         'name' => $this->nama,
@@ -617,7 +662,7 @@ class EmployeeManagement extends Component
 
                 // Create associated user
                 $user = \App\Models\User::where('email', $this->email)->first();
-                if (!$user) {
+                if (! $user) {
                     $user = \App\Models\User::create([
                         'name' => $this->nama,
                         'email' => $this->email,
@@ -651,8 +696,8 @@ class EmployeeManagement extends Component
             $this->dispatch('refreshEmployees');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error saving manual employee: ' . $e->getMessage());
-            session()->flash('error', 'Gagal menyimpan: ' . $e->getMessage());
+            Log::error('Error saving manual employee: '.$e->getMessage());
+            session()->flash('error', 'Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -789,6 +834,14 @@ class EmployeeManagement extends Component
     {
         $query = Employee::query();
 
+        $latestSyncRun = SyncRun::query()
+            ->whereIn('mode', ['employee', 'all'])
+            ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
+            ->latest('id')
+            ->first();
+
+        $latestSyncRunItems = $latestSyncRun ? $latestSyncRun->items : collect();
+
         if ($this->search) {
             // Update search scope to work with new field names
             $query->where(function ($q) {
@@ -814,6 +867,8 @@ class EmployeeManagement extends Component
         return view('livewire.sdm.employee-management', [
             'employees' => $employees,
             'unitKerjaList' => $this->unitKerjaList,
+            'latestSyncRun' => $latestSyncRun,
+            'latestSyncRunItems' => $latestSyncRunItems,
         ]);
     }
 }

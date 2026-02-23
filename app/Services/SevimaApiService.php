@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Exception;
 
 class SevimaApiService
 {
     protected $baseUrl;
+
     protected $appKey;
+
     protected $secretKey;
 
     public function __construct()
@@ -30,7 +31,11 @@ class SevimaApiService
             'X-Secret-Key' => $this->secretKey,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->baseUrl($this->baseUrl);
+        ])
+            ->timeout((int) config('services.sevima.timeout', 30))
+            ->connectTimeout((int) config('services.sevima.connect_timeout', 10))
+            ->retry((int) config('services.sevima.retry_times', 2), (int) config('services.sevima.retry_sleep_ms', 200), throw: false)
+            ->baseUrl($this->baseUrl);
     }
 
     /**
@@ -40,7 +45,7 @@ class SevimaApiService
     {
         Log::info($message);
         if (app()->runningInConsole()) {
-            echo $message . "\n";
+            echo $message."\n";
         }
     }
 
@@ -55,7 +60,7 @@ class SevimaApiService
 
             if ($response->successful()) {
                 $data = $response->json();
-                
+
                 // Handle JSON API format with data wrapper
                 if (isset($data['data']) && is_array($data['data'])) {
                     // Extract attributes from each record
@@ -63,14 +68,14 @@ class SevimaApiService
                         return $record['attributes'] ?? $record;
                     }, $data['data']);
                 }
-                
+
                 // If data is already an array of records with attributes
                 if (is_array($data) && isset($data[0]['attributes'])) {
                     return array_map(function ($record) {
                         return $record['attributes'] ?? $record;
                     }, $data);
                 }
-                
+
                 return $data;
             }
 
@@ -79,14 +84,14 @@ class SevimaApiService
                 'response' => $response->body(),
             ]);
 
-            throw new Exception('Failed to fetch pegawai data: ' . $response->status());
+            throw new Exception('Failed to fetch pegawai data: '.$response->status());
         } catch (Exception $e) {
             Log::error('Sevima API Exception - Pegawai', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new Exception('Error fetching pegawai data: ' . $e->getMessage());
+            throw new Exception('Error fetching pegawai data: '.$e->getMessage());
         }
     }
 
@@ -98,32 +103,47 @@ class SevimaApiService
         try {
             $allDosen = [];
             $currentPage = 1;
-            $lastPage = 1;
+            $lastPage = null;
+            $nextUrl = null;
+            $safetyCounter = 0;
 
             do {
-                $response = $this->getHttpClient()
-                    ->get('/dosen', ['page' => $currentPage]);
+                $request = $this->getHttpClient();
+
+                if ($nextUrl) {
+                    $response = $request->get($nextUrl);
+                } else {
+                    $response = $request->get('/dosen', ['page' => $currentPage]);
+                }
 
                 if ($response->successful()) {
                     $data = $response->json();
-                    
+
                     // Get pagination info
                     if (isset($data['meta'])) {
                         $lastPage = $data['meta']['last_page'] ?? 1;
                         $this->info("Fetching dosen page {$currentPage} of {$lastPage}...");
                     }
-                    
+
                     // Handle JSON API format with data wrapper
                     if (isset($data['data']) && is_array($data['data'])) {
                         // Extract attributes from each record
                         $pageDosen = array_map(function ($record) {
                             return $record['attributes'] ?? $record;
                         }, $data['data']);
-                        
+
                         $allDosen = array_merge($allDosen, $pageDosen);
                     }
-                    
-                    $currentPage++;
+                    $nextUrl = $data['links']['next'] ?? null;
+                    $safetyCounter++;
+
+                    if ($lastPage !== null) {
+                        $currentPage++;
+                    }
+
+                    if ($safetyCounter > 1000) {
+                        throw new Exception('Dosen pagination safety stop triggered.');
+                    }
                 } else {
                     Log::error('Sevima API Error - Dosen', [
                         'status' => $response->status(),
@@ -131,11 +151,12 @@ class SevimaApiService
                         'page' => $currentPage,
                     ]);
 
-                    throw new Exception('Failed to fetch dosen data: ' . $response->status());
+                    throw new Exception('Failed to fetch dosen data: '.$response->status());
                 }
-            } while ($currentPage <= $lastPage);
+            } while (($lastPage !== null && $currentPage <= $lastPage) || ($lastPage === null && $nextUrl));
 
-            $this->info("Total dosen records fetched: " . count($allDosen));
+            $this->info('Total dosen records fetched: '.count($allDosen));
+
             return $allDosen;
 
         } catch (Exception $e) {
@@ -144,7 +165,7 @@ class SevimaApiService
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new Exception('Error fetching dosen data: ' . $e->getMessage());
+            throw new Exception('Error fetching dosen data: '.$e->getMessage());
         }
     }
 
@@ -324,7 +345,7 @@ class SevimaApiService
      */
     private function formatDate($date)
     {
-        if (!$date) {
+        if (! $date) {
             return null;
         }
 
@@ -332,6 +353,7 @@ class SevimaApiService
             return \Carbon\Carbon::parse($date)->format('Y-m-d');
         } catch (Exception $e) {
             Log::warning('Failed to format date', ['date' => $date, 'error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -341,7 +363,7 @@ class SevimaApiService
      */
     private function formatDateTime($datetime)
     {
-        if (!$datetime) {
+        if (! $datetime) {
             return null;
         }
 
@@ -349,6 +371,7 @@ class SevimaApiService
             return \Carbon\Carbon::parse($datetime);
         } catch (Exception $e) {
             Log::warning('Failed to format datetime', ['datetime' => $datetime, 'error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -361,7 +384,7 @@ class SevimaApiService
         if ($value === null || $value === '' || $value === '0') {
             return null;
         }
-        
+
         return (int) $value;
     }
 
@@ -370,7 +393,7 @@ class SevimaApiService
      */
     private function mapPendidikanTerakhir($pendidikan)
     {
-        if (!$pendidikan) {
+        if (! $pendidikan) {
             return null;
         }
 
@@ -402,7 +425,7 @@ class SevimaApiService
      */
     private function mapStatusAktif($status)
     {
-        if (!$status) {
+        if (! $status) {
             return 'Tidak Aktif';
         }
 

@@ -13,6 +13,9 @@
             <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; background-color: #f3e8ff;">Tdk Lengkap</th>
             <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; background-color: #dcfce7;">Hadir</th>
             <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; background-color: #fee2e2;">Tdk Hadir</th>
+            <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; background-color: #e5e7eb;">Sakit</th>
+            <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; background-color: #fbcfe8;">Cuti</th>
+            <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 110px; border: 1px solid #000000; background-color: #dbeafe;">Setengah Hari</th>
         </tr>
     </thead>
     <tbody>
@@ -22,13 +25,16 @@
                 $incompleteCount = 0;
                 $presentCount = 0;
                 $absentCount = 0;
+                $sickCount = 0;
+                $leaveCount = 0;
+                $halfDayCount = 0;
             @endphp
             <tr>
-                <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->full_name_with_title ?? $employee->name }}</td>
+                <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->nama ?? $employee->name }}</td>
                 <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->nip ?? '-' }}</td>
                 @foreach($days as $day)
                     @php
-                        $data = $attendanceMatrix[$employee->id][$day['day']] ?? null;
+                        $data = $attendanceMatrix[$employee->id][$day['date']] ?? null;
                         $bgStyle = '';
                         $textStyle = '';
                         
@@ -65,14 +71,17 @@
                                 case 'half_day':
                                     $bgStyle = 'background-color: #60a5fa;'; // blue-400
                                     $textStyle = 'color: #ffffff; font-weight: bold;';
+                                    $halfDayCount++;
                                     break;
                                 case 'sick':
                                     $bgStyle = 'background-color: #9ca3af;'; // gray-400
                                     $textStyle = 'color: #ffffff; font-weight: bold;';
+                                    $sickCount++;
                                     break;
                                 case 'leave':
                                     $bgStyle = 'background-color: #f472b6;'; // pink-400
                                     $textStyle = 'color: #ffffff; font-weight: bold;';
+                                    $leaveCount++;
                                     break;
                             }
                         }
@@ -87,6 +96,9 @@
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $incompleteCount > 0 ? $incompleteCount : '' }}</td>
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $presentCount > 0 ? $presentCount : '' }}</td>
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $absentCount > 0 ? $absentCount : '' }}</td>
+                <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $sickCount > 0 ? $sickCount : '' }}</td>
+                <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $leaveCount > 0 ? $leaveCount : '' }}</td>
+                <td style="text-align: center; vertical-align: middle; border: 1px solid #000000; font-weight: bold;">{{ $halfDayCount > 0 ? $halfDayCount : '' }}</td>
             </tr>
         @endforeach
     </tbody>

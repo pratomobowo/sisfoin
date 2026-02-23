@@ -1,6 +1,8 @@
 *.log
 .DS_Store
 .env
+.env.testing
+.env.testing.local
 .env.backup
 .env.local
 .env.production
@@ -21,6 +23,7 @@
 /storage/pail
 /vendor
 /_debug
+/.worktrees
 Homestead.json
 Homestead.yaml
 Thumbs.db

@@ -70,17 +70,25 @@ class ImportUsersCommand extends Command
 
             foreach ($employees as $employee) {
                 try {
-                    $existingUser = User::where('nip', $employee->nip)->first();
+                    $existingUser = $this->findExistingUser('employee', (int) $employee->id, $employee->nip, $employee->email);
 
                     $name = trim($employee->nama_lengkap_with_gelar);
                     // Prioritize campus email over personal email
                     $email = $employee->email_kampus ?: ($employee->email ?: $employee->nip.'@usbypkp.ac.id');
 
                     if ($existingUser) {
+                        if ($this->hasConflictingOwnership($existingUser, 'employee', (int) $employee->id)) {
+                            $results['employees_skipped']++;
+                            $results['errors'][] = "Employee {$employee->nama_lengkap} (NIP: {$employee->nip}): conflict ownership on user {$existingUser->id}";
+
+                            continue;
+                        }
+
                         if ($force) {
                             $existingUser->update([
                                 'name' => $name,
                                 'email' => $email,
+                                'nip' => $employee->nip,
                                 'employee_type' => 'employee',
                                 'employee_id' => $employee->id,
                             ]);
@@ -132,17 +140,25 @@ class ImportUsersCommand extends Command
 
             foreach ($dosens as $dosen) {
                 try {
-                    $existingUser = User::where('nip', $dosen->nip)->first();
+                    $existingUser = $this->findExistingUser('dosen', (int) $dosen->id, $dosen->nip, $dosen->email);
 
                     $name = trim($dosen->nama_lengkap_with_gelar);
                     // Prioritize campus email over personal email
                     $email = $dosen->email_kampus ?: ($dosen->email ?: $dosen->nip.'@usbypkp.ac.id');
 
                     if ($existingUser) {
+                        if ($this->hasConflictingOwnership($existingUser, 'dosen', (int) $dosen->id)) {
+                            $results['dosens_skipped']++;
+                            $results['errors'][] = "Dosen {$dosen->nama} (NIP: {$dosen->nip}): conflict ownership on user {$existingUser->id}";
+
+                            continue;
+                        }
+
                         if ($force) {
                             $existingUser->update([
                                 'name' => $name,
                                 'email' => $email,
+                                'nip' => $dosen->nip,
                                 'employee_type' => 'dosen',
                                 'employee_id' => $dosen->id,
                             ]);
@@ -213,5 +229,53 @@ class ImportUsersCommand extends Command
 
             return 1;
         }
+    }
+
+    private function findExistingUser(string $type, int $employeeId, ?string $nip, ?string $email): ?User
+    {
+        $nip = $this->normalizeIdentity($nip);
+        $email = $this->normalizeIdentity($email);
+
+        $byOwnership = User::query()
+            ->where('employee_type', $type)
+            ->where('employee_id', $employeeId)
+            ->first();
+
+        if ($byOwnership) {
+            return $byOwnership;
+        }
+
+        if ($nip) {
+            $byNip = User::query()->where('nip', $nip)->first();
+            if ($byNip) {
+                return $byNip;
+            }
+        }
+
+        if ($email) {
+            return User::query()->where('email', $email)->first();
+        }
+
+        return null;
+    }
+
+    private function hasConflictingOwnership(User $user, string $expectedType, int $expectedEmployeeId): bool
+    {
+        if (empty($user->employee_type) || empty($user->employee_id)) {
+            return false;
+        }
+
+        return ! ($user->employee_type === $expectedType && (int) $user->employee_id === $expectedEmployeeId);
+    }
+
+    private function normalizeIdentity(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 }

@@ -1,32 +1,21 @@
 <div class="space-y-6">
     <!-- Header -->
     <x-page-header 
-        title="Absensi Karyawan" 
-        subtitle="Kelola data absensi karyawan"
+        title="Koreksi Absensi SDM" 
+        subtitle="Koreksi manual absensi masuk/pulang, sakit, cuti, dan penyesuaian status"
         :breadcrumbs="['Biro SDM' => '#', 'Absensi Karyawan' => route('sdm.absensi.management')]"
     >
         <x-slot name="actions">
-            <x-button 
+            <x-button
                 variant="danger"
-                wire:click="clearAllEmployeeAttendance"
+                wire:click="openClearSection"
                 wire:loading.attr="disabled"
-                onclick="return confirm('Apakah Anda yakin ingin menghapus SEMUA data employee attendance? Data akan diproses ulang dari attendance_log.')">
+                class="mr-2"
+            >
                 <x-slot name="icon">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </x-slot>
-                <span wire:loading.remove>Hapus Data</span>
-                <span wire:loading>Menghapus...</span>
-            </x-button>
-            <x-button 
-                variant="warning"
-                wire:click="reprocessAllAttendance"
-                wire:loading.attr="disabled"
-                onclick="return confirm('Proses ulang SEMUA data absensi dengan aturan terbaru? Data yang sudah ada akan dihitung ulang.')">
-                <x-slot name="icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </x-slot>
-                <span wire:loading.remove>Proses Ulang SEMUA</span>
-                <span wire:loading>Memproses ulang...</span>
+                Hapus Data
             </x-button>
             <x-button 
                 variant="primary"
@@ -39,74 +28,57 @@
         </x-slot>
     </x-page-header>
 
-    <!-- Statistics Panel -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistik Data Log</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-blue-50 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-blue-600">Total Logs</p>
-                        <p class="text-2xl font-semibold text-blue-900">{{ $this->attendanceLogStats['total_logs'] }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-green-50 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-green-600">Ter-mapping</p>
-                        <p class="text-2xl font-semibold text-green-900">{{ $this->attendanceLogStats['mapped_logs'] }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-yellow-50 rounded-lg p-4 cursor-pointer hover:bg-yellow-100 transition duration-150 ease-in-out" wire:click="showUnmappedLogs">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-yellow-600">Belum Ter-mapping</p>
-                        <p class="text-2xl font-semibold text-yellow-900">{{ $this->attendanceLogStats['unmapped_logs'] }}</p>
-                        <p class="text-xs text-yellow-500 mt-1">Klik untuk lihat detail</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-purple-50 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-purple-600">Unique Users</p>
-                        <p class="text-2xl font-semibold text-purple-900">{{ $this->attendanceLogStats['unique_users'] }}</p>
-                    </div>
-                </div>
-            </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <button
+                type="button"
+                wire:click="switchTab('daily-correction')"
+                class="px-4 py-3 rounded-lg text-left transition border {{ $currentTab === 'daily-correction' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}"
+            >
+                <div class="text-sm font-semibold">Koreksi Harian SDM</div>
+                <div class="text-xs opacity-80">Tampilkan semua karyawan aktif, lalu koreksi manual yang lupa absen / sakit / cuti.</div>
+            </button>
+            <button
+                type="button"
+                wire:click="switchTab('history')"
+                class="px-4 py-3 rounded-lg text-left transition border {{ $currentTab === 'history' ? 'bg-slate-50 border-slate-300 text-slate-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}"
+            >
+                <div class="text-sm font-semibold">Riwayat Record Absensi</div>
+                <div class="text-xs opacity-80">Daftar record absensi yang sudah tersimpan untuk audit dan koreksi lanjutan.</div>
+            </button>
         </div>
-
-        @if($this->attendanceLogStats['date_range']['start'] && $this->attendanceLogStats['date_range']['end'])
-        <div class="mt-4 text-sm text-gray-600">
-            <strong>Range Data:</strong> {{ \Carbon\Carbon::parse($this->attendanceLogStats['date_range']['start'])->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($this->attendanceLogStats['date_range']['end'])->format('d/m/Y') }}
-        </div>
-        @endif
     </div>
+
+    @if($showClearSection)
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div class="flex flex-col md:flex-row md:items-end gap-3">
+            <div class="flex-1">
+                <label class="block text-sm font-semibold text-red-800 mb-1">Konfirmasi Hapus Semua Data Absensi</label>
+                <p class="text-xs text-red-700 mb-2">Untuk menjalankan tombol <strong>Hapus Data</strong>, ketik <code class="px-1 py-0.5 bg-red-100 rounded">HAPUS ABSENSI</code> di bawah ini.</p>
+                <input
+                    type="text"
+                    wire:model.live="clearConfirmation"
+                    placeholder="HAPUS ABSENSI"
+                    class="w-full border border-red-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                >
+            </div>
+            <div class="text-xs text-red-700 bg-white/70 border border-red-200 rounded-lg px-3 py-2">
+                Status: {{ trim((string) $clearConfirmation) === 'HAPUS ABSENSI' ? 'Siap hapus' : 'Belum valid' }}
+            </div>
+        </div>
+        <div class="mt-3 flex items-center justify-end gap-2">
+            <button wire:click="closeClearSection" class="px-3 py-1.5 text-xs rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">Tutup</button>
+            <button
+                wire:click="clearAllEmployeeAttendance"
+                wire:loading.attr="disabled"
+                onclick="return confirm('Lanjutkan hapus seluruh data absensi?')"
+                class="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700"
+            >
+                Hapus Sekarang
+            </button>
+        </div>
+    </div>
+    @endif
 
     <!-- Flash Messages -->
     @if(session()->has('success'))
@@ -120,9 +92,133 @@
         </div>
     @endif
 
+    @if($this->lastAttendanceOperation)
+        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
+            <div class="font-semibold mb-1">Aktivitas proses absensi terakhir</div>
+            <div>
+                {{ $this->lastAttendanceOperation->created_at?->format('d/m/Y H:i:s') }}
+                oleh {{ $this->lastAttendanceOperation->causer?->name ?? 'System' }}
+                | aksi: {{ $this->lastAttendanceOperation->properties['action'] ?? '-' }}
+                @if(isset($this->lastAttendanceOperation->properties['processed_count']))
+                    | processed: {{ $this->lastAttendanceOperation->properties['processed_count'] }}
+                @endif
+                @if(isset($this->lastAttendanceOperation->properties['error_count']))
+                    | errors: {{ $this->lastAttendanceOperation->properties['error_count'] }}
+                @endif
+                @if(isset($this->lastAttendanceOperation->properties['deleted_count']))
+                    | deleted: {{ $this->lastAttendanceOperation->properties['deleted_count'] }}
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if($currentTab === 'daily-correction')
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <h3 class="text-base font-semibold text-gray-900">Workbench Koreksi Harian</h3>
+                <p class="text-xs text-gray-500">Gunakan untuk karyawan yang lupa absen, dinas luar, sakit, cuti, atau perlu koreksi jam.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Koreksi</label>
+                <input type="date" wire:model.live="correctionDate" class="w-full border border-gray-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cari Nama/NIP</label>
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Nama atau NIP..." class="w-full border border-gray-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Unit Kerja</label>
+                <select wire:model.live="unitKerja" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="">Semua Unit</option>
+                    @foreach($this->unitKerjaList as $unit)
+                        <option value="{{ $unit }}">{{ $unit }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status (Filter)</label>
+                <select wire:model.live="correctionStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="">Semua</option>
+                    <option value="absent">Belum Absen / Tidak Hadir</option>
+                    <option value="on_time">Hadir</option>
+                    <option value="late">Terlambat</option>
+                    <option value="incomplete">Tidak Lengkap</option>
+                    <option value="sick">Sakit</option>
+                    <option value="leave">Cuti</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button wire:click="create" class="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">
+                    Tambah Manual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Karyawan</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Unit</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Masuk</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Pulang</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($dailyCorrections as $row)
+                        <tr class="hover:bg-blue-50/30">
+                            <td class="px-4 py-3">
+                                <div class="text-sm font-semibold text-gray-900">{{ $row['name'] }}</div>
+                                <div class="text-xs text-gray-500">{{ $row['nip'] ?: 'Tanpa NIP' }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ $row['unit_kerja'] ?: '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ $row['check_in'] }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ $row['check_out'] }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                                    @if(in_array($row['status'], ['on_time','present','early_arrival'])) bg-green-100 text-green-800
+                                    @elseif($row['status']==='late') bg-yellow-100 text-yellow-800
+                                    @elseif($row['status']==='sick') bg-gray-100 text-gray-700
+                                    @elseif($row['status']==='leave') bg-indigo-100 text-indigo-700
+                                    @elseif($row['status']==='incomplete') bg-purple-100 text-purple-700
+                                    @else bg-red-100 text-red-800 @endif">
+                                    {{ $row['status_label'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-2 justify-end">
+                                    <button wire:click="editByEmployee({{ $row['employee_id'] }})" class="px-2.5 py-1 text-xs rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50">Edit Detail</button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">Tidak ada data karyawan untuk filter ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    @if($currentTab === 'history')
     <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <div>
+            <h3 class="text-base font-semibold text-gray-900">Riwayat Record Absensi</h3>
+            <p class="text-xs text-gray-500">Telusuri record absensi yang sudah tersimpan untuk pengecekan dan koreksi lanjutan.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Pencarian</label>
                 <input 
@@ -163,111 +259,100 @@
                     <option value="incomplete">Absen Tidak Lengkap</option>
                 </select>
             </div>
-        </div>
 
-        <div class="mt-4 flex justify-end">
-            <button 
-                wire:click="resetFilters"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                Reset Filter
-            </button>
+            <div class="flex items-end">
+                <button 
+                    wire:click="resetFilters"
+                    class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Reset Filter
+                </button>
+            </div>
         </div>
     </div>
+    @endif
 
+    @if($currentTab === 'history')
     <!-- Data Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Karyawan
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Tanggal
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Waktu Masuk
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Waktu Pulang
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($attendances as $attendance)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
+                    <tr class="hover:bg-blue-50/30 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                <div class="flex-shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                                     {{ strtoupper(substr(($attendance->employee->full_name_with_title ?? $attendance->employee->name ?? 'U'), 0, 2)) }}
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
+                                <div class="ml-3">
+                                    <div class="text-sm font-semibold text-gray-900">
                                         {{ $attendance->employee->full_name_with_title ?? $attendance->employee->name ?? 'N/A' }}
                                     </div>
-                                    <div class="text-sm text-gray-500">{{ $attendance->employee->nip ?? 'N/A' }}</div>
+                                    <div class="text-xs text-gray-500">{{ $attendance->employee->nip ?? 'N/A' }}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {{ $attendance->formatted_date }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {{ $attendance->formatted_check_in }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {{ $attendance->formatted_check_out }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $attendance->status_badge }}-100 text-{{ $attendance->status_badge }}-800">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-{{ $attendance->status_badge }}-100 text-{{ $attendance->status_badge }}-800">
                                 {{ $attendance->status_label }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex items-center justify-end space-x-2">
+                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
                                 <button 
                                     wire:click="view({{ $attendance->id }})"
-                                    class="text-blue-600 hover:text-blue-900">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
+                                    class="px-2.5 py-1 text-xs rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50">
+                                    Detail
                                 </button>
                                 <button 
                                     wire:click="edit({{ $attendance->id }})"
-                                    class="text-green-600 hover:text-green-900">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
+                                    class="px-2.5 py-1 text-xs rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50">
+                                    Edit
                                 </button>
                                 <button 
                                     wire:click="delete({{ $attendance->id }})"
                                     onclick="confirm('Apakah Anda yakin ingin menghapus data absensi ini?') || event.stopImmediatePropagation()"
-                                    class="text-red-600 hover:text-red-900">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
+                                    class="px-2.5 py-1 text-xs rounded-md border border-red-200 text-red-700 hover:bg-red-50">
+                                    Hapus
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <h3 class="text-sm font-medium text-gray-900 mb-1">Tidak ada data absensi</h3>
-                                <p class="text-sm text-gray-500">Mulai dengan menambahkan data absensi baru.</p>
-                            </div>
+                        <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">
+                            Tidak ada record absensi pada filter ini.
                         </td>
                     </tr>
                     @endforelse
@@ -276,10 +361,11 @@
         </div>
 
         <!-- Pagination -->
-        <div class="px-6 py-4 border-t border-gray-200 bg-white">
+        <div class="px-4 py-3 border-t border-gray-200 bg-white">
             {{ $attendances->links() }}
         </div>
     </div>
+    @endif
 
     <!-- Create/Edit Modal -->
     @if($showCreateModal || $showEditModal)

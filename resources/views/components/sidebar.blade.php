@@ -71,6 +71,13 @@
                     </x-slot>
                     System Services
                 </x-sidebar-link>
+
+                <x-sidebar-link href="{{ route('superadmin.operations-console.index') }}" :active="request()->routeIs('superadmin.operations-console.index')">
+                    <x-slot name="icon">
+                        <x-lucide-terminal class="w-5 h-5" />
+                    </x-slot>
+                    Operations Console
+                </x-sidebar-link>
                 
                 <!-- Email Group -->
                 <div x-data="{ open: {{ request()->routeIs('superadmin.smtp.*') || request()->routeIs('superadmin.email-log.*') ? 'true' : 'false' }} }">
@@ -123,6 +130,7 @@
                         <div class="pt-4 pb-2">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Absensi</p>
                         </div>
+                        <a href="{{ route('sdm.absensi.monitor') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.monitor') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Monitor Absensi SDM</a>
                         <a href="{{ route('sdm.absensi.management') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.management') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Manajemen Absensi</a>
                         <a href="{{ route('sdm.absensi.recap') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.recap') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Rekap Bulanan</a>
                         <a href="{{ route('sdm.absensi.logs') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.logs') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Log Mesin</a>

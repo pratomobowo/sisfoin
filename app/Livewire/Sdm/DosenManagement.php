@@ -3,11 +3,13 @@
 namespace App\Livewire\Sdm;
 
 use App\Models\Dosen;
+use App\Models\SyncRun;
 use App\Services\SevimaApiService;
+use App\Services\Sync\SyncOrchestratorService;
 use App\Traits\SevimaDataMappingTrait;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -15,7 +17,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class DosenManagement extends Component
 {
-    use WithPagination, SevimaDataMappingTrait;
+    use SevimaDataMappingTrait, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -33,8 +35,11 @@ class DosenManagement extends Component
 
     // Sync state
     public $isSyncing = false;
+
     public $syncProgress = 0;
+
     public $syncMessage = '';
+
     public $syncResults = [];
 
     // Modal state
@@ -122,64 +127,30 @@ class DosenManagement extends Component
     public function syncSevima()
     {
         $this->isSyncing = true;
-        $this->syncProgress = 0;
-        $this->syncMessage = 'Memulai sinkronisasi data...';
+        $this->syncProgress = 5;
+        $this->syncMessage = 'Menjadwalkan sinkronisasi asinkron...';
         $this->syncResults = [];
 
         try {
-            $startTime = microtime(true);
-            $sevimaService = new SevimaApiService();
+            $run = app(SyncOrchestratorService::class)->start('dosen', auth()->id(), 'dosen-management');
 
-            // Test connection first
-            $this->syncMessage = 'Menguji koneksi ke API Sevima...';
-            $this->syncProgress = 10;
-            
-            if (!$sevimaService->testConnection()) {
-                throw new Exception('Gagal terhubung ke API Sevima. Periksa koneksi internet dan konfigurasi API.');
-            }
-
-            // Sync dosen data
-            $this->syncMessage = 'Mengambil data dosen dari Sevima...';
-            $this->syncProgress = 30;
-            
-            $dosenResult = $this->syncDosenData($sevimaService);
-            $this->syncProgress = 90;
-
-            // Generate summary
-            $summary = $this->generateSyncSummary($dosenResult);
-            $summary['duration'] = round(microtime(true) - $startTime, 2);
-            
-            $this->logSyncResults($summary);
-            $this->syncResults = $summary;
-
-            $this->syncMessage = 'Sinkronisasi selesai!';
             $this->syncProgress = 100;
+            $this->syncMessage = 'Sinkronisasi berhasil dijadwalkan.';
 
-            // Show success message
-            $totalInserted = $summary['dosen']['total_inserted'];
-            $totalErrors = $summary['dosen']['total_errors'];
-            
-            if ($totalErrors > 0) {
-                session()->flash('warning', "Sinkronisasi selesai dengan {$totalInserted} data berhasil dan {$totalErrors} error. Lihat detail untuk informasi lebih lanjut.");
+            if ($run->status === 'failed') {
+                session()->flash('warning', 'Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
             } else {
-                session()->flash('success', "Sinkronisasi berhasil! {$totalInserted} data berhasil disinkronisasi.");
+                session()->flash('success', 'Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
             }
-
         } catch (\Throwable $e) {
-            // Tangkap semua jenis error termasuk Exception, Error, RuntimeException, dll
-            Log::error('Sevima sync failed', [
+            Log::error('Failed to schedule dosen sync', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
-            $this->syncMessage = 'Sinkronisasi gagal!';
             $this->syncProgress = 0;
-            
-            // Tampilkan error yang user-friendly di popup
-            $errorMessage = $this->formatUserFriendlyError($e);
-            session()->flash('error', $errorMessage);
+            $this->syncMessage = 'Gagal menjadwalkan sinkronisasi.';
+            session()->flash('error', $this->formatUserFriendlyError($e));
         } finally {
             $this->isSyncing = false;
         }
@@ -191,25 +162,25 @@ class DosenManagement extends Component
     private function syncDosenData(SevimaApiService $sevimaService)
     {
         $startTime = microtime(true);
-        
+
         try {
             // Fetch data from API
             $dosenData = $sevimaService->getDosen();
-            
-            if (!is_array($dosenData)) {
+
+            if (! is_array($dosenData)) {
                 throw new Exception('Invalid dosen data format received from API');
             }
 
             $totalApi = count($dosenData);
-            
+
             // Process batch data
             $batchResult = $this->processDosenBatch($dosenData);
-            
+
             // Truncate existing data and insert new data
             DB::transaction(function () use ($batchResult, $sevimaService) {
                 // Truncate table
                 Dosen::query()->delete();
-                
+
                 // Insert new data
                 $inserted = 0;
                 foreach ($batchResult['processed'] as $dosen) {
@@ -222,10 +193,10 @@ class DosenManagement extends Component
                             'error' => $e->getMessage(),
                             'data' => $dosen,
                         ]);
-                        $batchResult['errors'][] = "Insert failed: " . $e->getMessage();
+                        $batchResult['errors'][] = 'Insert failed: '.$e->getMessage();
                     }
                 }
-                
+
                 $batchResult['total_inserted'] = $inserted;
                 $batchResult['total_updated'] = 0; // Tambahkan ini untuk menghindari undefined array key
             });
@@ -286,55 +257,55 @@ class DosenManagement extends Component
     private function formatUserFriendlyError($e)
     {
         $errorMessage = $e->getMessage();
-        
+
         // Cek untuk error spesifik dan berikan pesan yang lebih user-friendly
         if (strpos($errorMessage, '403') !== false || strpos($errorMessage, 'Forbidden') !== false) {
-            return "Akses ditolak (403 Forbidden). Kemungkinan IP address Anda belum di-whitelist oleh server Sevima. Silakan hubungi admin IT untuk menambahkan IP address ke whitelist.";
+            return 'Akses ditolak (403 Forbidden). Kemungkinan IP address Anda belum di-whitelist oleh server Sevima. Silakan hubungi admin IT untuk menambahkan IP address ke whitelist.';
         }
-        
+
         if (strpos($errorMessage, '401') !== false || strpos($errorMessage, 'Unauthorized') !== false) {
-            return "Autentikasi gagal (401 Unauthorized). Periksa kredensial API Sevima Anda.";
+            return 'Autentikasi gagal (401 Unauthorized). Periksa kredensial API Sevima Anda.';
         }
-        
+
         if (strpos($errorMessage, '404') !== false || strpos($errorMessage, 'Not Found') !== false) {
-            return "Endpoint API tidak ditemukan (404 Not Found). Periksa konfigurasi URL API Sevima.";
+            return 'Endpoint API tidak ditemukan (404 Not Found). Periksa konfigurasi URL API Sevima.';
         }
-        
+
         if (strpos($errorMessage, '500') !== false || strpos($errorMessage, 'Internal Server Error') !== false) {
-            return "Server error (500 Internal Server Error). Terjadi kesalahan di server Sevima. Silakan coba beberapa saat lagi.";
+            return 'Server error (500 Internal Server Error). Terjadi kesalahan di server Sevima. Silakan coba beberapa saat lagi.';
         }
-        
+
         if (strpos($errorMessage, 'timeout') !== false || strpos($errorMessage, 'Connection timed out') !== false) {
-            return "Koneksi timeout. Server Sevima tidak merespon dalam waktu yang ditentukan. Periksa koneksi internet Anda atau coba lagi nanti.";
+            return 'Koneksi timeout. Server Sevima tidak merespon dalam waktu yang ditentukan. Periksa koneksi internet Anda atau coba lagi nanti.';
         }
-        
+
         if (strpos($errorMessage, 'Connection refused') !== false) {
-            return "Koneksi ditolak. Server Sevima tidak dapat dijangkau. Periksa apakah server Sevima sedang online atau ada firewall yang memblokir.";
+            return 'Koneksi ditolak. Server Sevima tidak dapat dijangkau. Periksa apakah server Sevima sedang online atau ada firewall yang memblokir.';
         }
-        
+
         if (strpos($errorMessage, 'cURL error') !== false) {
-            return "Error koneksi cURL: " . $errorMessage . ". Periksa koneksi internet dan konfigurasi jaringan Anda.";
+            return 'Error koneksi cURL: '.$errorMessage.'. Periksa koneksi internet dan konfigurasi jaringan Anda.';
         }
-        
+
         if (strpos($errorMessage, 'SSL certificate') !== false || strpos($errorMessage, 'SSL') !== false) {
-            return "Error SSL/TLS: " . $errorMessage . ". Terjadi masalah dengan sertifikat keamanan server Sevima.";
+            return 'Error SSL/TLS: '.$errorMessage.'. Terjadi masalah dengan sertifikat keamanan server Sevima.';
         }
-        
+
         if (strpos($errorMessage, 'Gagal terhubung ke API Sevima') !== false) {
-            return "Tidak dapat terhubung ke API Sevima. Periksa koneksi internet dan konfigurasi API.";
+            return 'Tidak dapat terhubung ke API Sevima. Periksa koneksi internet dan konfigurasi API.';
         }
-        
+
         // Untuk error lainnya, tampilkan pesan yang lebih umum tapi tetap informatif
         if (empty($errorMessage)) {
-            return "Terjadi error yang tidak diketahui saat sinkronisasi data. Silakan coba lagi atau hubungi admin IT.";
+            return 'Terjadi error yang tidak diketahui saat sinkronisasi data. Silakan coba lagi atau hubungi admin IT.';
         }
-        
+
         // Jika error message terlalu panjang, potong untuk tampilan yang lebih baik
         if (strlen($errorMessage) > 200) {
-            return "Error: " . substr($errorMessage, 0, 200) . "...";
+            return 'Error: '.substr($errorMessage, 0, 200).'...';
         }
-        
-        return "Error: " . $errorMessage;
+
+        return 'Error: '.$errorMessage;
     }
 
     public function getSatuanKerjaListProperty()
@@ -350,6 +321,14 @@ class DosenManagement extends Component
     public function render()
     {
         $query = Dosen::query();
+
+        $latestSyncRun = SyncRun::query()
+            ->whereIn('mode', ['dosen', 'all'])
+            ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
+            ->latest('id')
+            ->first();
+
+        $latestSyncRunItems = $latestSyncRun ? $latestSyncRun->items : collect();
 
         if ($this->search) {
             $query->search($this->search);
@@ -369,6 +348,8 @@ class DosenManagement extends Component
         return view('livewire.sdm.dosen-management', [
             'dosens' => $dosens,
             'satuanKerjaList' => $this->satuanKerjaList,
+            'latestSyncRun' => $latestSyncRun,
+            'latestSyncRunItems' => $latestSyncRunItems,
         ]);
     }
 }

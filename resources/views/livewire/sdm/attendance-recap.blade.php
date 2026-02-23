@@ -104,8 +104,23 @@
         </div>
     </div>
 
+    @if($lastAttendanceOperation)
+        <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+            <span class="font-semibold">Proses absensi terakhir:</span>
+            {{ $lastAttendanceOperation->created_at?->format('d/m/Y H:i:s') }}
+            oleh {{ $lastAttendanceOperation->causer?->name ?? 'System' }}
+            | aksi: {{ $lastAttendanceOperation->properties['action'] ?? '-' }}
+            @if(isset($lastAttendanceOperation->properties['processed_count']))
+                | processed: {{ $lastAttendanceOperation->properties['processed_count'] }}
+            @endif
+            @if(isset($lastAttendanceOperation->properties['error_count']))
+                | errors: {{ $lastAttendanceOperation->properties['error_count'] }}
+            @endif
+        </div>
+    @endif
+
     <!-- Matrix Table -->
-    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col" style="max-height: calc(100-250px);">
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col" style="max-height: calc(100vh - 250px);">
         <!-- Legend -->
         <div class="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-500">
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> Hadir</div>
@@ -145,11 +160,11 @@
                             <td class="sticky left-0 z-20 bg-white group-hover:bg-blue-50 px-6 py-4 whitespace-nowrap border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                                        {{ strtoupper(substr(($employee->name ?? 'U'), 0, 2)) }}
+                                        {{ strtoupper(substr(($employee->nama ?? 'U'), 0, 2)) }}
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" title="{{ $employee->full_name_with_title ?? $employee->name }}">
-                                            {{ $employee->full_name_with_title ?? $employee->name ?? 'N/A' }}
+                                        <div class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" title="{{ $employee->nama }}">
+                                            {{ $employee->nama ?? 'N/A' }}
                                         </div>
                                         <div class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">{{ $employee->nip ?? 'TANPA NIP' }}</div>
                                     </div>
@@ -159,7 +174,7 @@
                             <!-- Daily Data -->
                             @foreach($days as $day)
                                 @php
-                                    $data = $attendanceMatrix[$employee->id][$day['day']] ?? null;
+                                    $data = $attendanceMatrix[$employee->id][$day['date']] ?? null;
                                     $cellStyle = $day['is_weekend'] ? 'bg-red-50/30' : '';
                                     
                                     if ($data) {

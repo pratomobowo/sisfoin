@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AttendanceProcessingService;
+use App\Services\AttendanceService;
 use Illuminate\Console\Command;
 
 class ProcessAttendanceLogsCommand extends Command
@@ -28,7 +28,7 @@ class ProcessAttendanceLogsCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(AttendanceProcessingService $service)
+    public function handle(AttendanceService $service)
     {
         $this->info('Memulai proses konversi log absensi ke data absensi karyawan...');
 
@@ -36,18 +36,31 @@ class ProcessAttendanceLogsCommand extends Command
         $dateTo = $this->option('date-to');
         $userId = $this->option('user-id');
 
+        $force = (bool) $this->option('force');
+
         try {
             if ($userId) {
-                $result = $service->processAttendanceLogsForUser($userId, $dateFrom, $dateTo);
+                $result = $service->processLogs($dateFrom, $dateTo, (int) $userId, $force);
                 $this->info($result['message']);
             } else {
-                $result = $service->processAttendanceLogs($dateFrom, $dateTo);
+                $result = $service->processLogs($dateFrom, $dateTo, null, $force);
                 $this->info($result['message']);
+            }
+
+            if (isset($result['processed_count'])) {
+                $this->line('Processed: '.$result['processed_count']);
+            }
+            if (isset($result['error_count'])) {
+                $this->line('Errors: '.$result['error_count']);
+            }
+            if (isset($result['execution_time'])) {
+                $this->line('Execution time: '.$result['execution_time'].'s');
             }
 
             $this->info('Proses konversi selesai.');
         } catch (\Exception $e) {
-            $this->error('Terjadi kesalahan: ' . $e->getMessage());
+            $this->error('Terjadi kesalahan: '.$e->getMessage());
+
             return 1;
         }
 

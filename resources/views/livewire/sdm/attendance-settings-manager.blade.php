@@ -107,6 +107,96 @@
                 </div>
             </div>
         </div>
+
+        <!-- Holiday Management -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
+            <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                    <x-lucide-calendar-days class="w-5 h-5 mr-2 text-amber-600" />
+                    Tanggal Libur SDM
+                </h3>
+                <p class="text-xs text-gray-600 mt-1">Hari libur tidak dihitung sebagai tidak hadir pada monitor/rekap absensi.</p>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal</label>
+                        <input type="date" wire:model="holidayDate" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors">
+                        @error('holidayDate') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Libur</label>
+                        <input type="text" wire:model="holidayName" placeholder="Contoh: Isra Miraj" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors">
+                        @error('holidayName') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jenis</label>
+                        <select wire:model="holidayType" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors">
+                            <option value="national">Nasional</option>
+                            <option value="company">Internal</option>
+                            <option value="optional">Opsional</option>
+                        </select>
+                        @error('holidayType') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Keterangan</label>
+                        <input type="text" wire:model="holidayDescription" placeholder="Opsional" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors">
+                        @error('holidayDescription') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="flex flex-col justify-end gap-2">
+                        <label class="inline-flex items-center text-sm text-gray-700">
+                            <input type="checkbox" wire:model="holidayIsRecurring" class="mr-2 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                            Ulang tiap tahun
+                        </label>
+                        <div class="flex gap-2">
+                            <button type="button" wire:click="saveHoliday" class="flex-1 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold">
+                                {{ $holidayId ? 'Update' : 'Tambah' }}
+                            </button>
+                            @if($holidayId)
+                                <button type="button" wire:click="resetHolidayForm" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold">Batal</button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jenis</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Sifat</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                                @forelse($holidays as $holiday)
+                                    <tr class="hover:bg-amber-50/40">
+                                        <td class="px-4 py-3 text-sm text-gray-700">{{ \Carbon\Carbon::parse($holiday['date'])->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $holiday['name'] }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst($holiday['type']) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">{{ $holiday['is_recurring'] ? 'Tahunan' : 'Sekali' }}</td>
+                                        <td class="px-4 py-3 text-right">
+                                            <div class="inline-flex items-center gap-2">
+                                                <button type="button" wire:click="editHoliday({{ $holiday['id'] }})" class="px-2.5 py-1 text-xs rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50">Edit</button>
+                                                <button type="button" wire:click="deleteHoliday({{ $holiday['id'] }})" onclick="confirm('Hapus tanggal libur ini?') || event.stopImmediatePropagation()" class="px-2.5 py-1 text-xs rounded-md border border-red-200 text-red-700 hover:bg-red-50">Hapus</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada tanggal libur. Tambahkan agar hari libur tidak dianggap tidak hadir.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Reference -->

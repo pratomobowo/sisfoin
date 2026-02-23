@@ -2,13 +2,18 @@
 
 namespace App\Livewire\Superadmin;
 
-use App\Models\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class UserImportModal extends Component
 {
     public $showModal = false;
+
     public $importCounts = [];
+
     public $isLoading = false;
 
     protected $listeners = [
@@ -16,43 +21,41 @@ class UserImportModal extends Component
         'closeUserImportModal' => 'closeModal',
     ];
 
-    public function openModal()
+    public function openModal(): void
     {
         $this->showModal = true;
         $this->prepareImportData();
     }
 
-    public function closeModal()
+    public function closeModal(): void
     {
         $this->showModal = false;
         $this->importCounts = [];
     }
 
-    public function prepareImportData()
+    public function prepareImportData(): void
     {
         $this->isLoading = true;
-        
+
         try {
-            // Employees
-            $employeesTotal = \DB::table('employees')->where('status_aktif', 'Aktif')->count();
-            
-            $employeesQuery = \DB::table('employees')
+            $employeesTotal = DB::table('employees')->where('status_aktif', 'Aktif')->count();
+
+            $employeesData = DB::table('employees')
                 ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->whereNotNull('nip')
-                ->where('nip', '!=', '');
-            
-            $employeesReady = $employeesQuery->count();
-            $employeesSkipped = $employeesTotal - $employeesReady; // Skipped due to missing email/nip
-            
-            $employeesData = $employeesQuery->get(['id', 'nama', 'email', 'nip']);
+                ->where('nip', '!=', '')
+                ->get(['id', 'nama', 'email', 'nip']);
 
-            // Check new vs existing
+            $employeesReady = $employeesData->count();
+            $employeesSkipped = $employeesTotal - $employeesReady;
+
             $employeesNew = 0;
             $employeesExisting = 0;
+
             foreach ($employeesData as $employee) {
-                $existingUser = \DB::table('users')->where('email', $employee->email)->first();
+                $existingUser = $this->findExistingUser('employee', (int) $employee->id, $employee->nip, $employee->email);
                 if ($existingUser) {
                     $employeesExisting++;
                 } else {
@@ -60,26 +63,30 @@ class UserImportModal extends Component
                 }
             }
 
-            // Dosens
-            $dosensTotal = \DB::table('dosens')->where('status_aktif', 'Aktif')->count();
-            
-            $dosensQuery = \DB::table('dosens')
+            $dosensTotal = DB::table('dosens')->where('status_aktif', 'Aktif')->count();
+
+            $dosensData = DB::table('dosens')
                 ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
-                ->whereNotNull('nip')
-                ->where('nip', '!=', '');
-            
-            $dosensReady = $dosensQuery->count();
+                ->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->whereNotNull('nip')->where('nip', '!=', '');
+                    })->orWhere(function ($q) {
+                        $q->whereNotNull('nidn')->where('nidn', '!=', '');
+                    });
+                })
+                ->get(['id', 'nama', 'email', 'nidn', 'nip']);
+
+            $dosensReady = $dosensData->count();
             $dosensSkipped = $dosensTotal - $dosensReady;
 
-            $dosensData = $dosensQuery->get(['id', 'nama', 'email', 'nidn']);
-
-            // Check new vs existing
             $dosensNew = 0;
             $dosensExisting = 0;
+
             foreach ($dosensData as $dosen) {
-                $existingUser = \DB::table('users')->where('email', $dosen->email)->first();
+                $identityNip = $dosen->nip ?: $dosen->nidn;
+                $existingUser = $this->findExistingUser('dosen', (int) $dosen->id, $identityNip, $dosen->email);
                 if ($existingUser) {
                     $dosensExisting++;
                 } else {
@@ -93,39 +100,37 @@ class UserImportModal extends Component
                 'employees_skipped' => $employeesSkipped,
                 'employees_new' => $employeesNew,
                 'employees_existing' => $employeesExisting,
-                
+
                 'dosens_total' => $dosensTotal,
                 'dosens_ready' => $dosensReady,
                 'dosens_skipped' => $dosensSkipped,
                 'dosens_new' => $dosensNew,
                 'dosens_existing' => $dosensExisting,
-                
+
                 'total_new' => $employeesNew + $dosensNew,
                 'total_existing' => $employeesExisting + $dosensExisting,
             ];
-
         } catch (\Exception $e) {
-            \Log::error('Error preparing import data: ' . $e->getMessage());
+            Log::error('Error preparing import data: '.$e->getMessage());
             $this->importCounts = [];
         }
 
         $this->isLoading = false;
     }
 
-    public function importUsers()
+    public function importUsers(): void
     {
         try {
             $importedCount = 0;
             $updatedCount = 0;
+            $conflictCount = 0;
 
-            // Get staff role
-            $staffRole = \DB::table('roles')->where('name', 'staff')->first();
-            if (!$staffRole) {
+            $staffRole = DB::table('roles')->where('name', 'staff')->first();
+            if (! $staffRole) {
                 throw new \Exception('Staff role not found');
             }
 
-            // Import employees with email, NIP, and active status
-            $employeesData = \DB::table('employees')
+            $employeesData = DB::table('employees')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->whereNotNull('nip')
@@ -133,100 +138,174 @@ class UserImportModal extends Component
                 ->where('status_aktif', 'Aktif')
                 ->get(['id', 'nama', 'email', 'nip']);
 
-            // Import employees
             foreach ($employeesData as $employee) {
-                $existingUser = \DB::table('users')->where('email', $employee->email)->first();
-                
+                $existingUser = $this->findExistingUser('employee', (int) $employee->id, $employee->nip, $employee->email);
+
                 $userData = [
                     'name' => $employee->nama,
+                    'nip' => $employee->nip,
+                    'email' => $employee->email,
                     'employee_id' => $employee->id,
                     'employee_type' => 'employee',
                     'updated_at' => now(),
                 ];
 
                 if ($existingUser) {
-                    \DB::table('users')->where('id', $existingUser->id)->update($userData);
+                    if ($this->hasConflictingOwnership($existingUser, 'employee', (int) $employee->id)) {
+                        $conflictCount++;
+
+                        continue;
+                    }
+
+                    DB::table('users')->where('id', $existingUser->id)->update($userData);
+                    $this->ensureStaffRole((int) $existingUser->id, (int) $staffRole->id);
                     $updatedCount++;
                 } else {
-                    $userData = array_merge($userData, [
-                        'email' => $employee->email,
-                        'password' => bcrypt('password123'),
+                    $createData = array_merge($userData, [
+                        'password' => Hash::make('password123'),
                         'email_verified_at' => now(),
                         'created_at' => now(),
                     ]);
-                    $userId = \DB::table('users')->insertGetId($userData);
-                    
-                    \DB::table('model_has_roles')->insert([
-                        'role_id' => $staffRole->id,
-                        'model_type' => 'App\Models\User',
-                        'model_id' => $userId,
-                    ]);
+
+                    $userId = DB::table('users')->insertGetId($createData);
+                    $this->ensureStaffRole((int) $userId, (int) $staffRole->id);
                     $importedCount++;
                 }
             }
 
-            // Import dosens
-            $dosensData = \DB::table('dosens')
+            $dosensData = DB::table('dosens')
                 ->where('status_aktif', 'Aktif')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
-                ->where(function($query) {
-                    $query->where(function($q) {
+                ->where(function ($query) {
+                    $query->where(function ($q) {
                         $q->whereNotNull('nip')->where('nip', '!=', '');
-                    })->orWhere(function($q) {
+                    })->orWhere(function ($q) {
                         $q->whereNotNull('nidn')->where('nidn', '!=', '');
                     });
                 })
                 ->get(['id', 'nama', 'email', 'nidn', 'nip']);
 
             foreach ($dosensData as $dosen) {
-                $existingUser = \DB::table('users')->where('email', $dosen->email)->first();
-                
+                $identityNip = $dosen->nip ?: $dosen->nidn;
+                $existingUser = $this->findExistingUser('dosen', (int) $dosen->id, $identityNip, $dosen->email);
+
                 $userData = [
                     'name' => $dosen->nama,
+                    'nip' => $identityNip,
+                    'email' => $dosen->email,
                     'employee_id' => $dosen->id,
-                    'employee_type' => 'dosen', // Assuming 'dosen' or 'lecturer'? Let's check User model/enum if possible. Usually 'dosen' based on previous context.
+                    'employee_type' => 'dosen',
                     'updated_at' => now(),
                 ];
 
                 if ($existingUser) {
-                    \DB::table('users')->where('id', $existingUser->id)->update($userData);
+                    if ($this->hasConflictingOwnership($existingUser, 'dosen', (int) $dosen->id)) {
+                        $conflictCount++;
+
+                        continue;
+                    }
+
+                    DB::table('users')->where('id', $existingUser->id)->update($userData);
+                    $this->ensureStaffRole((int) $existingUser->id, (int) $staffRole->id);
                     $updatedCount++;
                 } else {
-                    $userData = array_merge($userData, [
-                        'email' => $dosen->email,
-                        'password' => bcrypt('password123'),
+                    $createData = array_merge($userData, [
+                        'password' => Hash::make('password123'),
                         'email_verified_at' => now(),
                         'created_at' => now(),
                     ]);
-                    $userId = \DB::table('users')->insertGetId($userData);
 
-                    \DB::table('model_has_roles')->insert([
-                        'role_id' => $staffRole->id,
-                        'model_type' => 'App\Models\User',
-                        'model_id' => $userId,
-                    ]);
+                    $userId = DB::table('users')->insertGetId($createData);
+                    $this->ensureStaffRole((int) $userId, (int) $staffRole->id);
                     $importedCount++;
                 }
             }
 
             $this->closeModal();
-            
-            $message = "Import selesai! ";
+
+            $message = 'Import selesai! ';
             if ($importedCount > 0) {
                 $message .= "{$importedCount} pengguna baru dibuat. ";
             }
             if ($updatedCount > 0) {
                 $message .= "{$updatedCount} pengguna diperbarui.";
             }
-            
+            if ($conflictCount > 0) {
+                $message .= " {$conflictCount} data dilewati karena konflik kepemilikan akun (dicek aman).";
+            }
+
             session()->flash('success', $message);
             $this->dispatch('usersImported');
-
         } catch (\Exception $e) {
             $this->closeModal();
-            session()->flash('error', 'Gagal melakukan import: ' . $e->getMessage());
+            session()->flash('error', 'Gagal melakukan import: '.$e->getMessage());
         }
+    }
+
+    private function findExistingUser(string $type, int $employeeId, ?string $nip, ?string $email): ?User
+    {
+        $nip = $this->normalizeIdentity($nip);
+        $email = $this->normalizeIdentity($email);
+
+        $byOwnership = User::query()
+            ->where('employee_type', $type)
+            ->where('employee_id', $employeeId)
+            ->first();
+
+        if ($byOwnership) {
+            return $byOwnership;
+        }
+
+        if ($nip) {
+            $byNip = User::query()->where('nip', $nip)->first();
+            if ($byNip) {
+                return $byNip;
+            }
+        }
+
+        if ($email) {
+            return User::query()->where('email', $email)->first();
+        }
+
+        return null;
+    }
+
+    private function hasConflictingOwnership(User $user, string $expectedType, int $expectedEmployeeId): bool
+    {
+        if (empty($user->employee_type) || empty($user->employee_id)) {
+            return false;
+        }
+
+        return ! ($user->employee_type === $expectedType && (int) $user->employee_id === $expectedEmployeeId);
+    }
+
+    private function ensureStaffRole(int $userId, int $staffRoleId): void
+    {
+        $exists = DB::table('model_has_roles')
+            ->where('role_id', $staffRoleId)
+            ->where('model_type', 'App\\Models\\User')
+            ->where('model_id', $userId)
+            ->exists();
+
+        if (! $exists) {
+            DB::table('model_has_roles')->insert([
+                'role_id' => $staffRoleId,
+                'model_type' => 'App\\Models\\User',
+                'model_id' => $userId,
+            ]);
+        }
+    }
+
+    private function normalizeIdentity(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     public function render()

@@ -36,6 +36,51 @@
         </div>
     @endif
 
+    @if($latestSyncRun)
+        <div class="bg-white border border-gray-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Status Sinkronisasi Terakhir</h3>
+                <span class="text-xs px-2.5 py-1 rounded-full
+                    @if($latestSyncRun->status === 'completed') bg-green-100 text-green-700
+                    @elseif($latestSyncRun->status === 'completed_with_warning') bg-yellow-100 text-yellow-800
+                    @elseif($latestSyncRun->status === 'failed') bg-red-100 text-red-700
+                    @elseif($latestSyncRun->status === 'running') bg-blue-100 text-blue-700
+                    @else bg-gray-100 text-gray-700 @endif">
+                    {{ strtoupper(str_replace('_', ' ', $latestSyncRun->status)) }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm mb-4">
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-gray-500">Fetched</p><p class="font-semibold">{{ $latestSyncRun->fetched_count }}</p></div>
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-gray-500">Processed</p><p class="font-semibold">{{ $latestSyncRun->processed_count }}</p></div>
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-gray-500">Inserted</p><p class="font-semibold text-green-700">{{ $latestSyncRun->inserted_count }}</p></div>
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-gray-500">Updated</p><p class="font-semibold">{{ $latestSyncRun->updated_count }}</p></div>
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-gray-500">Failed</p><p class="font-semibold text-red-700">{{ $latestSyncRun->failed_count }}</p></div>
+            </div>
+
+            @if(($latestSyncRun->error_summary['reconcile']['linked_count'] ?? 0) || ($latestSyncRun->error_summary['reconcile']['conflict_count'] ?? 0))
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-blue-900 font-medium">Ringkasan Rekonsiliasi User Link</p>
+                    <div class="mt-2 flex flex-wrap gap-4 text-sm">
+                        <span class="text-blue-700">Linked: <strong>{{ $latestSyncRun->error_summary['reconcile']['linked_count'] ?? 0 }}</strong></span>
+                        <span class="text-red-700">Conflict: <strong>{{ $latestSyncRun->error_summary['reconcile']['conflict_count'] ?? 0 }}</strong></span>
+                    </div>
+                </div>
+            @endif
+
+            @if($latestSyncRunItems->isNotEmpty())
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-sm font-semibold text-red-900 mb-2">Detail Warning/Error</p>
+                    <div class="space-y-1 max-h-40 overflow-y-auto">
+                        @foreach($latestSyncRunItems as $item)
+                            <p class="text-sm text-red-700">• [{{ strtoupper($item->entity_type) }}] {{ $item->message }}</p>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
     <!-- Sync Results -->
     @if(!empty($syncResults))
         <div class="bg-green-50 border border-green-200 rounded-xl p-6">

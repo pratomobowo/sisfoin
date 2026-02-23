@@ -2,20 +2,20 @@
 
 namespace App\Livewire\Sdm;
 
-use App\Models\User;
 use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
-use App\Models\AttendanceLog;
-use App\Models\FingerprintUserMapping;
+use App\Models\User;
 use App\Services\AttendanceService;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout;
+use Spatie\Activitylog\Models\Activity;
 
 #[Layout('layouts.app')]
 class EmployeeAttendanceManagement extends Component
-
 {
     use WithPagination;
 
@@ -23,27 +23,55 @@ class EmployeeAttendanceManagement extends Component
 
     // Filter properties
     public $search = '';
+
     public $dateFrom = '';
+
     public $dateTo = '';
+
     public $status = '';
+
     public $employeeType = '';
+
     public $unitKerja = '';
+
     public $perPage = 10;
+
+    public $showFilters = true;
+
+    public $currentTab = 'daily-correction';
+
+    public $correctionDate = '';
+
+    public $correctionStatus = '';
+
+    public $clearConfirmation = '';
 
     // Modal properties
     public $showCreateModal = false;
+
     public $showEditModal = false;
+
     public $showDetailModal = false;
+
     public $showUnmappedModal = false;
+
+    public $showClearSection = false;
+
     public $selectedAttendanceId;
+
     public $mappingUserIds = [];
 
     // Form properties
     public $user_id;
+
     public $date;
+
     public $check_in_time;
+
     public $check_out_time;
+
     public $status_form;
+
     public $notes;
 
     protected $queryString = [
@@ -70,6 +98,7 @@ class EmployeeAttendanceManagement extends Component
         // Set default date range to current month
         $this->dateFrom = now()->startOfMonth()->format('Y-m-d');
         $this->dateTo = now()->endOfMonth()->format('Y-m-d');
+        $this->correctionDate = now()->format('Y-m-d');
     }
 
     public function updatedSearch()
@@ -100,9 +129,9 @@ class EmployeeAttendanceManagement extends Component
 
         // Apply filters
         if ($this->search) {
-            $query->whereHas('employee', function($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
+            $query->whereHas('employee', function ($q) {
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -125,7 +154,7 @@ class EmployeeAttendanceManagement extends Component
             ->with(['employee', 'dosen'])
             ->orderBy('name')
             ->get()
-            ->map(function($user) {
+            ->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -137,7 +166,260 @@ class EmployeeAttendanceManagement extends Component
         return view('livewire.sdm.employee-attendance-management', [
             'attendances' => $attendances,
             'employees' => $employees,
+            'dailyCorrections' => $this->getDailyCorrections(),
         ]);
+    }
+
+    public function switchTab(string $tab): void
+    {
+        if (in_array($tab, ['daily-correction', 'history'], true)) {
+            $this->currentTab = $tab;
+            $this->showClearSection = false;
+            $this->clearConfirmation = '';
+            $this->resetPage();
+        }
+    }
+
+    public function openClearSection(): void
+    {
+        $this->showClearSection = true;
+    }
+
+    public function closeClearSection(): void
+    {
+        $this->showClearSection = false;
+        $this->clearConfirmation = '';
+    }
+
+    public function updatedCorrectionDate(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCorrectionStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function editByEmployee(int $employeeId): void
+    {
+        $employee = Employee::find($employeeId);
+        if (! $employee) {
+            session()->flash('error', 'Karyawan tidak ditemukan.');
+
+            return;
+        }
+
+        [$employeeToUserId] = $this->buildEmployeeUserMap(collect([$employee]));
+        $userId = $employeeToUserId[$employee->id] ?? null;
+
+        if (! $userId) {
+            session()->flash('error', 'Akun user untuk karyawan ini belum terhubung. Hubungi admin untuk sinkronisasi akun.');
+
+            return;
+        }
+
+        $attendance = EmployeeAttendance::where('user_id', $userId)
+            ->whereDate('date', $this->correctionDate)
+            ->first();
+
+        if ($attendance) {
+            $this->edit($attendance->id);
+
+            return;
+        }
+
+        $this->resetForm();
+        $this->selectedAttendanceId = null;
+        $this->user_id = $userId;
+        $this->date = $this->correctionDate;
+        $this->status_form = 'on_time';
+        $this->showCreateModal = true;
+    }
+
+    private function getDailyCorrections(): Collection
+    {
+        $employees = Employee::query()
+            ->active()
+            ->when($this->search, function ($query) {
+                $term = trim($this->search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('nama', 'like', '%'.$term.'%')
+                        ->orWhere('nip', 'like', '%'.$term.'%');
+                });
+            })
+            ->when($this->unitKerja, fn ($query) => $query->where('satuan_kerja', $this->unitKerja))
+            ->orderBy('nama')
+            ->get(['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja']);
+
+        [$employeeToUserId, $userIds] = $this->buildEmployeeUserMap($employees);
+
+        $attendances = EmployeeAttendance::query()
+            ->whereIn('user_id', $userIds)
+            ->whereDate('date', $this->correctionDate)
+            ->get()
+            ->keyBy('user_id');
+
+        $rows = $employees->map(function (Employee $employee) use ($employeeToUserId, $attendances) {
+            $userId = $employeeToUserId[$employee->id] ?? null;
+            $attendance = $userId ? $attendances->get($userId) : null;
+
+            $status = $attendance?->status ?? 'absent';
+            $statusLabel = $attendance?->status_label ?? 'Belum Absen';
+
+            return [
+                'employee_id' => $employee->id,
+                'name' => $employee->nama,
+                'nip' => $employee->nip,
+                'unit_kerja' => $employee->satuan_kerja,
+                'user_id' => $userId,
+                'status' => $status,
+                'status_label' => $statusLabel,
+                'check_in' => $attendance?->formatted_check_in ?? '-',
+                'check_out' => $attendance?->formatted_check_out ?? '-',
+            ];
+        });
+
+        if ($this->correctionStatus !== '') {
+            $rows = $rows->where('status', $this->correctionStatus)->values();
+        }
+
+        return $rows;
+    }
+
+    private function buildEmployeeUserMap(Collection $employees): array
+    {
+        $employeeIds = $employees->pluck('id')->filter()->values();
+        $employeeMasterIds = $employees->pluck('id_pegawai')->filter()->map(fn ($id) => (string) $id)->values();
+
+        $employeeNips = $employees
+            ->pluck('nip')
+            ->filter()
+            ->map(fn ($nip) => (string) $nip)
+            ->values();
+
+        $normalizedNips = $employeeNips
+            ->map(fn ($nip) => $this->normalizeNip($nip))
+            ->filter()
+            ->values();
+
+        $nipCandidates = $employeeNips->merge($normalizedNips)->unique()->values();
+
+        $relatedEmployeeRows = $employeeMasterIds->isEmpty()
+            ? collect()
+            : Employee::withTrashed()->whereIn('id_pegawai', $employeeMasterIds)->get(['id', 'id_pegawai']);
+
+        $relatedEmployeeIds = $relatedEmployeeRows->pluck('id')->unique()->values();
+
+        $users = User::query()
+            ->where(function ($query) use ($nipCandidates, $employeeIds, $relatedEmployeeIds) {
+                if (! empty($nipCandidates->all())) {
+                    $query->where(function ($q) use ($nipCandidates) {
+                        $q->whereNotNull('nip')->whereIn('nip', $nipCandidates);
+                    });
+                }
+
+                if (! $employeeIds->isEmpty()) {
+                    $query->orWhere(function ($q) use ($employeeIds) {
+                        $q->where('employee_type', 'employee')->whereIn('employee_id', $employeeIds);
+                    });
+                }
+
+                if (! $relatedEmployeeIds->isEmpty()) {
+                    $query->orWhere(function ($q) use ($relatedEmployeeIds) {
+                        $q->where('employee_type', 'employee')->whereIn('employee_id', $relatedEmployeeIds);
+                    });
+                }
+            })
+            ->get(['id', 'nip', 'employee_id', 'employee_type', 'created_at']);
+
+        $relatedEmployeesById = $relatedEmployeeRows->keyBy('id');
+
+        $usersByNormalizedNip = $users
+            ->filter(fn (User $user) => ! empty($this->normalizeNip($user->nip)))
+            ->groupBy(fn (User $user) => $this->normalizeNip($user->nip));
+
+        $usersByEmployeeId = $users
+            ->filter(fn (User $user) => $user->employee_type === 'employee' && ! empty($user->employee_id))
+            ->groupBy(fn (User $user) => (int) $user->employee_id);
+
+        $usersByEmployeeMasterId = $users
+            ->filter(fn (User $user) => $user->employee_type === 'employee' && ! empty($user->employee_id))
+            ->mapToGroups(function (User $user) use ($relatedEmployeesById) {
+                $employeeRow = $relatedEmployeesById->get((int) $user->employee_id);
+
+                return $employeeRow && ! empty($employeeRow->id_pegawai)
+                    ? [(string) $employeeRow->id_pegawai => $user]
+                    : [];
+            });
+
+        $attendanceOnDateUserIds = EmployeeAttendance::query()
+            ->whereDate('date', $this->correctionDate)
+            ->whereIn('user_id', $users->pluck('id'))
+            ->pluck('user_id')
+            ->flip();
+
+        $employeeToUserId = [];
+        foreach ($employees as $employee) {
+            $normNip = $this->normalizeNip($employee->nip);
+
+            $candidates = collect()
+                ->merge($usersByEmployeeId->get((int) $employee->id, collect()))
+                ->merge($normNip ? $usersByNormalizedNip->get($normNip, collect()) : collect())
+                ->merge(! empty($employee->id_pegawai) ? $usersByEmployeeMasterId->get((string) $employee->id_pegawai, collect()) : collect())
+                ->unique('id')
+                ->values();
+
+            $selected = $this->selectPreferredUser($candidates, $normNip, $attendanceOnDateUserIds);
+            $employeeToUserId[$employee->id] = $selected?->id;
+        }
+
+        return [$employeeToUserId, collect($employeeToUserId)->filter()->unique()->values()->all()];
+    }
+
+    private function selectPreferredUser(Collection $candidates, ?string $employeeNip, Collection $attendanceOnDateUserIds): ?User
+    {
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        $normalizedEmployeeNip = $this->normalizeNip($employeeNip);
+
+        $scored = $candidates->map(function (User $user) use ($normalizedEmployeeNip, $attendanceOnDateUserIds) {
+            $score = 0;
+            $userNip = $this->normalizeNip($user->nip);
+
+            if ($attendanceOnDateUserIds->has($user->id)) {
+                $score += 100;
+            }
+
+            if ($normalizedEmployeeNip && $userNip === $normalizedEmployeeNip) {
+                $score += 50;
+            }
+
+            if (! empty($userNip)) {
+                $score += 10;
+            }
+
+            return [
+                'user' => $user,
+                'score' => $score,
+                'created_at' => optional($user->created_at)?->timestamp ?? 0,
+            ];
+        })->sortByDesc(function ($item) {
+            return ($item['score'] * 10000000000) + $item['created_at'];
+        })->values();
+
+        return $scored->first()['user'] ?? null;
+    }
+
+    private function normalizeNip(?string $nip): ?string
+    {
+        if ($nip === null || trim($nip) === '') {
+            return null;
+        }
+
+        return rtrim(trim($nip), '_');
     }
 
     public function create()
@@ -149,8 +431,9 @@ class EmployeeAttendanceManagement extends Component
     public function edit($id)
     {
         $attendance = EmployeeAttendance::find($id);
-        if (!$attendance) {
+        if (! $attendance) {
             session()->flash('error', 'Data absensi tidak ditemukan.');
+
             return;
         }
 
@@ -177,8 +460,9 @@ class EmployeeAttendanceManagement extends Component
             ->select('pin', 'mesin_finger_id', DB::raw('count(*) as total'), DB::raw('max(datetime) as last_seen'), DB::raw('max(id) as last_id'))
             ->groupBy('pin', 'mesin_finger_id')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $lastLog = \App\Models\AttendanceLog::find($item->last_id);
+
                 return [
                     'pin' => $item->pin,
                     'total' => $item->total,
@@ -192,9 +476,10 @@ class EmployeeAttendanceManagement extends Component
     public function mapPin($pin)
     {
         $userId = $this->mappingUserIds[$pin] ?? null;
-        
-        if (!$userId) {
+
+        if (! $userId) {
             session()->flash('error', 'Silakan pilih karyawan terlebih dahulu.');
+
             return;
         }
 
@@ -202,14 +487,14 @@ class EmployeeAttendanceManagement extends Component
             DB::beginTransaction();
 
             $user = User::find($userId);
-            if (!$user) {
+            if (! $user) {
                 throw new \Exception('Karyawan tidak ditemukan.');
             }
 
             // 1. Update User's Fingerprint PIN
             $user->update([
                 'fingerprint_pin' => $pin,
-                'fingerprint_enabled' => true
+                'fingerprint_enabled' => true,
             ]);
 
             // 2. Update existing unmapped logs
@@ -218,30 +503,31 @@ class EmployeeAttendanceManagement extends Component
                 ->update(['user_id' => $userId]);
 
             // 3. Process logs for this user to generate attendance records
-            $attendanceService = new AttendanceService();
+            $attendanceService = new AttendanceService;
             $attendanceService->processLogs(null, null, $userId);
 
             DB::commit();
 
             // Clear selection
             unset($this->mappingUserIds[$pin]);
-            
+
             // Refresh stats
             $this->dispatch('refreshStats'); // Optional if you have listeners, else render handles it
-            
+
             session()->flash('success', "PIN {$pin} berhasil dimapping ke {$user->name}. Data absensi telah diperbarui.");
 
         } catch (\Exception $e) {
             DB::rollback();
-            session()->flash('error', 'Gagal melakukan mapping: ' . $e->getMessage());
+            session()->flash('error', 'Gagal melakukan mapping: '.$e->getMessage());
         }
     }
 
     public function view($id)
     {
         $attendance = EmployeeAttendance::with(['employee'])->find($id);
-        if (!$attendance) {
+        if (! $attendance) {
             session()->flash('error', 'Data absensi tidak ditemukan.');
+
             return;
         }
 
@@ -257,15 +543,16 @@ class EmployeeAttendanceManagement extends Component
             if ($this->selectedAttendanceId) {
                 // Update existing attendance
                 $attendance = EmployeeAttendance::find($this->selectedAttendanceId);
-                if (!$attendance) {
+                if (! $attendance) {
                     session()->flash('error', 'Data absensi tidak ditemukan.');
+
                     return;
                 }
 
-                $checkInDateTime = $this->check_in_time ? 
-                    \Carbon\Carbon::parse($this->date . ' ' . $this->check_in_time) : null;
-                $checkOutDateTime = $this->check_out_time ? 
-                    \Carbon\Carbon::parse($this->date . ' ' . $this->check_out_time) : null;
+                $checkInDateTime = $this->check_in_time ?
+                    \Carbon\Carbon::parse($this->date.' '.$this->check_in_time) : null;
+                $checkOutDateTime = $this->check_out_time ?
+                    \Carbon\Carbon::parse($this->date.' '.$this->check_out_time) : null;
 
                 $attendance->update([
                     'user_id' => $this->user_id,
@@ -279,10 +566,10 @@ class EmployeeAttendanceManagement extends Component
                 session()->flash('success', 'Data absensi berhasil diperbarui.');
             } else {
                 // Create new attendance
-                $checkInDateTime = $this->check_in_time ? 
-                    \Carbon\Carbon::parse($this->date . ' ' . $this->check_in_time) : null;
-                $checkOutDateTime = $this->check_out_time ? 
-                    \Carbon\Carbon::parse($this->date . ' ' . $this->check_out_time) : null;
+                $checkInDateTime = $this->check_in_time ?
+                    \Carbon\Carbon::parse($this->date.' '.$this->check_in_time) : null;
+                $checkOutDateTime = $this->check_out_time ?
+                    \Carbon\Carbon::parse($this->date.' '.$this->check_out_time) : null;
 
                 $attendance = EmployeeAttendance::create([
                     'user_id' => $this->user_id,
@@ -291,7 +578,7 @@ class EmployeeAttendanceManagement extends Component
                     'check_out_time' => $checkOutDateTime,
                     'status' => $this->status_form,
                     'notes' => $this->notes,
-                    'created_by' => auth()->id(),
+                    'created_by' => Auth::id(),
                 ]);
 
                 session()->flash('success', 'Data absensi berhasil ditambahkan.');
@@ -299,15 +586,16 @@ class EmployeeAttendanceManagement extends Component
 
             $this->closeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal menyimpan data absensi: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menyimpan data absensi: '.$e->getMessage());
         }
     }
 
     public function delete($id)
     {
         $attendance = EmployeeAttendance::find($id);
-        if (!$attendance) {
+        if (! $attendance) {
             session()->flash('error', 'Data absensi tidak ditemukan.');
+
             return;
         }
 
@@ -345,7 +633,7 @@ class EmployeeAttendanceManagement extends Component
 
     public function toggleFilters()
     {
-        $this->showFilters = !$this->showFilters;
+        $this->showFilters = ! $this->showFilters;
     }
 
     public function getUnitKerjaListProperty()
@@ -357,92 +645,99 @@ class EmployeeAttendanceManagement extends Component
             ->sort()
             ->values();
     }
-    
+
     public function getAttendanceEmployeeName()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return null;
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::with('employee')->find($this->selectedAttendanceId);
+
         return $attendance ? ($attendance->employee ? $attendance->employee->name : 'N/A') : 'N/A';
     }
-    
+
     public function getAttendanceFormattedDate()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return null;
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? $attendance->formatted_date : 'N/A';
     }
-    
+
     public function getAttendanceFormattedCheckIn()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return null;
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? $attendance->formatted_check_in : 'N/A';
     }
-    
+
     public function getAttendanceFormattedCheckOut()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return null;
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? $attendance->formatted_check_out : 'N/A';
     }
-    
+
     public function getAttendanceStatusBadge()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return 'gray';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? $attendance->status_badge : 'gray';
     }
-    
+
     public function getAttendanceStatusLabel()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return 'N/A';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? $attendance->status_label : 'N/A';
     }
-    
+
     public function getAttendanceTotalHoursFormatted()
     {
-        if (!$this->selectedAttendanceId) {
-            return "0:00";
+        if (! $this->selectedAttendanceId) {
+            return '0:00';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
-        if (!$attendance || !$attendance->total_hours) {
-            return "0:00";
+        if (! $attendance || ! $attendance->total_hours) {
+            return '0:00';
         }
-        
+
         $totalMinutes = (int) abs(round($attendance->total_hours * 60));
         $hours = floor($totalMinutes / 60);
         $minutes = $totalMinutes % 60;
-        
-        return sprintf("%d:%02d", $hours, $minutes);
+
+        return sprintf('%d:%02d', $hours, $minutes);
     }
-    
+
     public function getAttendanceNotes()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return '';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
+
         return $attendance ? ($attendance->notes ?? '') : '';
     }
 
@@ -451,31 +746,32 @@ class EmployeeAttendanceManagement extends Component
      */
     public function getAttendanceOvertimeFormatted()
     {
-        if (!$this->selectedAttendanceId) {
-            return "0:00";
+        if (! $this->selectedAttendanceId) {
+            return '0:00';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
-        if (!$attendance || !$attendance->check_out_time) {
-            return "0:00";
+        if (! $attendance || ! $attendance->check_out_time) {
+            return '0:00';
         }
-        
+
         $shift = $attendance->effective_shift;
-        if (!$shift || !$shift->end_time) {
-            return "0:00";
+        if (! $shift || ! $shift->end_time) {
+            return '0:00';
         }
-        
-        $shiftEnd = \Carbon\Carbon::parse($attendance->date->format('Y-m-d') . ' ' . $shift->end_time);
+
+        $shiftEnd = \Carbon\Carbon::parse($attendance->date->format('Y-m-d').' '.$shift->end_time);
         $checkOut = $attendance->check_out_time;
-        
+
         if ($checkOut->gt($shiftEnd)) {
             $totalMinutes = (int) abs(round($shiftEnd->floatDiffInMinutes($checkOut)));
             $hours = floor($totalMinutes / 60);
             $minutes = $totalMinutes % 60;
-            return sprintf("%d:%02d", $hours, $minutes);
+
+            return sprintf('%d:%02d', $hours, $minutes);
         }
-        
-        return "0:00";
+
+        return '0:00';
     }
 
     /**
@@ -483,31 +779,32 @@ class EmployeeAttendanceManagement extends Component
      */
     public function getAttendanceEarlyFormatted()
     {
-        if (!$this->selectedAttendanceId) {
-            return "0:00";
+        if (! $this->selectedAttendanceId) {
+            return '0:00';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
-        if (!$attendance || !$attendance->check_in_time) {
-            return "0:00";
+        if (! $attendance || ! $attendance->check_in_time) {
+            return '0:00';
         }
-        
+
         $shift = $attendance->effective_shift;
-        if (!$shift || !$shift->start_time) {
-            return "0:00";
+        if (! $shift || ! $shift->start_time) {
+            return '0:00';
         }
-        
-        $shiftStart = \Carbon\Carbon::parse($attendance->date->format('Y-m-d') . ' ' . $shift->start_time);
+
+        $shiftStart = \Carbon\Carbon::parse($attendance->date->format('Y-m-d').' '.$shift->start_time);
         $checkIn = $attendance->check_in_time;
-        
+
         if ($checkIn->lt($shiftStart)) {
             $totalMinutes = (int) abs(round($checkIn->floatDiffInMinutes($shiftStart)));
             $hours = floor($totalMinutes / 60);
             $minutes = $totalMinutes % 60;
-            return sprintf("%d:%02d", $hours, $minutes);
+
+            return sprintf('%d:%02d', $hours, $minutes);
         }
-        
-        return "0:00";
+
+        return '0:00';
     }
 
     /**
@@ -515,16 +812,17 @@ class EmployeeAttendanceManagement extends Component
      */
     public function getAttendanceShiftName()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return '-';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
-        if (!$attendance) {
+        if (! $attendance) {
             return '-';
         }
-        
+
         $shift = $attendance->effective_shift;
+
         return $shift ? $shift->name : 'Default';
     }
 
@@ -533,42 +831,54 @@ class EmployeeAttendanceManagement extends Component
      */
     public function getAttendanceShiftTime()
     {
-        if (!$this->selectedAttendanceId) {
+        if (! $this->selectedAttendanceId) {
             return '-';
         }
-        
+
         $attendance = \App\Models\Employee\Attendance::find($this->selectedAttendanceId);
-        if (!$attendance) {
+        if (! $attendance) {
             return '-';
         }
-        
+
         $shift = $attendance->effective_shift;
-        if (!$shift) {
+        if (! $shift) {
             return '-';
         }
-        
-        return substr($shift->start_time, 0, 5) . ' - ' . substr($shift->end_time, 0, 5);
+
+        return substr($shift->start_time, 0, 5).' - '.substr($shift->end_time, 0, 5);
     }
 
     public function processAttendanceLogs()
     {
         try {
-            $attendanceService = new AttendanceService();
-            
+            $attendanceService = new AttendanceService;
+
             // Process all attendance logs (we use NULL dates to process all unprocessed)
             $result = $attendanceService->processLogs();
-            
+
             // Refresh counts/stats
             $stats = $this->attendance_log_stats;
-            
+
             $message = $result['message'];
+
+            activity('attendance_operations')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'action' => 'process_incremental',
+                    'source' => 'employee_attendance_management',
+                    'processed_count' => $result['processed_count'] ?? 0,
+                    'error_count' => $result['error_count'] ?? 0,
+                    'execution_time' => $result['execution_time'] ?? null,
+                ])
+                ->log('Process attendance logs');
+
             session()->flash('success', $message);
-            
+
             // Refresh the data
             $this->render();
-            
+
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses data absensi: ' . $e->getMessage());
+            session()->flash('error', 'Gagal memproses data absensi: '.$e->getMessage());
         }
     }
 
@@ -578,19 +888,31 @@ class EmployeeAttendanceManagement extends Component
     public function reprocessAllAttendance()
     {
         try {
-            $attendanceService = new AttendanceService();
-            
+            $attendanceService = new AttendanceService;
+
             // Force reprocess all logs
             $result = $attendanceService->processLogs(null, null, null, true);
-            
-            $message = $result['message'] . " (Semua data telah diproses ulang)";
+
+            $message = $result['message'].' (Semua data telah diproses ulang)';
+
+            activity('attendance_operations')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'action' => 'reprocess_all',
+                    'source' => 'employee_attendance_management',
+                    'processed_count' => $result['processed_count'] ?? 0,
+                    'error_count' => $result['error_count'] ?? 0,
+                    'execution_time' => $result['execution_time'] ?? null,
+                ])
+                ->log('Reprocess all attendance logs');
+
             session()->flash('success', $message);
-            
+
             // Refresh the data
             $this->render();
-            
+
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses ulang data absensi: ' . $e->getMessage());
+            session()->flash('error', 'Gagal memproses ulang data absensi: '.$e->getMessage());
         }
     }
 
@@ -636,17 +958,50 @@ class EmployeeAttendanceManagement extends Component
     public function clearAllEmployeeAttendance()
     {
         try {
+            if (trim((string) $this->clearConfirmation) !== 'HAPUS ABSENSI') {
+                session()->flash('error', 'Konfirmasi tidak valid. Ketik tepat: HAPUS ABSENSI');
+
+                activity('attendance_operations')
+                    ->causedBy(Auth::user())
+                    ->withProperties([
+                        'action' => 'clear_all_attendance_blocked',
+                        'source' => 'employee_attendance_management',
+                        'input' => $this->clearConfirmation,
+                    ])
+                    ->log('Clear all employee attendance blocked by invalid confirmation');
+
+                return;
+            }
+
             $deletedCount = \App\Models\Employee\Attendance::count();
             \App\Models\Employee\Attendance::truncate();
-            
+
+            activity('attendance_operations')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'action' => 'clear_all_attendance',
+                    'source' => 'employee_attendance_management',
+                    'deleted_count' => $deletedCount,
+                ])
+                ->log('Clear all employee attendance records');
+
             session()->flash('success', "Berhasil menghapus {$deletedCount} data absensi karyawan.");
-            
+            $this->clearConfirmation = '';
+            $this->showClearSection = false;
+
             // Refresh the data
             $this->render();
-            
+
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal menghapus data absensi: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menghapus data absensi: '.$e->getMessage());
         }
     }
 
+    public function getLastAttendanceOperationProperty(): ?Activity
+    {
+        return Activity::query()
+            ->where('log_name', 'attendance_operations')
+            ->latest('created_at')
+            ->first();
+    }
 }
