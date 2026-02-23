@@ -55,6 +55,8 @@ class SevimaApiService
     public function getPegawai()
     {
         try {
+            $this->info('Fetching pegawai records...');
+
             $response = $this->getHttpClient()
                 ->get('/pegawai');
 
@@ -64,16 +66,28 @@ class SevimaApiService
                 // Handle JSON API format with data wrapper
                 if (isset($data['data']) && is_array($data['data'])) {
                     // Extract attributes from each record
-                    return array_map(function ($record) {
+                    $pegawai = array_map(function ($record) {
                         return $record['attributes'] ?? $record;
                     }, $data['data']);
+
+                    $this->info('Total pegawai records fetched: '.count($pegawai));
+
+                    return $pegawai;
                 }
 
                 // If data is already an array of records with attributes
                 if (is_array($data) && isset($data[0]['attributes'])) {
-                    return array_map(function ($record) {
+                    $pegawai = array_map(function ($record) {
                         return $record['attributes'] ?? $record;
                     }, $data);
+
+                    $this->info('Total pegawai records fetched: '.count($pegawai));
+
+                    return $pegawai;
+                }
+
+                if (is_array($data)) {
+                    $this->info('Total pegawai records fetched: '.count($data));
                 }
 
                 return $data;

@@ -45,8 +45,13 @@ class RunSdmSyncJob implements ShouldQueue
                 $this->handleEmployeeSync($run);
                 $this->handleReconcile($run, 'employee');
                 $run->refresh();
-                $this->handleDosenSync($run);
-                $this->handleReconcile($run, 'dosen');
+
+                try {
+                    $this->handleDosenSync($run);
+                    $this->handleReconcile($run, 'dosen');
+                } catch (\Throwable $e) {
+                    $this->recordNonFatalSyncError($run, 'dosen', $e);
+                }
             }
 
             $run->refresh();
@@ -113,7 +118,20 @@ class RunSdmSyncJob implements ShouldQueue
         $writer = new EmployeeSyncWriter($sevima);
 
         $raw = $sevima->getPegawai();
+        Log::info('Employee sync fetched records', [
+            'sync_run_id' => $run->id,
+            'fetched_count' => is_array($raw) ? count($raw) : 0,
+        ]);
+
         $result = $writer->sync(is_array($raw) ? $raw : []);
+
+        Log::info('Employee sync write summary', [
+            'sync_run_id' => $run->id,
+            'processed_count' => $result['processed_count'] ?? 0,
+            'inserted_count' => $result['inserted_count'] ?? 0,
+            'updated_count' => $result['updated_count'] ?? 0,
+            'failed_count' => $result['failed_count'] ?? 0,
+        ]);
 
         foreach ($result['errors'] as $error) {
             SyncRunItem::create([
@@ -169,6 +187,42 @@ class RunSdmSyncJob implements ShouldQueue
 
         $run->update([
             'error_summary' => $summary,
+        ]);
+    }
+
+    private function recordNonFatalSyncError(SyncRun $run, string $entityType, \Throwable $e): void
+    {
+        SyncRunItem::create([
+            'sync_run_id' => $run->id,
+            'entity_type' => $entityType,
+            'external_id' => null,
+            'level' => 'error',
+            'message' => $e->getMessage(),
+            'payload' => null,
+            'processed_at' => \now(),
+        ]);
+
+        $run->refresh();
+
+        $summary = is_array($run->error_summary) ? $run->error_summary : [];
+        $summary['error_count'] = (int) ($summary['error_count'] ?? 0) + 1;
+        $summary['stage_errors'] = array_values(array_filter([
+            ...((array) ($summary['stage_errors'] ?? [])),
+            [
+                'entity_type' => $entityType,
+                'message' => $e->getMessage(),
+            ],
+        ]));
+
+        $run->update([
+            'failed_count' => (int) ($run->failed_count ?? 0) + 1,
+            'error_summary' => $summary,
+        ]);
+
+        Log::warning('RunSdmSyncJob non-fatal stage error', [
+            'sync_run_id' => $run->id,
+            'entity_type' => $entityType,
+            'error' => $e->getMessage(),
         ]);
     }
 }

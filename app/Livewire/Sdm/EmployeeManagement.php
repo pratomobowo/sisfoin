@@ -7,10 +7,12 @@ use App\Models\Employee;
 use App\Models\SyncRun;
 use App\Models\User;
 use App\Services\SevimaApiService;
+use App\Services\Sync\SyncOrchestratorService;
 use App\Traits\SevimaDataMappingTrait;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -42,6 +44,20 @@ class EmployeeManagement extends Component
     public $syncMessage = '';
 
     public $syncResults = [];
+
+    public function mount(): void
+    {
+        if (session()->has('success')) {
+            $this->syncMessage = (string) session('success');
+            $this->syncProgress = 100;
+        } elseif (session()->has('warning')) {
+            $this->syncMessage = (string) session('warning');
+            $this->syncProgress = 100;
+        } elseif (session()->has('error')) {
+            $this->syncMessage = (string) session('error');
+            $this->syncProgress = 0;
+        }
+    }
 
     // Modal state
     public $showViewModal = false;
@@ -279,84 +295,30 @@ class EmployeeManagement extends Component
     public function syncSevima()
     {
         $this->isSyncing = true;
-        $this->syncProgress = 0;
-        $this->syncMessage = 'Memulai sinkronisasi data...';
+        $this->syncProgress = 5;
+        $this->syncMessage = 'Menjadwalkan sinkronisasi asinkron...';
         $this->syncResults = [];
 
         try {
-            $startTime = microtime(true);
-            $sevimaService = new SevimaApiService;
+            $run = app(SyncOrchestratorService::class)->start('all', auth()->id(), 'employee-management');
 
-            // Test connection first
-            $this->syncMessage = 'Menguji koneksi ke API Sevima...';
-            $this->syncProgress = 10;
-
-            if (! $sevimaService->testConnection()) {
-                throw new Exception('Gagal terhubung ke API Sevima. Periksa koneksi internet dan konfigurasi API.');
-            }
-
-            // Sync pegawai data
-            $this->syncMessage = 'Mengambil data pegawai dari Sevima...';
-            $this->syncProgress = 20;
-
-            $pegawaiResult = $this->syncPegawaiData($sevimaService);
-            $this->syncProgress = 60;
-
-            // Sync dosen data (with error handling)
-            $this->syncMessage = 'Mengambil data dosen dari Sevima...';
-            $this->syncProgress = 70;
-
-            try {
-                $dosenResult = $this->syncDosenData($sevimaService);
-            } catch (Exception $e) {
-                // If dosen sync fails, continue with pegawai only
-                $dosenResult = [
-                    'total_api' => 0,
-                    'total_processed' => 0,
-                    'total_inserted' => 0,
-                    'total_errors' => 1,
-                    'errors' => ['Dosen sync failed: '.$e->getMessage()],
-                    'duration' => 0,
-                ];
-                Log::warning('Dosen sync skipped due to error', ['error' => $e->getMessage()]);
-            }
-            $this->syncProgress = 90;
-
-            // Generate summary
-            $summary = $this->generateSyncSummary($pegawaiResult, $dosenResult);
-            $summary['duration'] = round(microtime(true) - $startTime, 2);
-
-            $this->logSyncResults($summary);
-            $this->syncResults = $summary;
-
-            $this->syncMessage = 'Sinkronisasi selesai!';
             $this->syncProgress = 100;
+            $this->syncMessage = 'Sinkronisasi berhasil dijadwalkan.';
 
-            // Show success message
-            $totalInserted = $summary['pegawai']['total_inserted'] + $summary['dosen']['total_inserted'];
-            $totalErrors = $summary['pegawai']['total_errors'] + $summary['dosen']['total_errors'];
-
-            if ($totalErrors > 0) {
-                session()->flash('warning', "Sinkronisasi selesai dengan {$totalInserted} data berhasil dan {$totalErrors} error. Lihat detail untuk informasi lebih lanjut.");
+            if ($run->status === 'failed') {
+                session()->flash('warning', 'Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
             } else {
-                session()->flash('success', "Sinkronisasi berhasil! {$totalInserted} data berhasil disinkronisasi.");
+                session()->flash('success', 'Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
             }
-
         } catch (\Throwable $e) {
-            // Tangkap semua jenis error termasuk Exception, Error, RuntimeException, dll
-            Log::error('Sevima sync failed', [
+            Log::error('Failed to schedule SDM sync', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
-            $this->syncMessage = 'Sinkronisasi gagal!';
             $this->syncProgress = 0;
-
-            // Tampilkan error yang user-friendly di popup
-            $errorMessage = $this->formatUserFriendlyError($e);
-            session()->flash('error', $errorMessage);
+            $this->syncMessage = 'Gagal menjadwalkan sinkronisasi.';
+            session()->flash('error', $this->formatUserFriendlyError($e));
         } finally {
             $this->isSyncing = false;
         }
@@ -834,11 +796,15 @@ class EmployeeManagement extends Component
     {
         $query = Employee::query();
 
-        $latestSyncRun = SyncRun::query()
-            ->whereIn('mode', ['employee', 'all'])
-            ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
-            ->latest('id')
-            ->first();
+        $latestSyncRun = null;
+
+        if (Schema::hasTable('sync_runs') && Schema::hasTable('sync_run_items')) {
+            $latestSyncRun = SyncRun::query()
+                ->whereIn('mode', ['employee', 'all'])
+                ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
+                ->latest('id')
+                ->first();
+        }
 
         $latestSyncRunItems = $latestSyncRun ? $latestSyncRun->items : collect();
 

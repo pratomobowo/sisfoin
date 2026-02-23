@@ -21,8 +21,13 @@ class SyncOrchestratorService
             ->where('idempotency_key', $idempotencyKey)
             ->first();
 
-        if ($existing) {
+        if ($existing && in_array($existing->status, ['pending', 'running'], true)) {
             return $existing;
+        }
+
+        $effectiveIdempotencyKey = $idempotencyKey;
+        if ($existing) {
+            $effectiveIdempotencyKey = $idempotencyKey.'-retry-'.\now()->format('YmdHisv');
         }
 
         if (! $this->lockService->acquire($normalizedMode, 30)) {
@@ -30,7 +35,7 @@ class SyncOrchestratorService
                 'mode' => $normalizedMode,
                 'status' => 'failed',
                 'triggered_by' => $triggeredBy,
-                'idempotency_key' => $idempotencyKey,
+                'idempotency_key' => $effectiveIdempotencyKey,
                 'error_summary' => ['message' => 'Sync already running for this mode'],
             ]);
         }
@@ -40,7 +45,7 @@ class SyncOrchestratorService
                 'mode' => $normalizedMode,
                 'status' => 'pending',
                 'triggered_by' => $triggeredBy,
-                'idempotency_key' => $idempotencyKey,
+                'idempotency_key' => $effectiveIdempotencyKey,
             ]);
 
             RunSdmSyncJob::dispatch($run->id);

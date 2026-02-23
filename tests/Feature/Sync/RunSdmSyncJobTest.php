@@ -7,6 +7,7 @@ use App\Models\SyncRun;
 use App\Models\User;
 use App\Services\SevimaApiService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Tests\Feature\Sync\Concerns\CreatesActivityLogTable;
 use Tests\TestCase;
 
@@ -112,6 +113,8 @@ class RunSdmSyncJobTest extends TestCase
 
     public function test_job_processes_employee_mode_and_persists_counters_and_errors(): void
     {
+        Log::spy();
+
         $fakeSevima = new class extends SevimaApiService
         {
             public function getPegawai()
@@ -163,6 +166,22 @@ class RunSdmSyncJobTest extends TestCase
             'entity_type' => 'employee',
             'level' => 'error',
         ]);
+
+        Log::shouldHaveReceived('info')
+            ->with('Employee sync fetched records', [
+                'sync_run_id' => $run->id,
+                'fetched_count' => 3,
+            ])->once();
+
+        Log::shouldHaveReceived('info')
+            ->with('Employee sync write summary', \Mockery::on(function (array $context): bool {
+                return ($context['sync_run_id'] ?? null) !== null
+                    && ($context['processed_count'] ?? null) === 2
+                    && ($context['inserted_count'] ?? null) === 2
+                    && ($context['updated_count'] ?? null) === 0
+                    && ($context['failed_count'] ?? null) === 1;
+            }))
+            ->once();
     }
 
     public function test_job_processes_all_mode_and_aggregates_employee_and_dosen_results(): void
@@ -426,5 +445,55 @@ class RunSdmSyncJobTest extends TestCase
         $this->assertSame('completed_with_warning', $run->status);
         $this->assertSame(1, $run->error_summary['error_count'] ?? null);
         $this->assertSame(0, $run->error_summary['reconcile']['conflict_count'] ?? null);
+    }
+
+    public function test_all_mode_continues_when_dosen_api_is_blocked_and_marks_warning(): void
+    {
+        $fakeSevima = new class extends SevimaApiService
+        {
+            public function getPegawai()
+            {
+                return [
+                    ['id_pegawai' => 'E401', 'nama' => 'Pegawai Satu', 'nip' => 'E-401', 'status_aktif' => 'Aktif'],
+                ];
+            }
+
+            public function getDosen()
+            {
+                throw new \Exception('Error fetching dosen data: Failed to fetch dosen data: 403');
+            }
+
+            public function mapPegawaiToEmployee(array $pegawaiData)
+            {
+                return [
+                    'id_pegawai' => $pegawaiData['id_pegawai'] ?? null,
+                    'nama' => $pegawaiData['nama'] ?? null,
+                    'nip' => $pegawaiData['nip'] ?? null,
+                    'status_aktif' => $pegawaiData['status_aktif'] ?? null,
+                    'last_sync_at' => now(),
+                ];
+            }
+        };
+
+        app()->instance(SevimaApiService::class, $fakeSevima);
+
+        $run = SyncRun::create([
+            'mode' => 'all',
+            'status' => 'pending',
+            'idempotency_key' => 'run-all-continue-on-dosen-403',
+        ]);
+
+        (new RunSdmSyncJob($run->id))->handle();
+
+        $run->refresh();
+
+        $this->assertSame('completed_with_warning', $run->status);
+        $this->assertSame(1, $run->processed_count);
+        $this->assertGreaterThanOrEqual(1, $run->error_summary['error_count'] ?? 0);
+        $this->assertDatabaseHas('sync_run_items', [
+            'sync_run_id' => $run->id,
+            'entity_type' => 'dosen',
+            'level' => 'error',
+        ]);
     }
 }

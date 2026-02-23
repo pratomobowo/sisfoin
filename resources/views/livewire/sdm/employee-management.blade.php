@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" wire:poll.15s>
     <x-page-header 
         title="Data Karyawan" 
         subtitle="Kelola data karyawan dan informasi kepegawaian"
@@ -36,6 +36,21 @@
         </div>
     @endif
 
+    @if(!$isSyncing && !empty($syncMessage))
+        <div class="rounded-xl p-4 border
+            @if(str_contains(strtolower($syncMessage), 'gagal')) bg-red-50 border-red-200 text-red-700
+            @elseif($syncProgress === 100) bg-green-50 border-green-200 text-green-700
+            @else bg-blue-50 border-blue-200 text-blue-700 @endif">
+            <div class="flex items-start gap-2">
+                <x-lucide-info class="w-4 h-4 mt-0.5" />
+                <div>
+                    <p class="text-sm font-medium">{{ $syncMessage }}</p>
+                    <p class="text-xs opacity-80 mt-1">Status detail ada di panel "Status Sinkronisasi Terakhir" di bawah dan akan refresh otomatis.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if($latestSyncRun)
         <div class="bg-white border border-gray-200 rounded-xl p-6">
             <div class="flex items-center justify-between mb-4">
@@ -48,6 +63,12 @@
                     @else bg-gray-100 text-gray-700 @endif">
                     {{ strtoupper(str_replace('_', ' ', $latestSyncRun->status)) }}
                 </span>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-4 text-xs">
+                <span class="px-2 py-1 rounded bg-green-100 text-green-700">COMPLETED = bersih</span>
+                <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800">COMPLETED WITH WARNING = ada warning/error</span>
+                <span class="px-2 py-1 rounded bg-red-100 text-red-700">FAILED = proses gagal</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm mb-4">
@@ -73,7 +94,7 @@
                     <p class="text-sm font-semibold text-red-900 mb-2">Detail Warning/Error</p>
                     <div class="space-y-1 max-h-40 overflow-y-auto">
                         @foreach($latestSyncRunItems as $item)
-                            <p class="text-sm text-red-700">• [{{ strtoupper($item->entity_type) }}] {{ $item->message }}</p>
+                            <p class="text-sm {{ $item->level === 'warning' ? 'text-amber-700' : 'text-red-700' }}">• [{{ strtoupper($item->entity_type) }}][{{ strtoupper($item->level) }}] {{ $item->message }}</p>
                         @endforeach
                     </div>
                 </div>

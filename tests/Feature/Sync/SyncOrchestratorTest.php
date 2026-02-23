@@ -82,4 +82,26 @@ class SyncOrchestratorTest extends TestCase
         $this->assertDatabaseCount('sync_runs', 1);
         Bus::assertDispatchedTimes(RunSdmSyncJob::class, 1);
     }
+
+    public function test_start_creates_new_run_when_previous_run_is_failed(): void
+    {
+        Bus::fake();
+
+        $user = User::create([
+            'name' => 'Sync Tester',
+            'email' => 'sync-tester-3@example.com',
+            'password' => 'password',
+        ]);
+
+        $service = app(SyncOrchestratorService::class);
+
+        $first = $service->start('employee', $user->id, 'manual-sync');
+        $first->update(['status' => 'failed']);
+
+        $second = $service->start('employee', $user->id, 'manual-sync');
+
+        $this->assertNotSame($first->id, $second->id);
+        $this->assertDatabaseCount('sync_runs', 2);
+        Bus::assertDispatchedTimes(RunSdmSyncJob::class, 2);
+    }
 }

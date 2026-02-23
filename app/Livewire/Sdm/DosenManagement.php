@@ -10,6 +10,7 @@ use App\Traits\SevimaDataMappingTrait;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -41,6 +42,20 @@ class DosenManagement extends Component
     public $syncMessage = '';
 
     public $syncResults = [];
+
+    public function mount(): void
+    {
+        if (session()->has('success')) {
+            $this->syncMessage = (string) session('success');
+            $this->syncProgress = 100;
+        } elseif (session()->has('warning')) {
+            $this->syncMessage = (string) session('warning');
+            $this->syncProgress = 100;
+        } elseif (session()->has('error')) {
+            $this->syncMessage = (string) session('error');
+            $this->syncProgress = 0;
+        }
+    }
 
     // Modal state
     public $showViewModal = false;
@@ -322,11 +337,15 @@ class DosenManagement extends Component
     {
         $query = Dosen::query();
 
-        $latestSyncRun = SyncRun::query()
-            ->whereIn('mode', ['dosen', 'all'])
-            ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
-            ->latest('id')
-            ->first();
+        $latestSyncRun = null;
+
+        if (Schema::hasTable('sync_runs') && Schema::hasTable('sync_run_items')) {
+            $latestSyncRun = SyncRun::query()
+                ->whereIn('mode', ['dosen', 'all'])
+                ->with(['items' => fn ($q) => $q->latest('id')->limit(20)])
+                ->latest('id')
+                ->first();
+        }
 
         $latestSyncRunItems = $latestSyncRun ? $latestSyncRun->items : collect();
 
