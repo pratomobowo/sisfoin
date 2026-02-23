@@ -3,28 +3,31 @@
 namespace App\Livewire\Sdm;
 
 use App\Models\Employee;
+use App\Models\EmployeeShiftAssignment;
 use App\Models\User;
 use App\Models\WorkShift;
-use App\Models\EmployeeShiftAssignment;
-use Livewire\Component;
-use Livewire\Attributes\Layout;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 #[Layout('layouts.app')]
 class UnitShiftCalendar extends Component
 {
     public $unitName;
+
     public $unitSlug;
+
     public $year;
+
     public $month;
-    
+
     // Quick edit state
     public $selectedCell = null; // Format: "userId_date"
-    public $quickEditShiftId = null;
-    public $quickEditEndDate = null;
-    
 
+    public $quickEditShiftId = null;
+
+    public $quickEditEndDate = null;
 
     public function mount($unit)
     {
@@ -46,13 +49,13 @@ class UnitShiftCalendar extends Component
             ->where('status_aktif', 'Aktif')
             ->orderBy('nama')
             ->get();
-            
+
         $result = [];
         foreach ($employees as $emp) {
             $user = User::where('nip', $emp->nip)
                 ->orWhere('nip', rtrim($emp->nip, '_'))
                 ->first();
-                
+
             if ($user) {
                 $result[] = (object) [
                     'id' => $user->id,
@@ -64,7 +67,7 @@ class UnitShiftCalendar extends Component
                 ];
             }
         }
-        
+
         return collect($result);
     }
 
@@ -72,30 +75,30 @@ class UnitShiftCalendar extends Component
     {
         $startDate = Carbon::create($this->year, $this->month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
-        
+
         return collect(CarbonPeriod::create($startDate, $endDate))
-            ->map(fn($date) => $date->copy());
+            ->map(fn ($date) => $date->copy());
     }
 
     public function getAssignmentsCacheProperty()
     {
         $userIds = $this->employees->pluck('id');
-        
+
         if ($userIds->isEmpty()) {
             return collect();
         }
-        
+
         $startDate = Carbon::create($this->year, $this->month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
-        
+
         return EmployeeShiftAssignment::with('workShift')
             ->whereIn('user_id', $userIds)
-            ->where(function($q) use ($startDate, $endDate) {
+            ->where(function ($q) use ($startDate, $endDate) {
                 $q->where('start_date', '<=', $endDate)
-                  ->where(function($q2) use ($startDate) {
-                      $q2->whereNull('end_date')
-                         ->orWhere('end_date', '>=', $startDate);
-                  });
+                    ->where(function ($q2) use ($startDate) {
+                        $q2->whereNull('end_date')
+                            ->orWhere('end_date', '>=', $startDate);
+                    });
             })
             ->get();
     }
@@ -103,13 +106,13 @@ class UnitShiftCalendar extends Component
     public function getEmployeeShiftForDate($userId, $date)
     {
         $carbonDate = $date instanceof Carbon ? $date : Carbon::parse($date);
-        
+
         $assignment = $this->assignmentsCache
             ->where('user_id', $userId)
-            ->first(function($a) use ($carbonDate) {
+            ->first(function ($a) use ($carbonDate) {
                 return $a->isActiveOn($carbonDate);
             });
-            
+
         return $assignment?->workShift;
     }
 
@@ -137,13 +140,14 @@ class UnitShiftCalendar extends Component
 
     public function selectWeek()
     {
-        if (!$this->selectedCell) return;
-        
+        if (! $this->selectedCell) {
+            return;
+        }
+
         [$userId, $dateStr] = explode('_', $this->selectedCell);
         $startDate = Carbon::parse($dateStr);
         $this->quickEditEndDate = $startDate->copy()->addDays(6)->toDateString();
     }
-
 
     public function closeQuickEdit()
     {
@@ -154,9 +158,20 @@ class UnitShiftCalendar extends Component
 
     public function saveQuickEdit()
     {
-        if (!$this->selectedCell) return;
-        
+        if (! $this->selectedCell) {
+            return;
+        }
+
         [$userId, $startDate] = explode('_', $this->selectedCell);
+        $userId = (int) $userId;
+
+        if (! $this->isUserInCurrentUnit($userId)) {
+            session()->flash('error', 'Akses ditolak: user bukan milik unit ini.');
+            $this->closeQuickEdit();
+
+            return;
+        }
+
         $endDate = $this->quickEditEndDate ?: $startDate;
 
         // Validation: End date cannot be before start date
@@ -166,13 +181,12 @@ class UnitShiftCalendar extends Component
 
         // Delete existing assignments that overlap with this range for this user
         EmployeeShiftAssignment::where('user_id', $userId)
-            ->where(function($q) use ($startDate, $endDate) {
-                $q->whereBetween('start_date', [$startDate, $endDate])
-                  ->orWhereBetween('end_date', [$startDate, $endDate])
-                  ->orWhere(function($q2) use ($startDate, $endDate) {
-                      $q2->where('start_date', '<=', $startDate)
-                        ->where('end_date', '>=', $endDate);
-                  });
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereDate('start_date', '<=', $endDate)
+                    ->where(function ($q2) use ($startDate) {
+                        $q2->whereNull('end_date')
+                            ->orWhereDate('end_date', '>=', $startDate);
+                    });
             })
             ->delete();
 
@@ -191,7 +205,25 @@ class UnitShiftCalendar extends Component
         session()->flash('success', 'Shift berhasil di-update!');
     }
 
+    private function isUserInCurrentUnit(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
 
+        $user = User::find($userId);
+        if (! $user || ! $user->nip) {
+            return false;
+        }
+
+        return Employee::query()
+            ->where('satuan_kerja', $this->unitName)
+            ->where(function ($query) use ($user) {
+                $query->where('nip', $user->nip)
+                    ->orWhereRaw("TRIM(TRAILING '_' FROM nip) = ?", [$user->nip]);
+            })
+            ->exists();
+    }
 
     public function render()
     {

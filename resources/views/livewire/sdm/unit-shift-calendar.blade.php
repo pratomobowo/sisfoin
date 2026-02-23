@@ -164,6 +164,12 @@
                         $employee = $this->employees->firstWhere('id', $userId);
                         $date = \Carbon\Carbon::parse($dateStr);
                     @endphp
+
+                    @if(!$employee)
+                        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                            User tidak ditemukan pada unit ini. Silakan tutup panel dan pilih sel yang valid.
+                        </div>
+                    @else
                     
                     <div class="flex items-center gap-3 mb-6 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
                         <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -223,6 +229,7 @@
                             Simpan
                         </button>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
