@@ -4,7 +4,6 @@ namespace App\Livewire\Superadmin;
 
 use App\Models\AttendanceLog;
 use App\Models\MesinFinger;
-use App\Services\AttendanceService;
 use App\Services\FingerprintService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -70,12 +69,12 @@ class AttendanceLogs extends Component
 
         // Filter berdasarkan PIN atau Nama
         if ($this->pin) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('pin', 'like', '%'.$this->pin.'%')
-                  ->orWhere('name', 'like', '%'.$this->pin.'%')
-                  ->orWhereHas('user', function($qu) {
-                      $qu->where('name', 'like', '%'.$this->pin.'%');
-                  });
+                    ->orWhere('name', 'like', '%'.$this->pin.'%')
+                    ->orWhereHas('user', function ($qu) {
+                        $qu->where('name', 'like', '%'.$this->pin.'%');
+                    });
             });
         }
 
@@ -109,7 +108,7 @@ class AttendanceLogs extends Component
             $this->selectedAttendanceLog->delete();
             $this->showDeleteModal = false;
             $this->selectedAttendanceLog = null;
-            
+
             session()->flash('success', 'Data absensi berhasil dihapus');
         }
     }
@@ -123,7 +122,7 @@ class AttendanceLogs extends Component
     {
         AttendanceLog::truncate();
         $this->showClearAllModal = false;
-        
+
         session()->flash('success', 'Semua data absensi berhasil dihapus');
     }
 
@@ -179,11 +178,13 @@ class AttendanceLogs extends Component
         } elseif ($this->pullOption === 'range') {
             if (empty($this->pullDateFrom) || empty($this->pullDateTo)) {
                 session()->flash('error', 'Tanggal awal dan tanggal akhir harus diisi');
+
                 return;
             }
 
             if (strtotime($this->pullDateFrom) > strtotime($this->pullDateTo)) {
                 session()->flash('error', 'Tanggal awal tidak boleh lebih besar dari tanggal akhir');
+
                 return;
             }
         }
@@ -193,45 +194,67 @@ class AttendanceLogs extends Component
         $this->pullProgressMessage = "Tarik data dari ADMS API ({$dateFrom} s/d {$dateTo})...";
 
         try {
-            $fingerprintService = new FingerprintService();
-            
+            $fingerprintService = new FingerprintService;
+
             // Get attendance logs from ADMS API
             $result = $fingerprintService->getAttendanceLogs($dateFrom, $dateTo);
-            
-            if (!$result['success']) {
-                session()->flash('error', 'Gagal menarik data: ' . $result['message']);
+
+            if (! $result['success']) {
+                $message = 'Gagal menarik data: '.$result['message'];
+                session()->flash('error', $message);
+                $this->dispatch('toast-show', message: $message, type: 'error');
+
                 return;
             }
 
             if (empty($result['data'])) {
-                session()->flash('warning', 'Tidak ada data ditemukan untuk periode tersebut');
+                $message = 'Tidak ada data ditemukan untuk periode tersebut';
+                session()->flash('warning', $message);
+                $this->dispatch('toast-show', message: $message, type: 'warning');
                 $this->showPullDataModal = false;
                 $this->resetPullDataForm();
+
                 return;
             }
 
             // Save to database with auto-processing option
             $saveResult = $fingerprintService->saveAttendanceLogsToDatabase($result['data'], $this->autoProcessAttendances);
-            
+
             if ($saveResult['success']) {
                 $message = "Berhasil menarik data. Disimpan: {$saveResult['saved_count']}, Diperbarui: {$saveResult['updated_count']}.";
                 if (isset($saveResult['processed_count']) && $saveResult['processed_count'] > 0) {
                     $message .= " Data absensi karyawan diproses: {$saveResult['processed_count']}.";
                 }
-                
+
                 session()->flash('success', $message);
+                $this->dispatch('toast-show', message: $message, type: 'success');
                 $this->showPullDataModal = false;
                 $this->resetPullDataForm();
             } else {
-                session()->flash('error', 'Gagal menyimpan data: ' . $saveResult['message']);
+                $message = 'Gagal menyimpan data: '.$saveResult['message'];
+                session()->flash('error', $message);
+                $this->dispatch('toast-show', message: $message, type: 'error');
             }
-            
+
         } catch (\Exception $e) {
             \Log::error('Error pulling data from ADMS', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+
+            $errorText = strtolower($e->getMessage());
+            $isConnectivityIssue = str_contains($errorText, 'connection')
+                || str_contains($errorText, 'timed out')
+                || str_contains($errorText, 'could not resolve host')
+                || str_contains($errorText, 'cURL error')
+                || str_contains($errorText, 'network');
+
+            $message = $isConnectivityIssue
+                ? 'Gagal terhubung ke server ADMS. Periksa koneksi jaringan atau konfigurasi ADMS.'
+                : 'Terjadi kesalahan: '.$e->getMessage();
+
+            session()->flash('error', $message);
+            $this->dispatch('toast-show', message: $message, type: 'error');
         } finally {
             $this->isPullingData = false;
             $this->pullProgressMessage = '';
@@ -252,8 +275,8 @@ class AttendanceLogs extends Component
 
         foreach ($data as $item) {
             $datetime = isset($item['datetime']) ? $item['datetime'] : (isset($item['timestamp']) ? $item['timestamp'] : null);
-            
-            if (!$datetime) {
+
+            if (! $datetime) {
                 continue;
             }
 
@@ -271,7 +294,7 @@ class AttendanceLogs extends Component
                         $filteredData[] = $item;
                     }
                     break;
-                    
+
                 case 'range':
                     if ($itemDate >= $this->pullDateFrom && $itemDate <= $this->pullDateTo) {
                         $filteredData[] = $item;
@@ -329,34 +352,35 @@ class AttendanceLogs extends Component
         try {
             $this->showPullDataModal = true;
             $mesinCount = MesinFinger::count();
-            
+
             \Log::info('Pull data modal opened', [
                 'showPullDataModal' => $this->showPullDataModal,
                 'mesinFingers_count' => $mesinCount,
                 'selectedMachines' => $this->selectedMachines,
                 'pullOption' => $this->pullOption,
             ]);
-            
+
             // Ensure we have machines to select from
             if ($mesinCount === 0) {
                 session()->flash('error', 'Tidak ada mesin fingerprint yang tersedia. Silakan tambahkan mesin fingerprint terlebih dahulu.');
                 $this->showPullDataModal = false;
+
                 return;
             }
-            
+
             // Initialize with default values if empty
             if (empty($this->selectedMachines)) {
                 $this->pullOption = 'all';
                 $this->pullDateFrom = '';
                 $this->pullDateTo = '';
             }
-            
+
         } catch (\Exception $e) {
             \Log::error('Error opening pull data modal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            session()->flash('error', 'Terjadi kesalahan saat membuka modal: ' . $e->getMessage());
+            session()->flash('error', 'Terjadi kesalahan saat membuka modal: '.$e->getMessage());
         }
     }
 
@@ -365,7 +389,7 @@ class AttendanceLogs extends Component
      */
     public function togglePullDataModal()
     {
-        $this->showPullDataModal = !$this->showPullDataModal;
+        $this->showPullDataModal = ! $this->showPullDataModal;
         if ($this->showPullDataModal) {
             $this->openPullDataModal();
         }
