@@ -33,6 +33,8 @@ class SlipGajiDetail extends Component
 
     public bool $confirmingBulkEmailSend = false;
 
+    public bool $isBulkEmailSending = false;
+
     public int $page = 1;
 
     public bool $filterNoEmail = false;
@@ -124,6 +126,14 @@ class SlipGajiDetail extends Component
 
     public function sendBulkEmail()
     {
+        if ($this->isBulkEmailSending) {
+            $this->toastWarning('Pengiriman email masal sedang diproses. Mohon tunggu hingga selesai.');
+
+            return;
+        }
+
+        $this->isBulkEmailSending = true;
+
         try {
             // Kirim ke semua karyawan tanpa perlu seleksi
             $slipGajiEmailService = app(SlipGajiEmailService::class);
@@ -146,7 +156,11 @@ class SlipGajiDetail extends Component
                     ->log('Kirim bulk email slip gaji ke semua karyawan untuk periode: '.$this->header->periode);
 
             } else {
-                $this->toastError($result['message']);
+                if (($result['level'] ?? 'error') === 'warning') {
+                    $this->toastWarning($result['message']);
+                } else {
+                    $this->toastError($result['message']);
+                }
             }
 
         } catch (\Exception $e) {
@@ -157,6 +171,8 @@ class SlipGajiDetail extends Component
             ]);
 
             $this->toastError('Terjadi kesalahan saat mengirim email: '.$e->getMessage());
+        } finally {
+            $this->isBulkEmailSending = false;
         }
     }
 
@@ -209,7 +225,11 @@ class SlipGajiDetail extends Component
                     ->log('Kirim single email slip gaji untuk detail ID: '.$detailId);
 
             } else {
-                $this->toastError($result['message']);
+                if (($result['level'] ?? 'error') === 'warning') {
+                    $this->toastWarning($result['message']);
+                } else {
+                    $this->toastError($result['message']);
+                }
             }
 
         } catch (\Exception $e) {
@@ -279,10 +299,13 @@ class SlipGajiDetail extends Component
 
         $result = $slipGajiService->getSlipGajiDetails($this->header->id, $filters);
 
+        $emailStats = app(SlipGajiEmailService::class)->getEmailStats($this->header->id);
+
         return view('livewire.sdm.slip-gaji-detail', [
             'header' => $result['header'],
             'details' => $result['details'],
             'filters' => $result['filters'],
+            'emailStats' => $emailStats,
         ]);
     }
 }

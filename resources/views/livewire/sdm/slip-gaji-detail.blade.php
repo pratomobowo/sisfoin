@@ -17,16 +17,39 @@
 
                 <div class="h-8 w-px bg-gray-200 mx-1 hidden sm:block"></div>
 
-                <!-- Queue Management -->
-                <livewire:sdm.queue-management />
-                
                 <button wire:click="confirmBulkEmailSend" 
+                        wire:loading.attr="disabled"
+                        @disabled($isBulkEmailSending)
                         class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg wire:loading.remove wire:target="sendBulkEmailWithConfirmation" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
-                    <span>Kirim Email Masal</span>
+                    <svg wire:loading wire:target="sendBulkEmailWithConfirmation" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="sendBulkEmailWithConfirmation">Kirim Email Masal</span>
+                    <span wire:loading wire:target="sendBulkEmailWithConfirmation">Menjadwalkan...</span>
                 </button>
+            </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-gray-100 pt-4">
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</p>
+                <p class="text-lg font-semibold text-slate-900">{{ number_format($emailStats['total_emails'] ?? 0) }}</p>
+            </div>
+            <div class="rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                <p class="text-xs font-semibold text-green-700 uppercase tracking-wide">Terkirim</p>
+                <p class="text-lg font-semibold text-green-800">{{ number_format($emailStats['sent_emails'] ?? 0) }}</p>
+            </div>
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Pending/Proses</p>
+                <p class="text-lg font-semibold text-amber-800">{{ number_format(($emailStats['pending_emails'] ?? 0) + ($emailStats['processing_emails'] ?? 0)) }}</p>
+            </div>
+            <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                <p class="text-xs font-semibold text-red-700 uppercase tracking-wide">Gagal</p>
+                <p class="text-lg font-semibold text-red-800">{{ number_format($emailStats['failed_emails'] ?? 0) }}</p>
             </div>
         </div>
     </div>
@@ -85,6 +108,10 @@
                     </svg>
                 </button>
             </div>
+        </div>
+
+        <div class="mt-4 border-t border-gray-200 pt-4">
+            <livewire:sdm.queue-management />
         </div>
     </div>
 
@@ -179,7 +206,8 @@
                                     </a>
                                     <!-- Preview PDF -->
                                     <button type="button" 
-                                            onclick="previewPdf('{{ route('sdm.slip-gaji.preview-pdf-slip', $detail->id) }}')"
+                                            data-url="{{ route('sdm.slip-gaji.preview-pdf-slip', $detail->id) }}"
+                                            onclick="previewPdf(this.dataset.url, event)"
                                             title="Preview Slip Gaji" aria-label="Preview Slip Gaji"
                                             class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-blue-600">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -458,10 +486,10 @@
     </div>
 
     <script>
-        function previewPdf(url) {
-            event.preventDefault();
-            event.stopPropagation();
-            
+        function previewPdf(url, e) {
+            e.preventDefault();
+            e.stopPropagation();
+
             const modal = document.getElementById('pdfModal');
             const iframe = document.getElementById('pdfFrame');
             

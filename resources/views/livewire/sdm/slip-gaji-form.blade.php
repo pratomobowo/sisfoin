@@ -20,6 +20,14 @@
         <!-- Modal Body -->
         <form wire:submit="save" class="space-y-4 flex-1 overflow-y-auto">
             <div class="p-4">
+                <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Fitur form manual sementara dinonaktifkan untuk menjaga konsistensi data. Silakan gunakan menu <span class="font-semibold">Upload Data Slip Gaji</span> di header halaman.
+                </div>
+
+                @error('legacy')
+                    <p class="mb-4 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
                 <div class="space-y-4">
                     <!-- Periode -->
                     <div>

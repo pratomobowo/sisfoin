@@ -67,16 +67,25 @@
     </div>
 
     <!-- Info -->
-    <div class="bg-slate-800 rounded-xl p-5 text-white">
-        <h4 class="font-bold mb-3 flex items-center">
-            <x-lucide-info class="w-5 h-5 mr-2 text-blue-400" />
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h4 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <x-lucide-info class="w-5 h-5 mr-2 text-blue-500" />
             Cara Penggunaan
         </h4>
-        <div class="text-sm text-slate-300">
-            <ol class="list-decimal list-inside space-y-1">
-                <li>Klik unit kerja yang ingin dikelola</li>
-                <li>Di halaman detail, tambahkan assignment shift untuk setiap pegawai</li>
-                <li>Set tanggal mulai dan selesai untuk setiap assignment</li>
+        <div class="text-sm text-gray-600">
+            <ol class="space-y-2">
+                <li class="flex items-start gap-2">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold mt-0.5">1</span>
+                    <span>Klik unit kerja yang ingin dikelola.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold mt-0.5">2</span>
+                    <span>Di halaman detail, tambahkan assignment shift untuk setiap pegawai.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold mt-0.5">3</span>
+                    <span>Set tanggal mulai dan selesai untuk setiap assignment.</span>
+                </li>
             </ol>
         </div>
     </div>

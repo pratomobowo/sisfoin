@@ -5,6 +5,7 @@ namespace App\Livewire\Sdm;
 use App\Exports\SlipGajiDataExport;
 use App\Exports\SlipGajiTemplateExport;
 use App\Livewire\Concerns\InteractsWithToast;
+use App\Models\EmailLog;
 use App\Models\SlipGajiHeader;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,12 +47,12 @@ class SlipGajiManagement extends Component
         $this->resetPage();
     }
 
-    public function updatingPeriode()
+    public function updatingFilterPeriode()
     {
         $this->resetPage();
     }
 
-    public function updatingTahun()
+    public function updatingFilterTahun()
     {
         $this->resetPage();
     }
@@ -89,6 +90,19 @@ class SlipGajiManagement extends Component
             return;
         }
 
+        $hasPendingEmail = EmailLog::query()
+            ->whereHas('slipGajiDetail', function ($query) {
+                $query->where('header_id', $this->selectedHeader->id);
+            })
+            ->whereIn('status', ['pending', 'processing'])
+            ->exists();
+
+        if ($hasPendingEmail) {
+            $this->toastWarning('Data tidak dapat dihapus karena masih ada pengiriman email yang pending/processing. Tunggu sampai selesai atau batalkan proses email terlebih dahulu.');
+
+            return;
+        }
+
         try {
             DB::beginTransaction();
 
@@ -101,18 +115,16 @@ class SlipGajiManagement extends Component
             DB::commit();
 
             $this->closeDeleteModal();
+            $this->toastSuccess('Data slip gaji berhasil dihapus!');
 
-            // Redirect to show toast notification
-            return redirect()->route('sdm.slip-gaji.index')
-                ->with('success', 'Data slip gaji berhasil dihapus!');
+            return;
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Slip Gaji delete error: '.$e->getMessage());
+            $this->toastError('Gagal menghapus data slip gaji: '.$e->getMessage());
 
-            // Redirect with error message
-            return redirect()->route('sdm.slip-gaji.index')
-                ->with('error', 'Gagal menghapus data slip gaji: '.$e->getMessage());
+            return;
         }
     }
 
@@ -142,7 +154,7 @@ class SlipGajiManagement extends Component
     public function getHeadersProperty()
     {
         try {
-            $query = SlipGajiHeader::with(['uploader', 'details'])
+            $query = SlipGajiHeader::with(['uploader'])
                 ->withCount('details');
 
             // Search functionality

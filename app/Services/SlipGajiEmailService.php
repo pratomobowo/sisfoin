@@ -21,13 +21,13 @@ class SlipGajiEmailService
             DB::beginTransaction();
 
             $header = SlipGajiHeader::findOrFail($headerId);
-            
+
             // Get details to send email
             $query = SlipGajiDetail::with(['employee', 'dosen'])
                 ->where('header_id', $headerId);
 
             // If specific details selected, filter by them
-            if (!empty($selectedDetails)) {
+            if (! empty($selectedDetails)) {
                 $query->whereIn('id', $selectedDetails);
             }
 
@@ -36,12 +36,31 @@ class SlipGajiEmailService
             $validRecipients = [];
             $invalidRecipients = [];
             $emailLogs = [];
+            $alreadyQueuedRecipients = [];
+
+            $detailIds = $details->pluck('id')->all();
+            $activeQueuedLogByDetail = EmailLog::query()
+                ->whereIn('slip_gaji_detail_id', $detailIds)
+                ->whereIn('status', ['pending', 'processing'])
+                ->select('slip_gaji_detail_id')
+                ->distinct()
+                ->pluck('slip_gaji_detail_id')
+                ->flip();
 
             // Process each detail to validate recipients
             foreach ($details as $detail) {
                 $recipientEmail = $this->getRecipientEmail($detail);
-                
+
                 if ($recipientEmail) {
+                    if (isset($activeQueuedLogByDetail[$detail->id])) {
+                        $alreadyQueuedRecipients[] = [
+                            'detail' => $detail,
+                            'reason' => 'Email sudah terjadwal (pending/processing)',
+                        ];
+
+                        continue;
+                    }
+
                     $validRecipients[] = [
                         'detail' => $detail,
                         'email' => $recipientEmail,
@@ -60,8 +79,8 @@ class SlipGajiEmailService
                 $emailLog = EmailLog::create([
                     'from_email' => config('mail.from.address'),
                     'to_email' => $recipient['email'],
-                    'subject' => 'Slip Gaji ' . $recipient['name'] . ' - Periode ' . $header->periode,
-                    'message' => 'Slip gaji untuk periode ' . $header->periode,
+                    'subject' => 'Slip Gaji '.$recipient['name'].' - Periode '.$header->periode,
+                    'message' => 'Slip gaji untuk periode '.$header->periode,
                     'status' => 'pending',
                     'error_message' => null,
                     'sent_at' => null,
@@ -87,9 +106,13 @@ class SlipGajiEmailService
 
             return [
                 'success' => true,
-                'message' => 'Email slip gaji berhasil dijadwalkan untuk dikirim',
+                'level' => count($validRecipients) > 0 ? 'success' : 'warning',
+                'message' => count($validRecipients) > 0
+                    ? 'Email slip gaji berhasil dijadwalkan untuk dikirim. Berhasil dijadwalkan: '.count($validRecipients).', sudah terjadwal sebelumnya: '.count($alreadyQueuedRecipients).', tanpa email valid: '.count($invalidRecipients).'.'
+                    : 'Tidak ada email baru yang dijadwalkan. Sudah terjadwal sebelumnya: '.count($alreadyQueuedRecipients).', tanpa email valid: '.count($invalidRecipients).'.',
                 'valid_recipients' => count($validRecipients),
                 'invalid_recipients' => count($invalidRecipients),
+                'already_queued_recipients' => count($alreadyQueuedRecipients),
                 'email_logs' => $emailLogs,
             ];
 
@@ -104,7 +127,7 @@ class SlipGajiEmailService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengirim email slip gaji: ' . $e->getMessage(),
+                'message' => 'Gagal mengirim email slip gaji: '.$e->getMessage(),
             ];
         }
     }
@@ -121,19 +144,35 @@ class SlipGajiEmailService
                 ->findOrFail($detailId);
 
             $recipientEmail = $this->getRecipientEmail($detail);
-            
-            if (!$recipientEmail) {
+
+            if (! $recipientEmail) {
                 throw new \Exception('No valid email found for recipient');
             }
 
             $employeeName = $this->getEmployeeName($detail);
 
+            $existingQueueLog = EmailLog::query()
+                ->where('slip_gaji_detail_id', $detail->id)
+                ->whereIn('status', ['pending', 'processing'])
+                ->latest('id')
+                ->first();
+
+            if ($existingQueueLog) {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'level' => 'warning',
+                    'message' => 'Email untuk pegawai ini sudah terjadwal (pending/processing). Tunggu proses selesai terlebih dahulu.',
+                ];
+            }
+
             // Create email log
             $emailLog = EmailLog::create([
                 'from_email' => config('mail.from.address'),
                 'to_email' => $recipientEmail,
-                'subject' => 'Slip Gaji ' . $employeeName . ' - Periode ' . $detail->header->periode,
-                'message' => 'Slip gaji untuk periode ' . $detail->header->periode,
+                'subject' => 'Slip Gaji '.$employeeName.' - Periode '.$detail->header->periode,
+                'message' => 'Slip gaji untuk periode '.$detail->header->periode,
                 'status' => 'pending',
                 'error_message' => null,
                 'sent_at' => null,
@@ -155,6 +194,7 @@ class SlipGajiEmailService
 
             return [
                 'success' => true,
+                'level' => 'success',
                 'message' => 'Email slip gaji berhasil dijadwalkan untuk dikirim',
                 'email_log' => $emailLog,
             ];
@@ -170,7 +210,8 @@ class SlipGajiEmailService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengirim email slip gaji: ' . $e->getMessage(),
+                'level' => 'error',
+                'message' => 'Gagal mengirim email slip gaji: '.$e->getMessage(),
             ];
         }
     }
@@ -186,8 +227,18 @@ class SlipGajiEmailService
             // Load requirement
             $emailLog->load('slipGajiDetail');
 
-            if (!$emailLog->slip_gaji_detail_id) {
+            if (! $emailLog->slip_gaji_detail_id) {
                 throw new \Exception('Email log is not related to a slip gaji detail');
+            }
+
+            if ($emailLog->status !== 'failed') {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'level' => 'warning',
+                    'message' => 'Hanya email dengan status gagal yang dapat dijadwalkan ulang.',
+                ];
             }
 
             // Reset status to pending
@@ -206,6 +257,7 @@ class SlipGajiEmailService
 
             return [
                 'success' => true,
+                'level' => 'success',
                 'message' => 'Email slip gaji berhasil dijadwalkan ulang',
                 'email_log' => $emailLog,
             ];
@@ -219,7 +271,8 @@ class SlipGajiEmailService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengulangi pengiriman email: ' . $e->getMessage(),
+                'level' => 'error',
+                'message' => 'Gagal mengulangi pengiriman email: '.$e->getMessage(),
             ];
         }
     }
@@ -233,14 +286,14 @@ class SlipGajiEmailService
             $stats = EmailLog::whereHas('slipGajiDetail', function ($query) use ($headerId) {
                 $query->where('header_id', $headerId);
             })
-            ->selectRaw('
+                ->selectRaw('
                 COUNT(*) as total_emails,
                 SUM(CASE WHEN status = "sent" THEN 1 ELSE 0 END) as sent_emails,
                 SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed_emails,
                 SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_emails,
                 SUM(CASE WHEN status = "processing" THEN 1 ELSE 0 END) as processing_emails
             ')
-            ->first();
+                ->first();
 
             return [
                 'total_emails' => $stats->total_emails ?? 0,
@@ -275,23 +328,23 @@ class SlipGajiEmailService
             $query = EmailLog::whereHas('slipGajiDetail', function ($query) use ($headerId) {
                 $query->where('header_id', $headerId);
             })
-            ->with(['slipGajiDetail.employee', 'slipGajiDetail.dosen']);
+                ->with(['slipGajiDetail.employee', 'slipGajiDetail.dosen']);
 
             // Filter by status
-            if (!empty($filters['status'])) {
+            if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
 
             // Filter by search
-            if (!empty($filters['search'])) {
+            if (! empty($filters['search'])) {
                 $query->where(function ($q) use ($filters) {
-                    $q->where('to_email', 'like', '%' . $filters['search'] . '%')
-                        ->orWhere('subject', 'like', '%' . $filters['search'] . '%')
+                    $q->where('to_email', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('subject', 'like', '%'.$filters['search'].'%')
                         ->orWhereHas('slipGajiDetail.employee', function ($subQ) use ($filters) {
-                            $subQ->where('nama', 'like', '%' . $filters['search'] . '%');
+                            $subQ->where('nama', 'like', '%'.$filters['search'].'%');
                         })
                         ->orWhereHas('slipGajiDetail.dosen', function ($subQ) use ($filters) {
-                            $subQ->where('nama', 'like', '%' . $filters['search'] . '%');
+                            $subQ->where('nama', 'like', '%'.$filters['search'].'%');
                         });
                 });
             }
@@ -330,9 +383,9 @@ class SlipGajiEmailService
             $failedEmailLogs = EmailLog::whereHas('slipGajiDetail', function ($query) use ($headerId) {
                 $query->where('header_id', $headerId);
             })
-            ->where('status', 'failed')
-            ->with(['slipGajiDetail'])
-            ->get();
+                ->where('status', 'failed')
+                ->with(['slipGajiDetail'])
+                ->get();
 
             $retryCount = 0;
 
@@ -372,7 +425,7 @@ class SlipGajiEmailService
 
             return [
                 'success' => false,
-                'message' => 'Gagal mengulangi pengiriman email: ' . $e->getMessage(),
+                'message' => 'Gagal mengulangi pengiriman email: '.$e->getMessage(),
             ];
         }
     }
@@ -400,15 +453,15 @@ class SlipGajiEmailService
     private function getEmployeeName(SlipGajiDetail $detail): string
     {
         if ($detail->employee) {
-            return trim(($detail->employee->gelar_depan ? $detail->employee->gelar_depan . ' ' : '') . 
-                   $detail->employee->nama_lengkap . 
-                   ($detail->employee->gelar_belakang ? ', ' . $detail->employee->gelar_belakang : ''));
+            return trim(($detail->employee->gelar_depan ? $detail->employee->gelar_depan.' ' : '').
+                   $detail->employee->nama_lengkap.
+                   ($detail->employee->gelar_belakang ? ', '.$detail->employee->gelar_belakang : ''));
         }
 
         if ($detail->dosen) {
-            return trim(($detail->dosen->gelar_depan ? $detail->dosen->gelar_depan . ' ' : '') . 
-                   $detail->dosen->nama . 
-                   ($detail->dosen->gelar_belakang ? ', ' . $detail->dosen->gelar_belakang : ''));
+            return trim(($detail->dosen->gelar_depan ? $detail->dosen->gelar_depan.' ' : '').
+                   $detail->dosen->nama.
+                   ($detail->dosen->gelar_belakang ? ', '.$detail->dosen->gelar_belakang : ''));
         }
 
         return 'Karyawan';

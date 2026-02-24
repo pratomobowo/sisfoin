@@ -58,7 +58,7 @@
         <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
             <div class="flex items-center space-x-2">
                 <label class="text-sm font-medium text-gray-700">Urutkan:</label>
-                <select wire:model.live="sortBy"
+                <select wire:model.live="sortField"
                         class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="created_at">Tanggal Dibuat</option>
                     <option value="periode">Periode</option>
@@ -194,6 +194,9 @@
                                     <p class="text-sm text-gray-500">
                                         Apakah Anda yakin ingin menghapus data slip gaji ini? Semua data detail slip gaji akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
                                     </p>
+                                    <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                        Penghapusan akan ditolak otomatis jika masih ada email slip gaji dengan status <span class="font-semibold">pending</span> atau <span class="font-semibold">processing</span>.
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -215,4 +218,3 @@
         </div>
     @endif
 </div>
-

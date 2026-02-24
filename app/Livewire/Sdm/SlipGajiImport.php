@@ -2,27 +2,30 @@
 
 namespace App\Livewire\Sdm;
 
-use App\Models\SlipGajiHeader;
-use App\Imports\SlipGajiImport as SlipGajiImportClass;
 use App\Services\SlipGajiService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class SlipGajiImport extends Component
 {
     use WithFileUploads;
 
     public $showModal = false;
+
     public $fileUpload;
+
     public $periode;
+
     public $tahun;
+
     public $mode = 'standard'; // New: mode property
+
     public $keterangan;
+
     public $isUploading = false;
+
     public $uploadProgress = 0;
+
     public $uploadMessage = '';
 
     protected $listeners = [
@@ -42,7 +45,7 @@ class SlipGajiImport extends Component
         return [
             'fileUpload' => 'required|file|mimes:xlsx,xls|max:10240', // Max 10MB
             'periode' => 'required|string|max:20',
-            'tahun' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            'tahun' => 'required|integer|min:2020|max:'.(date('Y') + 1),
             'mode' => 'required|in:standard,gaji_13', // New: mode validation
             'keterangan' => 'nullable|string|max:500',
         ];
@@ -60,7 +63,7 @@ class SlipGajiImport extends Component
             'tahun.required' => 'Tahun harus diisi',
             'tahun.integer' => 'Tahun harus berupa angka',
             'tahun.min' => 'Tahun minimal 2020',
-            'tahun.max' => 'Tahun maksimal ' . (date('Y') + 1),
+            'tahun.max' => 'Tahun maksimal '.(date('Y') + 1),
             'mode.required' => 'Mode slip gaji harus dipilih', // New
             'mode.in' => 'Mode slip gaji tidak valid', // New
             'keterangan.max' => 'Keterangan maksimal 500 karakter',
@@ -69,6 +72,7 @@ class SlipGajiImport extends Component
 
     public function mount()
     {
+        // Legacy component retained for backward compatibility, hidden from index flow.
         $this->resetForm();
     }
 
@@ -91,71 +95,8 @@ class SlipGajiImport extends Component
 
     public function uploadSlipGaji()
     {
-        $this->validate();
-
-        try {
-            $this->isUploading = true;
-            $this->uploadProgress = 0;
-            $this->uploadMessage = 'Memproses file...';
-
-            // Check if periode and tahun combination already exists
-            $existingHeader = SlipGajiHeader::where('periode', $this->periode)
-                ->where('tahun', $this->tahun)
-                ->first();
-
-            if ($existingHeader) {
-                throw new \Exception('Data slip gaji untuk periode ' . $this->periode . ' tahun ' . $this->tahun . ' sudah ada');
-            }
-
-            // Store the file
-            $fileName = 'slip_gaji_' . $this->periode . '_' . $this->tahun . '_' . date('Y-m-d_His') . '.' . $this->fileUpload->getClientOriginalExtension();
-            $filePath = $this->fileUpload->storeAs('private/slip-gaji', $fileName);
-
-            $this->uploadProgress = 25;
-            $this->uploadMessage = 'Mengimpor data...';
-
-            // Import the data
-            $import = new SlipGajiImportClass();
-            Excel::import($import, $filePath);
-
-            $this->uploadProgress = 75;
-            $this->uploadMessage = 'Menyimpan data...';
-
-            // Create header record
-            $header = SlipGajiHeader::create([
-                'periode' => $this->periode,
-                'tahun' => $this->tahun,
-                'mode' => $this->mode, // New: include mode
-                'total_data' => $import->getRowCount() ?? 0,
-                'status' => 'draft',
-                'file_original' => $this->fileUpload->getClientOriginalName(),
-                'file_path' => $filePath,
-                'keterangan' => $this->keterangan,
-                'uploaded_by' => auth()->id(),
-                'uploaded_at' => now(),
-            ]);
-
-            $this->uploadProgress = 100;
-            $this->uploadMessage = 'Upload berhasil!';
-
-            // Reset form and close modal
-            $this->closeModal();
-
-            // Refresh the parent component
-            $this->dispatch('slipGajiUploaded');
-
-        } catch (\Exception $e) {
-            Log::error('Slip Gaji upload error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'file' => $this->fileUpload ? $this->fileUpload->getClientOriginalName() : null,
-                'periode' => $this->periode,
-                'tahun' => $this->tahun,
-            ]);
-
-            $this->uploadMessage = 'Error: ' . $e->getMessage();
-        } finally {
-            $this->isUploading = false;
-        }
+        // Disable legacy upload flow until schema/services are fully aligned.
+        $this->addError('legacy', 'Fitur import lama dinonaktifkan sementara. Gunakan menu Upload Data Slip Gaji pada header halaman.');
     }
 
     public function resetForm()

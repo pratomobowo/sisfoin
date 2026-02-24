@@ -21,6 +21,7 @@ class SlipGajiService
         // Check if periode and mode combination already exists
         if (SlipGajiHeader::where('periode', $periode)->where('mode', $mode)->exists()) {
             $modeLabel = $mode === 'gaji_13' ? 'Gaji 13' : 'Standard';
+
             return [
                 'success' => false,
                 'errors' => ['Slip gaji '.$modeLabel.' untuk periode '.$periode.' sudah ada'],
@@ -46,6 +47,7 @@ class SlipGajiService
             // Check if periode and mode combination already exists
             if (SlipGajiHeader::where('periode', $periode)->where('mode', $mode)->exists()) {
                 $modeLabel = $mode === 'gaji_13' ? 'Gaji 13' : 'Standard';
+
                 return [
                     'success' => false,
                     'errors' => ['Slip gaji '.$modeLabel.' untuk periode '.$periode.' sudah ada'],
@@ -203,10 +205,10 @@ class SlipGajiService
 
         // Get mode from header
         $mode = $detail->header->mode ?? 'standard';
-        
+
         // Determine the template based on employee status and mode
         $status = strtolower(str_replace('_', '-', $detail->status));
-        
+
         // For gaji_13 mode, use special templates
         if ($mode === 'gaji_13') {
             // Karyawan Magang uses Karyawan Kontrak template for gaji 13
@@ -417,18 +419,18 @@ class SlipGajiService
                     $q->whereHas('employee', function ($subQ) {
                         $subQ->where('status_aktif', true);
                     })
-                    ->orWhereHas('dosen', function ($subQ) {
-                        $subQ->where('status_aktif', true);
-                    });
+                        ->orWhereHas('dosen', function ($subQ) {
+                            $subQ->where('status_aktif', true);
+                        });
                 });
             } elseif ($filters['status'] === 'tidak_aktif') {
                 $query->where(function ($q) {
                     $q->whereHas('employee', function ($subQ) {
                         $subQ->where('status_aktif', false);
                     })
-                    ->orWhereHas('dosen', function ($subQ) {
-                        $subQ->where('status_aktif', false);
-                    });
+                        ->orWhereHas('dosen', function ($subQ) {
+                            $subQ->where('status_aktif', false);
+                        });
                 });
             }
         }
@@ -442,16 +444,16 @@ class SlipGajiService
                             ->whereNull('email');
                     });
                 })
-                ->orWhereHas('dosen', function ($subQ) {
-                    $subQ->where(function ($subSubQ) {
-                        $subSubQ->whereNull('email_kampus')
-                            ->whereNull('email');
+                    ->orWhereHas('dosen', function ($subQ) {
+                        $subQ->where(function ($subSubQ) {
+                            $subSubQ->whereNull('email_kampus')
+                                ->whereNull('email');
+                        });
+                    })
+                    ->orWhere(function ($q) {
+                        $q->whereDoesntHave('employee')
+                            ->whereDoesntHave('dosen');
                     });
-                })
-                ->orWhere(function ($q) {
-                    $q->whereDoesntHave('employee')
-                        ->whereDoesntHave('dosen');
-                });
             });
         }
 
@@ -474,39 +476,16 @@ class SlipGajiService
                 $query->orderByRaw('(COALESCE(potongan_arisan, 0) + COALESCE(potongan_koperasi, 0) + COALESCE(potongan_lazmaal, 0) + COALESCE(potongan_bpjs_kesehatan, 0) + COALESCE(potongan_bpjs_ketenagakerjaan, 0) + COALESCE(potongan_bkd, 0) + COALESCE(pph21_terhutang, 0) + COALESCE(pph21_sudah_dipotong, 0) + COALESCE(pph21_kurang_dipotong, 0) + COALESCE(pajak, 0)) ASC');
                 break;
             default:
-                // Sort by nama from relations - use a subquery approach without joins
-                $query->orderByRaw('(
-                    SELECT COALESCE(
-                        CASE 
-                            WHEN employees.gelar_depan IS NOT NULL AND employees.gelar_depan != "" THEN 
-                                CONCAT(employees.gelar_depan, " ", employees.nama, 
-                                       CASE WHEN employees.gelar_belakang IS NOT NULL AND employees.gelar_belakang != "" THEN CONCAT(", ", employees.gelar_belakang) ELSE "" END)
-                            ELSE employees.nama
-                        END,
-                        CASE 
-                            WHEN dosens.gelar_depan IS NOT NULL AND dosens.gelar_depan != "" THEN 
-                                CONCAT(dosens.gelar_depan, " ", dosens.nama,
-                                       CASE WHEN dosens.gelar_belakang IS NOT NULL AND dosens.gelar_belakang != "" THEN CONCAT(", ", dosens.gelar_belakang) ELSE "" END)
-                            ELSE dosens.nama
-                        END,
+                // Use lightweight joins for name sorting to avoid expensive nested subqueries.
+                $query
+                    ->leftJoin('employees as sg_emp', 'sg_emp.nip', '=', 'slip_gaji_detail.nip')
+                    ->leftJoin('dosens as sg_dsn', 'sg_dsn.nip', '=', 'slip_gaji_detail.nip')
+                    ->orderByRaw('COALESCE(
+                        NULLIF(TRIM(CONCAT(COALESCE(sg_emp.gelar_depan, ""), " ", COALESCE(sg_emp.nama, ""), CASE WHEN sg_emp.gelar_belakang IS NOT NULL AND sg_emp.gelar_belakang != "" THEN CONCAT(", ", sg_emp.gelar_belakang) ELSE "" END)), ""),
+                        NULLIF(TRIM(CONCAT(COALESCE(sg_dsn.gelar_depan, ""), " ", COALESCE(sg_dsn.nama, ""), CASE WHEN sg_dsn.gelar_belakang IS NOT NULL AND sg_dsn.gelar_belakang != "" THEN CONCAT(", ", sg_dsn.gelar_belakang) ELSE "" END)), ""),
                         ""
-                    )
-                    FROM employees
-                    LEFT JOIN dosens ON employees.nip = dosens.nip
-                    WHERE employees.nip = slip_gaji_detail.nip
-                    UNION
-                    SELECT 
-                        CASE 
-                            WHEN dosens.gelar_depan IS NOT NULL AND dosens.gelar_depan != "" THEN 
-                                CONCAT(dosens.gelar_depan, " ", dosens.nama,
-                                       CASE WHEN dosens.gelar_belakang IS NOT NULL AND dosens.gelar_belakang != "" THEN CONCAT(", ", dosens.gelar_belakang) ELSE "" END)
-                            ELSE dosens.nama
-                        END
-                    FROM dosens
-                    WHERE dosens.nip = slip_gaji_detail.nip
-                    AND NOT EXISTS (SELECT 1 FROM employees WHERE employees.nip = dosens.nip)
-                    LIMIT 1
-                )');
+                    ) ASC')
+                    ->select('slip_gaji_detail.*');
                 break;
         }
 

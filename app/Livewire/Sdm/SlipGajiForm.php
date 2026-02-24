@@ -4,17 +4,23 @@ namespace App\Livewire\Sdm;
 
 use App\Models\SlipGajiHeader;
 use App\Services\SlipGajiService;
-use Livewire\Component;
 use Illuminate\Validation\Rule;
+use Livewire\Component;
 
 class SlipGajiForm extends Component
 {
     public $slip_gaji_id;
+
     public $periode;
+
     public $tahun;
+
     public $status = 'draft';
+
     public $keterangan;
+
     public $editMode = false;
+
     public $showModal = false;
 
     protected $listeners = [
@@ -34,12 +40,12 @@ class SlipGajiForm extends Component
     {
         $rules = [
             'periode' => 'required|string|max:20',
-            'tahun' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            'tahun' => 'required|integer|min:2020|max:'.(date('Y') + 1),
             'status' => 'required|in:draft,published',
             'keterangan' => 'nullable|string|max:500',
         ];
 
-        if (!$this->editMode) {
+        if (! $this->editMode) {
             $rules['periode'][] = Rule::unique('slip_gaji_headers', 'periode')
                 ->where('tahun', $this->tahun);
         } else {
@@ -59,7 +65,7 @@ class SlipGajiForm extends Component
             'tahun.required' => 'Tahun harus diisi',
             'tahun.integer' => 'Tahun harus berupa angka',
             'tahun.min' => 'Tahun minimal 2020',
-            'tahun.max' => 'Tahun maksimal ' . (date('Y') + 1),
+            'tahun.max' => 'Tahun maksimal '.(date('Y') + 1),
             'status.required' => 'Status harus dipilih',
             'status.in' => 'Status harus draft atau published',
             'keterangan.max' => 'Keterangan maksimal 500 karakter',
@@ -68,6 +74,7 @@ class SlipGajiForm extends Component
 
     public function mount()
     {
+        // Legacy component retained for backward compatibility, hidden from index flow.
         $this->resetForm();
     }
 
@@ -110,27 +117,8 @@ class SlipGajiForm extends Component
 
     public function save()
     {
-        $this->validate();
-
-        try {
-            $data = [
-                'periode' => $this->periode,
-                'tahun' => $this->tahun,
-                'status' => $this->status,
-                'keterangan' => $this->keterangan,
-            ];
-
-            if ($this->editMode) {
-                $this->slipGajiService->updateHeader($this->slip_gaji_id, $data);
-            } else {
-                $this->slipGajiService->createHeader($data);
-            }
-
-            $this->closeModal();
-            $this->dispatch('slipGajiSaved');
-        } catch (\Exception $e) {
-            // Error logged, parent handles notification
-        }
+        // Disable legacy save flow until model/service schema is aligned with current slip_gaji_header structure.
+        $this->addError('legacy', 'Form manual Slip Gaji dinonaktifkan sementara. Gunakan menu Upload Data Slip Gaji pada header.');
     }
 
     public function resetForm()

@@ -85,8 +85,14 @@ class QueueManagement extends Component
                 return;
             }
 
+            if (count($this->pids) > 1) {
+                $this->toastWarning('Terdeteksi lebih dari satu queue worker aktif. Hentikan worker melalui server agar tidak mengganggu proses lain.');
+
+                return;
+            }
+
             foreach ($this->pids as $pid) {
-                $command = "kill -9 {$pid}";
+                $command = "kill {$pid}";
                 \exec($command);
                 Log::info('Stopped queue worker PID: '.$pid);
             }

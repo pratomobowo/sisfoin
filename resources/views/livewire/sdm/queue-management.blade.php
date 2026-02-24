@@ -27,6 +27,7 @@
     @if($isRunning)
         <button wire:click="stopQueue" 
                 wire:loading.attr="disabled"
+                onclick="return confirm('Hentikan queue worker sekarang? Pastikan tidak ada proses email penting yang sedang berjalan.')"
                 title="Stop Queue Worker"
                 class="inline-flex items-center px-4 py-2 border border-red-600 text-red-600 hover:bg-red-50 text-sm font-medium rounded-lg shadow-sm transition-colors">
             <svg wire:loading class="animate-spin -ml-1 mr-2 h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24">
@@ -56,4 +57,3 @@
         </button>
     @endif
 </div>
-
