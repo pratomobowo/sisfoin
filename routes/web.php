@@ -173,10 +173,8 @@ Route::prefix('sekretariat')->middleware(['auth'])->name('sekretariat.')->group(
 
 // Staff routes
 Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->group(function () {
-    // Staff Dashboard -> redirect to unified dashboard
-    Route::get('/', function () {
-        return redirect()->route('dashboard');
-    })->name('dashboard');
+    // Staff Dashboard
+    Route::get('/', [App\Http\Controllers\Employee\DashboardController::class, 'index'])->name('dashboard');
 
     // Staff Profile routes (self-service)
     Route::get('/profile', [ProfileController::class, 'staffProfile'])->name('profile');
