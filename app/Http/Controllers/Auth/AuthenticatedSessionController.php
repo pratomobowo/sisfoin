@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\Audit\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,15 +36,23 @@ class AuthenticatedSessionController extends Controller
             setActiveRole($firstRole->name);
         }
 
-        // Log login activity
-        activity('auth')
-            ->causedBy($user)
-            ->withProperties([
+        AuditLogger::log(
+            logName: 'auth',
+            event: 'login',
+            action: 'auth.session.login',
+            description: 'User logged in',
+            properties: [
+                'login_time' => now()->toIso8601String(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'login_time' => now(),
-            ])
-            ->log('User logged in');
+            ],
+            metadata: [
+                'module' => 'auth',
+                'risk_level' => 'low',
+                'result' => 'success',
+            ],
+            causer: $user,
+        );
 
         // Unify redirect to single dashboard for all roles
         return redirect()->intended(route('dashboard', absolute: false));
@@ -58,14 +67,23 @@ class AuthenticatedSessionController extends Controller
 
         // Log logout activity before logging out
         if ($user) {
-            activity('auth')
-                ->causedBy($user)
-                ->withProperties([
+            AuditLogger::log(
+                logName: 'auth',
+                event: 'logout',
+                action: 'auth.session.logout',
+                description: 'User logged out',
+                properties: [
+                    'logout_time' => now()->toIso8601String(),
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
-                    'logout_time' => now(),
-                ])
-                ->log('User logged out');
+                ],
+                metadata: [
+                    'module' => 'auth',
+                    'risk_level' => 'low',
+                    'result' => 'success',
+                ],
+                causer: $user,
+            );
         }
 
         Auth::guard('web')->logout();

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Livewire\Superadmin;
 
 use App\Livewire\Superadmin\OperationsConsole;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -76,5 +77,15 @@ class OperationsConsoleTest extends TestCase
             ->set('confirmationText', 'RUN')
             ->call('runCommand')
             ->assertSet('lastRun.status', 'success');
+
+        $entry = ActivityLog::query()->latest('id')->first();
+
+        $this->assertNotNull($entry);
+        $this->assertSame('admin_operations', $entry->log_name);
+        $this->assertSame('execute', $entry->event);
+        $this->assertSame('system.command.run', $entry->action);
+        $this->assertSame('superadmin', $entry->metadata['module'] ?? null);
+        $this->assertSame('high', $entry->metadata['risk_level'] ?? null);
+        $this->assertSame('success', $entry->metadata['result'] ?? null);
     }
 }

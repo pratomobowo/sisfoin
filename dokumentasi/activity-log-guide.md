@@ -850,6 +850,32 @@ window.showToast(message, type)
 
 ## Best Practices
 
+### 0. Standard Audit Contract (User + Admin)
+
+Gunakan kontrak field yang konsisten untuk semua event audit:
+
+- `log_name`: domain (`auth`, `attendance`, `sdm`, `admin_operations`, dan lainnya)
+- `event`: event canonical (`login`, `logout`, `create`, `update`, `delete`, `execute`, `import`, `sync`)
+- `action`: action code namespaced (`<module>.<resource>.<operation>`)
+- `metadata.module`: modul sumber aksi
+- `metadata.risk_level`: `low|medium|high|critical`
+- `metadata.result`: `success|failed|blocked`
+- `metadata.actor_type`: `user|admin|super-admin|system`
+- `metadata.request_id`: ID request HTTP jika ada
+- `metadata.correlation_id`: ID korelasi lintas request/job jika ada
+- `metadata.masked_fields`: daftar field yang dimasking
+
+Contoh action code:
+
+- `auth.session.login`
+- `auth.session.logout`
+- `system.command.run`
+- `attendance.logs.process_incremental`
+- `attendance.logs.reprocess_all`
+- `attendance.records.clear_all`
+
+Gunakan helper terpusat (`AuditLogger`) agar kontrak ini konsisten di semua modul.
+
 ### 1. Performance Optimization
 
 #### **Database Indexing**
@@ -884,6 +910,23 @@ $logNames = Cache::remember('activity_log_names', 3600, function () {
 
 ### 2. Security Considerations
 
+#### **Strict Masking Policy**
+```php
+// Selalu gunakan sanitizer terpusat sebelum menulis payload ke activity_log
+// App\Support\Audit\AuditPayloadSanitizer
+
+// Contoh field yang wajib full redact
+// password, token, api_key, authorization, cookie, session_id
+
+// Contoh field yang wajib masking
+// email, phone/no_hp/telp, nik/npwp/identity_number
+```
+
+Aturan minimum:
+- Jangan simpan secret/token mentah di `properties` atau `metadata`.
+- Simpan payload import/upload dalam bentuk ringkasan (`row_count`, `error_count`, hash file), bukan isi mentah.
+- Pastikan event audit tetap bisa menjawab siapa melakukan apa dan hasilnya, tanpa membuka data sensitif.
+
 #### **Data Sanitization**
 ```php
 // Sanitize user input for search
@@ -916,18 +959,11 @@ public function view(User $user, ActivityLog $log)
 
 #### **Log Retention**
 ```php
-// Set up log retention policy
-public function cleanupOldLogs()
-{
-    // Delete logs older than 1 year
-    ActivityLog::where('created_at', '<', now()->subYear())->delete();
-    
-    // Archive logs older than 6 months
-    ActivityLog::where('created_at', '<', now()->subMonths(6))
-        ->whereNotIn('log_name', ['security', 'critical'])
-        ->delete();
-}
+// Retention policy dikunci di konfigurasi paket activitylog
+config('activitylog.delete_records_older_than_days'); // 365
 ```
+
+Untuk project ini, retensi audit ditetapkan **365 hari** dan diverifikasi lewat test konfigurasi.
 
 ### 3. User Experience
 

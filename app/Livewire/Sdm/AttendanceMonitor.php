@@ -9,6 +9,7 @@ use App\Models\Employee\Attendance as EmployeeAttendance;
 use App\Models\Holiday;
 use App\Models\User;
 use App\Services\AttendanceService;
+use App\Support\Audit\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -64,16 +65,24 @@ class AttendanceMonitor extends Component
             $attendanceService = new AttendanceService;
             $result = $attendanceService->processLogs(null, null, null, true);
 
-            activity('attendance_operations')
-                ->causedBy(Auth::user())
-                ->withProperties([
-                    'action' => 'reprocess_all',
+            AuditLogger::log(
+                logName: 'attendance_operations',
+                event: 'execute',
+                action: 'attendance.logs.reprocess_all',
+                description: 'Reprocess attendance from monitor',
+                properties: [
                     'source' => 'attendance_monitor',
                     'processed_count' => $result['processed_count'] ?? 0,
                     'error_count' => $result['error_count'] ?? 0,
                     'execution_time' => $result['execution_time'] ?? null,
-                ])
-                ->log('Reprocess attendance from monitor');
+                ],
+                metadata: [
+                    'module' => 'attendance',
+                    'risk_level' => 'high',
+                    'result' => 'success',
+                ],
+                causer: Auth::user(),
+            );
 
             $message = ($result['message'] ?? 'Proses ulang selesai.').' (Monitor telah diperbarui)';
             $this->toastSuccess($message);

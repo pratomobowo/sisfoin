@@ -55,7 +55,43 @@
                 <input type="date" wire:model.live="dateTo"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
-            
+
+            <!-- Module Filter -->
+            <div class="md:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Modul</label>
+                <select wire:model.live="moduleFilter"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Semua Modul</option>
+                    @foreach($modules as $module)
+                        <option value="{{ $module }}">{{ ucfirst($module) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Risk Filter -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Risiko</label>
+                <select wire:model.live="riskLevelFilter"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Semua Risiko</option>
+                    @foreach($riskLevels as $risk)
+                        <option value="{{ $risk }}">{{ ucfirst($risk) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Result Filter -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Hasil</label>
+                <select wire:model.live="resultFilter"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Semua Hasil</option>
+                    @foreach($results as $result)
+                        <option value="{{ $result }}">{{ ucfirst($result) }}</option>
+                    @endforeach
+                </select>
+            </div>
+             
             <!-- Reset Filter Button -->
             <div class="md:col-span-1 flex items-end">
                 <button wire:click="resetFilters"

@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
 use App\Models\User;
 use App\Services\AttendanceService;
+use App\Support\Audit\AuditLogger;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -866,16 +867,24 @@ class EmployeeAttendanceManagement extends Component
 
             $message = $result['message'];
 
-            activity('attendance_operations')
-                ->causedBy(Auth::user())
-                ->withProperties([
-                    'action' => 'process_incremental',
+            AuditLogger::log(
+                logName: 'attendance_operations',
+                event: 'execute',
+                action: 'attendance.logs.process_incremental',
+                description: 'Process attendance logs',
+                properties: [
                     'source' => 'employee_attendance_management',
                     'processed_count' => $result['processed_count'] ?? 0,
                     'error_count' => $result['error_count'] ?? 0,
                     'execution_time' => $result['execution_time'] ?? null,
-                ])
-                ->log('Process attendance logs');
+                ],
+                metadata: [
+                    'module' => 'attendance',
+                    'risk_level' => 'medium',
+                    'result' => 'success',
+                ],
+                causer: Auth::user(),
+            );
 
             $this->toastSuccess($message);
 
@@ -900,16 +909,24 @@ class EmployeeAttendanceManagement extends Component
 
             $message = $result['message'].' (Semua data telah diproses ulang)';
 
-            activity('attendance_operations')
-                ->causedBy(Auth::user())
-                ->withProperties([
-                    'action' => 'reprocess_all',
+            AuditLogger::log(
+                logName: 'attendance_operations',
+                event: 'execute',
+                action: 'attendance.logs.reprocess_all',
+                description: 'Reprocess all attendance logs',
+                properties: [
                     'source' => 'employee_attendance_management',
                     'processed_count' => $result['processed_count'] ?? 0,
                     'error_count' => $result['error_count'] ?? 0,
                     'execution_time' => $result['execution_time'] ?? null,
-                ])
-                ->log('Reprocess all attendance logs');
+                ],
+                metadata: [
+                    'module' => 'attendance',
+                    'risk_level' => 'high',
+                    'result' => 'success',
+                ],
+                causer: Auth::user(),
+            );
 
             $this->toastSuccess($message);
 
@@ -966,14 +983,22 @@ class EmployeeAttendanceManagement extends Component
             if (trim((string) $this->clearConfirmation) !== 'HAPUS ABSENSI') {
                 $this->toastError('Konfirmasi tidak valid. Ketik tepat: HAPUS ABSENSI');
 
-                activity('attendance_operations')
-                    ->causedBy(Auth::user())
-                    ->withProperties([
-                        'action' => 'clear_all_attendance_blocked',
+                AuditLogger::log(
+                    logName: 'attendance_operations',
+                    event: 'delete',
+                    action: 'attendance.records.clear_all',
+                    description: 'Clear all employee attendance blocked by invalid confirmation',
+                    properties: [
                         'source' => 'employee_attendance_management',
                         'input' => $this->clearConfirmation,
-                    ])
-                    ->log('Clear all employee attendance blocked by invalid confirmation');
+                    ],
+                    metadata: [
+                        'module' => 'attendance',
+                        'risk_level' => 'critical',
+                        'result' => 'blocked',
+                    ],
+                    causer: Auth::user(),
+                );
 
                 return;
             }
@@ -987,14 +1012,22 @@ class EmployeeAttendanceManagement extends Component
             $deletedCount = \App\Models\Employee\Attendance::count();
             \App\Models\Employee\Attendance::truncate();
 
-            activity('attendance_operations')
-                ->causedBy(Auth::user())
-                ->withProperties([
-                    'action' => 'clear_all_attendance',
+            AuditLogger::log(
+                logName: 'attendance_operations',
+                event: 'delete',
+                action: 'attendance.records.clear_all',
+                description: 'Clear all employee attendance records',
+                properties: [
                     'source' => 'employee_attendance_management',
                     'deleted_count' => $deletedCount,
-                ])
-                ->log('Clear all employee attendance records');
+                ],
+                metadata: [
+                    'module' => 'attendance',
+                    'risk_level' => 'critical',
+                    'result' => 'success',
+                ],
+                causer: Auth::user(),
+            );
 
             $this->toastSuccess("Berhasil menghapus {$deletedCount} data absensi karyawan.");
             $this->clearConfirmation = '';

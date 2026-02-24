@@ -26,6 +26,12 @@ class ActivityLogs extends Component
 
     public $dateTo = '';
 
+    public $moduleFilter = '';
+
+    public $riskLevelFilter = '';
+
+    public $resultFilter = '';
+
     public function render()
     {
         $query = ActivityLogModel::with('causer')
@@ -44,16 +50,31 @@ class ActivityLogs extends Component
             ->when($this->dateTo, function ($query) {
                 $query->whereDate('created_at', '<=', $this->dateTo);
             })
+            ->when($this->moduleFilter, function ($query) {
+                $query->where('metadata->module', $this->moduleFilter);
+            })
+            ->when($this->riskLevelFilter, function ($query) {
+                $query->where('metadata->risk_level', $this->riskLevelFilter);
+            })
+            ->when($this->resultFilter, function ($query) {
+                $query->where('metadata->result', $this->resultFilter);
+            })
             ->orderBy('created_at', 'desc');
 
         $activityLogs = $query->paginate($this->perPage);
 
         // Get unique log names for filter dropdown
         $logNames = ActivityLogModel::distinct()->pluck('log_name')->filter()->toArray();
+        $modules = ActivityLogModel::query()->distinct()->pluck('metadata->module')->filter()->values()->toArray();
+        $riskLevels = ActivityLogModel::query()->distinct()->pluck('metadata->risk_level')->filter()->values()->toArray();
+        $results = ActivityLogModel::query()->distinct()->pluck('metadata->result')->filter()->values()->toArray();
 
         return view('livewire.superadmin.activity-log', [
             'activityLogs' => $activityLogs,
             'logNames' => $logNames,
+            'modules' => $modules,
+            'riskLevels' => $riskLevels,
+            'results' => $results,
             'activities' => $activityLogs, // Using 'activities' to match the view variable name
         ]);
     }
@@ -64,6 +85,9 @@ class ActivityLogs extends Component
         $this->filterType = '';
         $this->dateFrom = '';
         $this->dateTo = '';
+        $this->moduleFilter = '';
+        $this->riskLevelFilter = '';
+        $this->resultFilter = '';
         $this->perPage = 10;
         $this->resetPage();
     }

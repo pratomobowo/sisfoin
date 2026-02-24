@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Superadmin;
 
+use App\Support\Audit\AuditLogger;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -66,15 +67,24 @@ class OperationsConsole extends Component
                 'run_at' => now()->format('Y-m-d H:i:s'),
             ];
 
-            activity('admin_operations')
-                ->causedBy(Auth::user())
-                ->withProperties([
+            AuditLogger::log(
+                logName: 'admin_operations',
+                event: 'execute',
+                action: 'system.command.run',
+                description: 'Operations console command executed',
+                properties: [
                     'command' => $command,
                     'arguments' => $arguments,
                     'exit_code' => $exitCode,
                     'status' => $status,
-                ])
-                ->log('Operations console command executed');
+                ],
+                metadata: [
+                    'module' => 'superadmin',
+                    'risk_level' => 'high',
+                    'result' => $status === 'success' ? 'success' : 'failed',
+                ],
+                causer: Auth::user(),
+            );
 
             session()->flash($status, $status === 'success' ? 'Command berhasil dijalankan.' : 'Command selesai dengan error.');
         } catch (\Throwable $e) {
@@ -85,6 +95,26 @@ class OperationsConsole extends Component
                 'exit_code' => 1,
                 'run_at' => now()->format('Y-m-d H:i:s'),
             ];
+
+            AuditLogger::log(
+                logName: 'admin_operations',
+                event: 'execute',
+                action: 'system.command.run',
+                description: 'Operations console command failed',
+                properties: [
+                    'command' => $command,
+                    'arguments' => $arguments,
+                    'exit_code' => 1,
+                    'status' => 'error',
+                    'error_message' => $e->getMessage(),
+                ],
+                metadata: [
+                    'module' => 'superadmin',
+                    'risk_level' => 'high',
+                    'result' => 'failed',
+                ],
+                causer: Auth::user(),
+            );
 
             session()->flash('error', 'Gagal menjalankan command: '.$e->getMessage());
         }
