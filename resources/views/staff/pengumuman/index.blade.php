@@ -1,7 +1,57 @@
 @extends('layouts.staff')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 pb-24 lg:pb-0">
+<div class="min-h-screen bg-gray-50 pb-24 lg:pb-0"
+     x-data="{
+        detailOpen: false,
+        selectedAnnouncement: null,
+        openDetail(announcement) {
+            this.selectedAnnouncement = announcement;
+            this.detailOpen = true;
+        },
+        closeDetail() {
+            this.detailOpen = false;
+            this.selectedAnnouncement = null;
+        },
+        markAsRead() {
+            if (!this.selectedAnnouncement || this.selectedAnnouncement.read_status) return;
+            const url = '{{ route('staff.pengumuman.mark-as-read', ['id' => '__ID__']) }}'.replace('__ID__', this.selectedAnnouncement.id);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then((response) => response.json())
+              .then(() => {
+                this.selectedAnnouncement.read_status = true;
+              });
+        },
+        typeLabel(type) {
+            const labels = {
+                tausiyah: 'Tausiyah',
+                kajian: 'Kajian',
+                pengumuman: 'Pengumuman',
+                himbauan: 'Himbauan',
+                undangan: 'Undangan'
+            };
+            return labels[type] || type;
+        },
+        priorityLabel(priority) {
+            const labels = {
+                low: 'Normal',
+                normal: 'Normal',
+                high: 'Penting',
+                urgent: 'Segera'
+            };
+            return labels[priority] || priority;
+        },
+        formatDate(value) {
+            if (!value) return '-';
+            return new Date(value).toLocaleString('id-ID');
+        }
+     }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg shadow-blue-200 overflow-hidden">
             <div class="px-5 py-6 lg:px-6 lg:py-7">
@@ -107,11 +157,9 @@
                 
                 <select id="typeFilter" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer">
                     <option value="">Semua Jenis</option>
-                    <option value="tausiyah">Tausiyah</option>
-                    <option value="kajian">Kajian</option>
-                    <option value="pengumuman">Pengumuman</option>
-                    <option value="himbauan">Himbauan</option>
-                    <option value="undangan">Undangan</option>
+                    @foreach($announcementTypeOptions as $typeValue => $typeLabel)
+                        <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -119,8 +167,10 @@
         <!-- Announcements List -->
         <div class="space-y-3">
             @forelse($announcements as $announcement)
-                <a href="{{ route('staff.pengumuman.show', $announcement['id']) }}" 
-                   class="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all group {{ $announcement['is_pinned'] ? 'border-l-4 border-l-amber-500' : '' }}">
+                <button type="button"
+                   @click='openDetail(@json($announcement))'
+                   data-type="{{ strtolower($announcement['type']) }}"
+                   class="announcement-item w-full text-left block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all group {{ $announcement['is_pinned'] ? 'border-l-4 border-l-amber-500' : '' }}">
                     <div class="flex items-start gap-4">
                         <!-- Icon -->
                         <div class="flex-shrink-0 w-12 h-12 rounded-xl 
@@ -145,7 +195,7 @@
                                     @elseif($announcement['type'] == 'himbauan') text-amber-600 bg-amber-50
                                     @else text-gray-600 bg-gray-50 @endif
                                     px-2 py-0.5 rounded">
-                                    {{ ucfirst($announcement['type']) }}
+                                    {{ $announcement['type_label'] ?? ucfirst($announcement['type']) }}
                                 </span>
                                 
                                 @if($announcement['is_pinned'])
@@ -181,7 +231,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                     </div>
-                </a>
+                </button>
             @empty
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
                     <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -195,6 +245,68 @@
             @endforelse
         </div>
 
+        <div x-show="detailOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50" @click="closeDetail()"></div>
+            <div class="relative w-full max-w-xl max-h-[82vh] overflow-hidden bg-white rounded-2xl shadow-2xl border border-gray-200">
+                <div class="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-xs font-medium px-2 py-0.5 rounded bg-blue-50 text-blue-700" x-text="selectedAnnouncement ? (selectedAnnouncement.type_label || typeLabel(selectedAnnouncement.type)) : ''"></span>
+                            <span class="text-xs font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-700" x-show="selectedAnnouncement && selectedAnnouncement.is_pinned">Pinned</span>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-900 leading-snug" x-text="selectedAnnouncement ? selectedAnnouncement.title : ''"></h3>
+                    </div>
+                    <button type="button" @click="closeDetail()" class="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100">
+                        <x-lucide-x class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div class="px-4 py-3 overflow-y-auto max-h-[58vh] space-y-3">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-gray-50 rounded-lg px-3 py-2">
+                            <p class="text-gray-500">Prioritas</p>
+                            <p class="font-semibold text-gray-800" x-text="selectedAnnouncement ? (selectedAnnouncement.priority_label || priorityLabel(selectedAnnouncement.priority)) : '-'"></p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg px-3 py-2">
+                            <p class="text-gray-500">Status</p>
+                            <p class="font-semibold text-gray-800" x-text="selectedAnnouncement ? (selectedAnnouncement.read_status ? 'Sudah dibaca' : 'Belum dibaca') : '-'"></p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg px-3 py-2 col-span-2">
+                            <p class="text-gray-500">Dibuat Oleh</p>
+                            <p class="font-semibold text-gray-800" x-text="selectedAnnouncement ? selectedAnnouncement.created_by : '-'"></p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg px-3 py-2">
+                            <p class="text-gray-500">Dibuat</p>
+                            <p class="font-semibold text-gray-800" x-text="selectedAnnouncement ? formatDate(selectedAnnouncement.created_at) : '-'"></p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg px-3 py-2">
+                            <p class="text-gray-500">Berlaku Sampai</p>
+                            <p class="font-semibold text-gray-800" x-text="selectedAnnouncement ? formatDate(selectedAnnouncement.expires_at) : '-'"></p>
+                        </div>
+                    </div>
+
+                    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" x-text="selectedAnnouncement ? selectedAnnouncement.content : ''"></p>
+
+                    <div x-show="selectedAnnouncement && selectedAnnouncement.attachments && selectedAnnouncement.attachments.length">
+                        <h4 class="text-sm font-bold text-gray-900 mb-2">Lampiran</h4>
+                        <div class="space-y-2">
+                            <template x-for="file in (selectedAnnouncement ? selectedAnnouncement.attachments : [])" :key="file">
+                                <div class="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700" x-text="file"></div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+                    <span class="text-sm font-medium text-emerald-700" x-show="selectedAnnouncement && selectedAnnouncement.read_status">Sudah dibaca</span>
+                    <span class="text-sm font-medium text-amber-700" x-show="selectedAnnouncement && !selectedAnnouncement.read_status">Belum dibaca</span>
+                    <button type="button" @click="markAsRead()" x-show="selectedAnnouncement && !selectedAnnouncement.read_status" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                        Tandai Sudah Dibaca
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 @endsection
@@ -204,14 +316,14 @@
     // Simple search filter
     document.getElementById('searchInput')?.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        const items = document.querySelectorAll('.space-y-3 > a');
+        const items = document.querySelectorAll('.announcement-item');
         
         items.forEach(item => {
             const title = item.querySelector('h3')?.textContent.toLowerCase() || '';
             const content = item.querySelector('p')?.textContent.toLowerCase() || '';
             
             if (title.includes(searchTerm) || content.includes(searchTerm)) {
-                item.style.display = 'block';
+                item.style.display = '';
             } else {
                 item.style.display = 'none';
             }
@@ -221,13 +333,13 @@
     // Type filter
     document.getElementById('typeFilter')?.addEventListener('change', function(e) {
         const type = e.target.value.toLowerCase();
-        const items = document.querySelectorAll('.space-y-3 > a');
+        const items = document.querySelectorAll('.announcement-item');
         
         items.forEach(item => {
-            const itemType = item.querySelector('.text-xs.font-medium')?.textContent.toLowerCase() || '';
+            const itemType = (item.dataset.type || '').toLowerCase();
             
             if (!type || itemType.includes(type)) {
-                item.style.display = 'block';
+                item.style.display = '';
             } else {
                 item.style.display = 'none';
             }

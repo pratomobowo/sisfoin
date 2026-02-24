@@ -71,41 +71,4 @@ class ProfileController extends Controller
             'employee' => $employee,
         ]);
     }
-
-    /**
-     * Display staff profile edit form.
-     */
-    public function staffEdit(Request $request): View
-    {
-        $user = $request->user();
-        $employee = $user->employee;
-
-        return view('staff.profile.edit', [
-            'user' => $user,
-            'employee' => $employee,
-        ]);
-    }
-
-    /**
-     * Update staff profile information.
-     */
-    public function staffUpdate(Request $request): RedirectResponse
-    {
-        $user = $request->user();
-
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-        ]);
-
-        $user->fill($request->only(['name', 'email']));
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
-
-        return Redirect::route('staff.profile')->with('status', 'profile-updated');
-    }
 }

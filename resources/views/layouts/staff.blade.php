@@ -107,6 +107,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                     </button>
+                    <div class="p-1.5 bg-blue-50 rounded-lg">
+                        <img src="{{ asset('images/logo-usbypkp.jpg') }}" alt="USBYPKP Logo" class="w-6 h-6 rounded object-cover">
+                    </div>
                     <span class="font-bold text-lg text-blue-700">Staff Portal</span>
                 </div>
                 
@@ -205,14 +208,12 @@
         <aside class="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 z-30">
             <div class="p-6 border-b border-gray-100">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+                    <div class="p-2 bg-blue-50 rounded-xl">
+                        <img src="{{ asset('images/logo-usbypkp.jpg') }}" alt="USBYPKP Logo" class="w-8 h-8 rounded-lg object-cover">
                     </div>
                     <div>
                         <p class="font-bold text-gray-800">Staff Portal</p>
-                        <p class="text-xs text-gray-500">{{ config('app.name') }}</p>
+                        <p class="text-xs text-gray-500">Univ. Sangga Buana</p>
                     </div>
                 </div>
             </div>

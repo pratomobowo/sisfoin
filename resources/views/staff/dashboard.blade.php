@@ -376,7 +376,7 @@
                             <h3 class="font-semibold text-gray-800 text-sm lg:text-base line-clamp-1">{{ $announcement['title'] }}</h3>
                             <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($announcement['created_at'])->diffForHumans() }}</p>
                         </div>
-                        <a href="{{ route('staff.pengumuman.show', $announcement['id']) }}" class="flex-shrink-0 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <a href="{{ route('staff.pengumuman.index') }}" class="flex-shrink-0 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>

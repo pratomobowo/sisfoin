@@ -34,6 +34,7 @@ class AnnouncementController extends Controller
                 ['name' => 'Dashboard', 'url' => route('staff.dashboard')],
                 ['name' => 'Pengumuman', 'url' => null],
             ],
+            'announcementTypeOptions' => $this->announcementTypeOptions(),
             'announcements' => $this->toStaffPayloadCollection($announcements, $user?->id),
         ]);
     }
@@ -110,8 +111,11 @@ class AnnouncementController extends Controller
             'title' => $announcement->title,
             'content' => $announcement->content,
             'type' => $announcement->type,
+            'type_label' => $announcement->type_label,
             'priority' => $announcement->priority,
+            'priority_label' => $announcement->priority_label,
             'status' => $announcement->status,
+            'status_label' => $announcement->status_label,
             'is_pinned' => (bool) $announcement->is_pinned,
             'published_at' => $announcement->published_at,
             'expires_at' => $announcement->expires_at,
@@ -121,6 +125,20 @@ class AnnouncementController extends Controller
                 ? $announcement->readByUsers->contains('id', $userId)
                 : false,
             'attachments' => is_array($announcement->attachments) ? $announcement->attachments : [],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function announcementTypeOptions(): array
+    {
+        return [
+            'general' => 'Umum',
+            'policy' => 'Kebijakan',
+            'event' => 'Acara',
+            'urgent' => 'Mendesak',
+            'maintenance' => 'Pemeliharaan',
         ];
     }
 }

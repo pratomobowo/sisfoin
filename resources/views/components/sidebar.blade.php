@@ -140,6 +140,24 @@
                 </div>
                 @endif
 
+                @if(isActiveRole('super-admin|admin-sekretariat'))
+                <div x-data="{ open: {{ request()->routeIs('sekretariat.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open"
+                            class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-sky-50/50 transition-all duration-200">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-sky-50 text-sky-600 rounded-lg mr-3">
+                                <x-lucide-file-text class="w-5 h-5" />
+                            </div>
+                            Sekretariat
+                        </div>
+                        <x-lucide-chevron-down class="w-4 h-4 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
+                    </button>
+                    <div x-show="open" x-cloak class="mt-2 ml-10 space-y-1 border-l border-sky-100 pl-4">
+                        <a href="{{ route('sekretariat.pengumuman.index') }}" class="block py-2 text-sm {{ request()->routeIs('sekretariat.pengumuman.*') ? 'text-sky-600 font-semibold' : 'text-gray-500 hover:text-sky-600 transition-colors' }}">Manajemen Pengumuman</a>
+                    </div>
+                </div>
+                @endif
+
                 @if(isActiveRole('employee|staff'))
                 <div x-data="{ open: {{ request()->routeIs('staff.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 

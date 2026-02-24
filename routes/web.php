@@ -190,6 +190,16 @@ Route::prefix('sekretariat')->middleware(['auth'])->name('sekretariat.')->group(
     Route::get('/kegiatan-pejabat', function () {
         return view('sekretariat.kegiatan-pejabat.index');
     })->middleware(['role:sekretariat|admin-sekretariat|super-admin'])->name('kegiatan-pejabat.index');
+
+    // Sekretariat announcement management (admin dashboard)
+    Route::prefix('pengumuman')->middleware(['role:admin-sekretariat|super-admin'])->name('pengumuman.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'store'])->name('store');
+        Route::put('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/pin', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'togglePin'])->name('toggle-pin');
+        Route::patch('/{id}/status', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'toggleStatus'])->name('toggle-status');
+    });
 });
 
 // Staff routes
@@ -199,8 +209,6 @@ Route::prefix('staff')->middleware(['auth', 'role:staff'])->name('staff.')->grou
 
     // Staff Profile routes (self-service)
     Route::get('/profile', [ProfileController::class, 'staffProfile'])->name('profile');
-    Route::get('/profile/edit', [ProfileController::class, 'staffEdit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'staffUpdate'])->name('profile.update');
 
     // Staff Penggajian routes (view only)
     Route::prefix('penggajian')->name('penggajian.')->group(function () {
