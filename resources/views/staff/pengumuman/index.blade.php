@@ -1,67 +1,111 @@
-@extends('layouts.app')
-
-@section('breadcrumb')
-    <nav class="flex overflow-x-auto pb-1 invisible-scrollbar" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-2 whitespace-nowrap">
-            <li class="inline-flex items-center">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
-                    <x-lucide-home class="w-4 h-4 sm:mr-2" />
-                    <span class="hidden sm:inline">Dashboard</span>
-                </a>
-                <x-lucide-chevron-right class="w-4 h-4 text-gray-400 mx-1 sm:mx-2" />
-            </li>
-            <li>
-                <span class="text-sm font-semibold text-gray-900">
-                    Pengumuman
-                </span>
-            </li>
-        </ol>
-    </nav>
-@endsection
+@extends('layouts.staff')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Welcome Card -->
-    <div class="mb-4 sm:mb-6">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl lg:rounded-3xl shadow-sm text-white overflow-hidden">
-            <div class="p-5 sm:p-6 lg:p-8">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex-1 space-y-1">
-                        <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider mb-1">
-                            Pusat Informasi
+<div class="min-h-screen bg-gray-50 pb-24 lg:pb-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg shadow-blue-200 overflow-hidden">
+            <div class="px-5 py-6 lg:px-6 lg:py-7">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 text-blue-100 text-xs font-semibold uppercase tracking-wide mb-2">
+                            <a href="{{ route('staff.dashboard') }}" class="inline-flex items-center hover:text-white transition-colors">
+                                <x-lucide-chevron-left class="w-4 h-4 mr-1" />
+                                Dashboard
+                            </a>
+                            <span>/</span>
+                            <span>Pengumuman</span>
                         </div>
-                        <h4 class="text-xl sm:text-2xl font-black tracking-tight">
-                            Pengumuman & Informasi
-                        </h4>
-                        <p class="text-blue-100 text-xs sm:text-sm">
-                            Dapatkan informasi terbaru, tausiyah, dan pengumuman penting.
-                        </p>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-white">Pengumuman</h1>
+                        <p class="text-blue-100 mt-1">Informasi dan pengumuman terbaru</p>
                     </div>
-                    <div class="flex-shrink-0">
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[100px]">
-                            <h5 class="text-xl sm:text-2xl font-black mb-0.5">{{ count($announcements) }}</h5>
-                            <p class="text-[10px] sm:text-xs text-blue-100 font-bold uppercase tracking-wider">Total</p>
-                        </div>
+                    <div class="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                        <x-lucide-megaphone class="w-5 h-5" />
                     </div>
+                </div>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/20 text-white text-xs font-semibold">
+                        <x-lucide-bell-ring class="w-3.5 h-3.5 mr-1.5" />
+                        Total: {{ count($announcements) }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/20 text-white text-xs font-semibold">
+                        <x-lucide-pin class="w-3.5 h-3.5 mr-1.5" />
+                        Pinned: {{ collect($announcements)->where('is_pinned', true)->count() }}
+                    </span>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ count($announcements) }}</p>
+                        <p class="text-xs text-gray-500">Total</p>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Filter & Search -->
-    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
-        <div class="flex-1">
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                    <x-lucide-search class="w-4 h-4" />
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ collect($announcements)->where('type', 'tausiyah')->count() }}</p>
+                        <p class="text-xs text-gray-500">Tausiyah</p>
+                    </div>
                 </div>
-                <input type="text" class="block w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm" 
-                       placeholder="Cari pengumuman..." id="searchInput">
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ collect($announcements)->where('type', 'kajian')->count() }}</p>
+                        <p class="text-xs text-gray-500">Kajian</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ collect($announcements)->where('is_pinned', true)->count() }}</p>
+                        <p class="text-xs text-gray-500">Pinned</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="flex gap-2 sm:gap-3">
-            <div class="relative flex-1 sm:flex-none">
-                <select class="block w-full pl-3 pr-8 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm cursor-pointer" id="typeFilter">
+
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1 relative">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Cari pengumuman..."
+                           class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+                
+                <select id="typeFilter" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer">
                     <option value="">Semua Jenis</option>
                     <option value="tausiyah">Tausiyah</option>
                     <option value="kajian">Kajian</option>
@@ -69,325 +113,125 @@
                     <option value="himbauan">Himbauan</option>
                     <option value="undangan">Undangan</option>
                 </select>
-                <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <x-lucide-chevron-down class="w-4 h-4" />
-                </div>
-            </div>
-            <div class="relative flex-1 sm:flex-none">
-                <select class="block w-full pl-3 pr-8 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm cursor-pointer" id="priorityFilter">
-                    <option value="">Prioritas</option>
-                    <option value="high">Tinggi</option>
-                    <option value="normal">Normal</option>
-                    <option value="low">Rendah</option>
-                </select>
-                <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <x-lucide-chevron-down class="w-4 h-4" />
-                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-3 transition-transform hover:scale-[1.02]">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <x-lucide-megaphone class="w-5 h-5" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Tausiyah</p>
-                <p class="text-xl font-black text-gray-900 leading-none">{{ collect($announcements)->where('type', 'tausiyah')->count() }}</p>
-            </div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-3 transition-transform hover:scale-[1.02]">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                <x-lucide-book-open class="w-5 h-5" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Kajian</p>
-                <p class="text-xl font-black text-gray-900 leading-none">{{ collect($announcements)->where('type', 'kajian')->count() }}</p>
-            </div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-3 transition-transform hover:scale-[1.02]">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-                <x-lucide-mail class="w-5 h-5" />
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Belum Baca</p>
-                <p class="text-xl font-black text-gray-900 leading-none">{{ collect($announcements)->where('read_status', false)->count() }}</p>
-            </div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-3 transition-transform hover:scale-[1.02]">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-                <x-lucide-pin class="w-5 h-5" />
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Penting</p>
-                <p class="text-xl font-black text-gray-900 leading-none">{{ collect($announcements)->where('is_pinned', true)->count() }}</p>
-            </div>
-        </div>
-    </div>
+        <!-- Announcements List -->
+        <div class="space-y-3">
+            @forelse($announcements as $announcement)
+                <a href="{{ route('staff.pengumuman.show', $announcement['id']) }}" 
+                   class="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all group {{ $announcement['is_pinned'] ? 'border-l-4 border-l-amber-500' : '' }}">
+                    <div class="flex items-start gap-4">
+                        <!-- Icon -->
+                        <div class="flex-shrink-0 w-12 h-12 rounded-xl 
+                            @if($announcement['type'] == 'tausiyah') bg-emerald-100 text-emerald-600
+                            @elseif($announcement['type'] == 'kajian') bg-blue-100 text-blue-600
+                            @elseif($announcement['type'] == 'pengumuman') bg-purple-100 text-purple-600
+                            @elseif($announcement['type'] == 'himbauan') bg-amber-100 text-amber-600
+                            @else bg-gray-100 text-gray-600 @endif
+                            flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                            </svg>
+                        </div>
 
-    <!-- Announcements List -->
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-        <div class="px-6 sm:px-8 py-5 sm:py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 class="text-lg font-black text-gray-800 flex items-center">
-                <x-lucide-list class="w-5 h-5 mr-3 text-blue-600" />
-                Daftar Pengumuman
-            </h3>
-            <button onclick="markAllAsRead()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-blue-100 transition-colors">
-                <x-lucide-check-check class="w-4 h-4 mr-2" />
-                Tandai Semua Dibaca
-            </button>
-        </div>
-        <div class="p-0">
-            <div id="announcementsList" class="divide-y divide-gray-50">
-                @forelse($announcements as $announcement)
-                <div class="announcement-item p-5 sm:p-6 lg:p-8 {{ !$announcement['read_status'] ? 'bg-blue-50/30' : '' }} hover:bg-gray-50 transition-colors" 
-                     data-type="{{ $announcement['type'] }}" 
-                     data-priority="{{ $announcement['priority'] }}"
-                     data-title="{{ strtolower($announcement['title']) }}">
-                    <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start">
-                        <div class="flex-1 min-w-0 space-y-3">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border {{ getTypeBadgeClass($announcement['type']) }}">
-                                    {{ $announcement['type'] }}
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-medium 
+                                    @if($announcement['type'] == 'tausiyah') text-emerald-600 bg-emerald-50
+                                    @elseif($announcement['type'] == 'kajian') text-blue-600 bg-blue-50
+                                    @elseif($announcement['type'] == 'pengumuman') text-purple-600 bg-purple-50
+                                    @elseif($announcement['type'] == 'himbauan') text-amber-600 bg-amber-50
+                                    @else text-gray-600 bg-gray-50 @endif
+                                    px-2 py-0.5 rounded">
+                                    {{ ucfirst($announcement['type']) }}
                                 </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border {{ getPriorityBadgeClass($announcement['priority']) }}">
-                                    {{ $announcement['priority'] }}
-                                </span>
+                                
                                 @if($announcement['is_pinned'])
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 text-[9px] font-bold uppercase tracking-wider">
-                                        <x-lucide-pin class="w-3 h-3 mr-1" />
+                                    <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
                                         Pinned
                                     </span>
                                 @endif
-                                @if(!$announcement['read_status'])
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 text-[9px] font-bold uppercase tracking-wider">
-                                        Baru
-                                    </span>
-                                @endif
                             </div>
 
-                            <h4 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight leading-snug">
-                                <a href="{{ route('staff.pengumuman.show', $announcement['id']) }}" class="hover:text-blue-600 transition-colors">
-                                    {{ $announcement['title'] }}
-                                </a>
-                            </h4>
+                            <h3 class="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                {{ $announcement['title'] }}
+                            </h3>
 
-                            <p class="text-xs sm:text-sm text-gray-500 line-clamp-2 leading-relaxed">
-                                {{ $announcement['content'] }}
+                            <p class="text-sm text-gray-500 line-clamp-2 mt-1">
+                                {{ Str::limit(strip_tags($announcement['content'] ?? ''), 100) }}
                             </p>
 
-                            <div class="flex flex-wrap items-center gap-4 text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider pt-2">
-                                <span class="flex items-center">
-                                    <x-lucide-user class="w-3.5 h-3.5 mr-1.5 text-gray-300" />
-                                    {{ $announcement['created_by'] }}
+                            <div class="flex items-center gap-3 mt-3 text-xs text-gray-400">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    {{ \Carbon\Carbon::parse($announcement['created_at'])->diffForHumans() }}
                                 </span>
-                                <span class="flex items-center">
-                                    <x-lucide-calendar class="w-3.5 h-3.5 mr-1.5 text-gray-300" />
-                                    {{ \Carbon\Carbon::parse($announcement['published_at'])->format('d M Y') }}
-                                </span>
-                                @if(count($announcement['attachments']) > 0)
-                                    <span class="flex items-center text-blue-500">
-                                        <x-lucide-paperclip class="w-3.5 h-3.5 mr-1.5" />
-                                        {{ count($announcement['attachments']) }} File
-                                    </span>
-                                @endif
                             </div>
                         </div>
 
-                        <div class="flex items-center lg:items-end lg:flex-col gap-2 flex-shrink-0">
-                            <a href="{{ route('staff.pengumuman.show', $announcement['id']) }}" 
-                               class="flex-1 lg:flex-none inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all shadow-sm">
-                                <x-lucide-eye class="w-4 h-4 mr-2" />
-                                Baca
-                            </a>
-                            @if(!$announcement['read_status'])
-                                <button onclick="markAsRead({{ $announcement['id'] }}, this)" 
-                                        class="inline-flex items-center justify-center px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold rounded-xl hover:bg-emerald-100 transition-all shadow-sm">
-                                    <x-lucide-check class="w-4 h-4 lg:mr-2" />
-                                    <span class="hidden lg:inline uppercase tracking-widest">Selesai</span>
-                                </button>
-                            @endif
-                        </div>
+                        <!-- Arrow -->
+                        <svg class="w-5 h-5 text-gray-300 group-hover:text-blue-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
                     </div>
+                </a>
+            @empty
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-600 font-medium">Tidak ada pengumuman</p>
+                    <p class="text-sm text-gray-500 mt-1">Belum ada pengumuman yang dipublikasikan</p>
                 </div>
-                @empty
-                <div class="text-center py-12">
-                    <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
-                    <h5 class="text-xl font-medium text-gray-500 mb-2">Tidak ada pengumuman</h5>
-                    <p class="text-gray-400">Belum ada pengumuman yang tersedia saat ini.</p>
-                </div>
-                @endforelse
-            </div>
+            @endforelse
         </div>
+
     </div>
 </div>
-
-<script>
-// Search functionality
-document.getElementById('searchInput').addEventListener('input', function() {
-    filterAnnouncements();
-});
-
-// Filter functionality
-document.getElementById('typeFilter').addEventListener('change', function() {
-    filterAnnouncements();
-});
-
-document.getElementById('priorityFilter').addEventListener('change', function() {
-    filterAnnouncements();
-});
-
-function filterAnnouncements() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const typeFilter = document.getElementById('typeFilter').value;
-    const priorityFilter = document.getElementById('priorityFilter').value;
-    
-    const items = document.querySelectorAll('.announcement-item');
-    
-    items.forEach(item => {
-        const title = item.dataset.title;
-        const type = item.dataset.type;
-        const priority = item.dataset.priority;
-        
-        const matchesSearch = title.includes(searchTerm);
-        const matchesType = !typeFilter || type === typeFilter;
-        const matchesPriority = !priorityFilter || priority === priorityFilter;
-        
-        if (matchesSearch && matchesType && matchesPriority) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-function markAsRead(id) {
-    // Simulate marking as read
-    const button = event.target.closest('button');
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>';
-    button.disabled = true;
-    
-    setTimeout(() => {
-        // Remove unread indicator
-        const item = button.closest('.announcement-item');
-        item.classList.remove('bg-gray-50');
-        
-        // Remove blue dot
-        const blueDot = item.querySelector('.bg-blue-500.rounded-full');
-        if (blueDot) {
-            blueDot.remove();
-        }
-        
-        // Remove mark as read button
-        button.remove();
-        
-        // Show success message
-        showToast('Pengumuman ditandai sebagai sudah dibaca', 'success');
-    }, 1000);
-}
-
-function markAllAsRead() {
-    const unreadItems = document.querySelectorAll('.announcement-item.bg-gray-50');
-    
-    if (unreadItems.length === 0) {
-        showToast('Semua pengumuman sudah dibaca', 'info');
-        return;
-    }
-    
-    unreadItems.forEach(item => {
-        item.classList.remove('bg-gray-50');
-        
-        const blueDot = item.querySelector('.bg-blue-500.rounded-full');
-        if (blueDot) {
-            blueDot.remove();
-        }
-        
-        const markButton = item.querySelector('button[onclick*="markAsRead"]');
-        if (markButton) {
-            markButton.remove();
-        }
-    });
-    
-    showToast(`${unreadItems.length} pengumuman ditandai sebagai sudah dibaca`, 'success');
-}
-
-function showToast(message, type = 'info') {
-    // Simple toast notification
-    const toast = document.createElement('div');
-    toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 translate-x-full ${
-        type === 'success' ? 'bg-green-500' : 
-        type === 'error' ? 'bg-red-500' : 
-        'bg-blue-500'
-    }`;
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    
-    // Show toast
-    setTimeout(() => {
-        toast.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Hide toast after 3 seconds
-    setTimeout(() => {
-        toast.classList.add('translate-x-full');
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 300);
-    }, 3000);
-}
-</script>
-
-<style>
-.announcement-item {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-@keyframes slide-in-right {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
-}
-</style>
-
-@php
-function getTypeBadgeClass($type) {
-    return match($type) {
-        'tausiyah' => 'bg-green-100 text-green-800',
-        'kajian' => 'bg-blue-100 text-blue-800',
-        'pengumuman' => 'bg-purple-100 text-purple-800',
-        'himbauan' => 'bg-yellow-100 text-yellow-800',
-        'undangan' => 'bg-indigo-100 text-indigo-800',
-        default => 'bg-gray-100 text-gray-800'
-    };
-}
-
-function getPriorityBadgeClass($priority) {
-    return match($priority) {
-        'low' => 'bg-gray-100 text-gray-800',
-        'normal' => 'bg-blue-100 text-blue-800',
-        'high' => 'bg-yellow-100 text-yellow-800',
-        'urgent' => 'bg-red-100 text-red-800',
-        default => 'bg-gray-100 text-gray-800'
-    };
-}
-@endphp
 @endsection
+
+@push('scripts')
+<script>
+    // Simple search filter
+    document.getElementById('searchInput')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.space-y-3 > a');
+        
+        items.forEach(item => {
+            const title = item.querySelector('h3')?.textContent.toLowerCase() || '';
+            const content = item.querySelector('p')?.textContent.toLowerCase() || '';
+            
+            if (title.includes(searchTerm) || content.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Type filter
+    document.getElementById('typeFilter')?.addEventListener('change', function(e) {
+        const type = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.space-y-3 > a');
+        
+        items.forEach(item => {
+            const itemType = item.querySelector('.text-xs.font-medium')?.textContent.toLowerCase() || '';
+            
+            if (!type || itemType.includes(type)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+@endpush
