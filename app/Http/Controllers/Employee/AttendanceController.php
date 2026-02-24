@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee\Attendance as EmployeeAttendance;
-use App\Models\WorkShift;
-use App\Models\Holiday;
 use App\Models\AttendanceSetting;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Models\Employee\Attendance as EmployeeAttendance;
+use App\Models\Holiday;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
@@ -31,7 +31,7 @@ class AttendanceController extends Controller
             'months' => [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
                 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
             ],
             'years' => range(now()->year, 2024, -1),
             'month' => $month,
@@ -46,26 +46,26 @@ class AttendanceController extends Controller
 
         $days = [];
         $current = $startDate->copy();
-        
+
         // Get working days setting (1=Mon, 2=Tue, ..., 7=Sun)
         $workingDays = AttendanceSetting::getValue('working_days', '1,2,3,4,5,6');
-        $workingDaysArray = is_array($workingDays) ? $workingDays : explode(',', $workingDays);
+        $workingDaysArray = $this->normalizeWorkingDays($workingDays);
 
         while ($current->lte($endDate)) {
             $isHoliday = Holiday::isHoliday($current);
             $holidayInfo = $isHoliday ? Holiday::getHolidayInfo($current) : null;
             $isWorkingDay = in_array($current->dayOfWeekIso, $workingDaysArray);
-            
+
             $days[] = [
                 'date' => $current->format('Y-m-d'),
                 'day' => $current->day,
                 'day_name' => $current->locale('id')->isoFormat('dddd'),
                 'formatted_date' => $current->format('d M Y'),
-                'is_weekend' => !$isWorkingDay,
+                'is_weekend' => ! $isWorkingDay,
                 'is_holiday' => $isHoliday,
                 'holiday_name' => $holidayInfo?->name,
             ];
-            
+
             $current->addDay();
         }
 
@@ -74,7 +74,7 @@ class AttendanceController extends Controller
 
     private function getAttendanceData($year, $month, $statusFilter, $daysInMonth)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth()->format('Y-m-d');
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
 
@@ -82,7 +82,7 @@ class AttendanceController extends Controller
         $records = EmployeeAttendance::where('user_id', $user->id)
             ->whereBetween('date', [$startDate, $endDate])
             ->get()
-            ->keyBy(function($item) {
+            ->keyBy(function ($item) {
                 return $item->date->format('Y-m-d');
             });
 
@@ -114,19 +114,27 @@ class AttendanceController extends Controller
                 $notes = $record->notes;
 
                 // Simple summary mapping
-                if (in_array($status, ['on_time', 'early_arrival', 'present'])) $summary['present']++;
-                elseif ($status === 'late') { $summary['present']++; $summary['late']++; }
-                elseif ($status === 'incomplete') $summary['incomplete']++;
-                elseif ($status === 'absent') $summary['absent']++;
+                if (in_array($status, ['on_time', 'early_arrival', 'present'])) {
+                    $summary['present']++;
+                } elseif ($status === 'late') {
+                    $summary['present']++;
+                    $summary['late']++;
+                } elseif ($status === 'incomplete') {
+                    $summary['incomplete']++;
+                } elseif ($status === 'absent') {
+                    $summary['absent']++;
+                }
             } else {
                 // Synthesis for missing records
-                $isPastDay = Carbon::parse($date)->isPast() && !Carbon::parse($date)->isToday();
-                
+                $isPastDay = Carbon::parse($date)->isPast() && ! Carbon::parse($date)->isToday();
+
                 if ($day['is_holiday'] || $day['is_weekend']) {
                     $status = 'off';
                     $statusLabel = $day['is_holiday'] ? 'Libur' : 'Weekend';
                     $statusBadge = 'gray';
-                    if ($day['is_holiday']) $summary['holiday']++;
+                    if ($day['is_holiday']) {
+                        $summary['holiday']++;
+                    }
                 } elseif ($isPastDay) {
                     $status = 'absent';
                     $statusLabel = 'Tidak Hadir';
@@ -137,13 +145,21 @@ class AttendanceController extends Controller
 
             // Apply status filter
             if ($statusFilter && $status !== $statusFilter) {
-                if ($statusFilter === 'present' && !in_array($status, ['on_time', 'early_arrival', 'present', 'late'])) continue;
-                if ($statusFilter === 'late' && $status !== 'late') continue;
-                if ($statusFilter === 'absent' && $status !== 'absent') continue;
-                if ($statusFilter === 'incomplete' && $status !== 'incomplete') continue;
-                
+                if ($statusFilter === 'present' && ! in_array($status, ['on_time', 'early_arrival', 'present', 'late'])) {
+                    continue;
+                }
+                if ($statusFilter === 'late' && $status !== 'late') {
+                    continue;
+                }
+                if ($statusFilter === 'absent' && $status !== 'absent') {
+                    continue;
+                }
+                if ($statusFilter === 'incomplete' && $status !== 'incomplete') {
+                    continue;
+                }
+
                 // If filtering by specific status and it doesn't match, skip
-                if (!in_array($statusFilter, ['present', 'late', 'absent', 'incomplete'])) {
+                if (! in_array($statusFilter, ['present', 'late', 'absent', 'incomplete'])) {
                     continue;
                 }
             }
@@ -168,5 +184,25 @@ class AttendanceController extends Controller
             'history' => $history,
             'summary' => $summary,
         ];
+    }
+
+    /**
+     * Normalize working days config into integer day-of-week ISO values.
+     *
+     * @param  array<int, int|string>|string  $workingDays
+     * @return array<int, int>
+     */
+    private function normalizeWorkingDays(array|string $workingDays): array
+    {
+        $source = is_array($workingDays) ? $workingDays : explode(',', $workingDays);
+
+        $normalized = collect($source)
+            ->map(fn ($value) => (int) trim((string) $value))
+            ->filter(fn (int $value) => $value >= 1 && $value <= 7)
+            ->unique()
+            ->values()
+            ->all();
+
+        return $normalized !== [] ? $normalized : [1, 2, 3, 4, 5, 6];
     }
 }
