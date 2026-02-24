@@ -29,8 +29,11 @@ class RoleSwitcher extends Component
 
         session()->flash('success', "Berhasil beralih ke peran {$role}.");
 
-        // Redirect to refresh the page and apply new permissions
-        return redirect()->to(request()->header('Referer') ?: '/');
+        $targetRoute = in_array($role, ['staff', 'employee'], true)
+            ? 'staff.dashboard'
+            : 'dashboard';
+
+        return redirect()->route($targetRoute);
     }
 
     public function render()

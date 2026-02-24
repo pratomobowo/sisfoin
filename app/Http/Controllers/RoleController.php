@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
@@ -19,14 +20,21 @@ class RoleController extends Controller
         $role = $request->input('role');
 
         // Check if user has this role
-        if (! auth()->user()->hasRole($role)) {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        if (! $user || ! $user->hasRole($role)) {
             return back()->with('error', 'You do not have permission to switch to this role.');
         }
 
         // Set the active role
         setActiveRole($role);
 
-        return back()->with('success', "Successfully switched to {$role} role.");
+        $targetRoute = in_array($role, ['staff', 'employee'], true)
+            ? 'staff.dashboard'
+            : 'dashboard';
+
+        return redirect()->route($targetRoute)->with('success', "Successfully switched to {$role} role.");
     }
 
     /**
@@ -34,8 +42,11 @@ class RoleController extends Controller
      */
     public function getAvailableRoles()
     {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
         return response()->json([
-            'roles' => auth()->user()->roles->pluck('name')->toArray(),
+            'roles' => $user ? $user->roles->pluck('name')->toArray() : [],
             'active_role' => getActiveRole(),
         ]);
     }

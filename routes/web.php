@@ -8,6 +8,7 @@ use App\Http\Controllers\SDM\SlipGajiController;
 use App\Http\Controllers\Superadmin\ActivityLogController;
 use App\Http\Controllers\Superadmin\RoleController as SuperadminRoleController;
 use App\Http\Controllers\Superadmin\UserController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,6 +16,26 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    /** @var \App\Models\User|null $user */
+    $user = Auth::user();
+
+    if (request()->boolean('admin')) {
+        foreach (['super-admin', 'admin-sdm', 'admin-sekretariat'] as $adminRole) {
+            if ($user && $user->hasRole($adminRole)) {
+                setActiveRole($adminRole);
+                break;
+            }
+        }
+    }
+
+    if (isActiveRole('staff|employee')) {
+        return redirect()->route('staff.dashboard');
+    }
+
+    if (! isActiveRole('super-admin|admin-sdm|admin-sekretariat')) {
+        abort(403);
+    }
+
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
