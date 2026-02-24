@@ -1,326 +1,202 @@
-@extends('layouts.app')
-
-@section('breadcrumb')
-    <nav class="flex overflow-x-auto pb-1 invisible-scrollbar" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-2 whitespace-nowrap">
-            <li class="inline-flex items-center">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
-                    <x-lucide-home class="w-4 h-4 sm:mr-2" />
-                    <span class="hidden sm:inline">Dashboard</span>
-                </a>
-                <x-lucide-chevron-right class="w-4 h-4 text-gray-400 mx-1 sm:mx-2" />
-            </li>
-            <li>
-                <span class="text-sm font-semibold text-gray-900">
-                    Riwayat Absensi
-                </span>
-            </li>
-        </ol>
-    </nav>
-@endsection
+@extends('layouts.staff')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-    {{-- Header Section --}}
-    <div class="bg-white rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="p-4 sm:p-6 lg:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
-            <div class="space-y-1">
-                <div class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 sm:mb-2 text-center">
-                    Layanan Mandiri
+<div class="min-h-screen bg-gray-50 pb-24 lg:pb-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg shadow-blue-200 overflow-hidden">
+            <div class="px-5 py-6 lg:px-6 lg:py-7">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 text-blue-100 text-xs font-semibold uppercase tracking-wide mb-2">
+                            <a href="{{ route('staff.dashboard') }}" class="inline-flex items-center hover:text-white transition-colors">
+                                <x-lucide-chevron-left class="w-4 h-4 mr-1" />
+                                Dashboard
+                            </a>
+                            <span>/</span>
+                            <span>Absensi</span>
+                        </div>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-white">Riwayat Absensi</h1>
+                        <p class="text-blue-100 mt-1">Pantau kehadiran dan ketidakhadiran Anda</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                        <x-lucide-calendar-check class="w-5 h-5" />
+                    </div>
                 </div>
-                <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">Riwayat Absensi</h1>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/20 text-white text-xs font-semibold">
+                        <x-lucide-calendar-range class="w-3.5 h-3.5 mr-1.5" />
+                        {{ $months[$month] ?? 'Bulan' }} {{ $year }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/20 text-white text-xs font-semibold">
+                        <x-lucide-check-circle class="w-3.5 h-3.5 mr-1.5" />
+                        Hadir: {{ $summary['present'] ?? 0 }} hari
+                    </span>
+                </div>
             </div>
-            
-            <!-- Filters -->
-            <form action="{{ route('staff.attendance.index') }}" method="GET" class="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
-                <div class="relative group flex-1 sm:flex-none">
-                    <select name="month" onchange="this.form.submit()" class="w-full sm:w-auto pl-3 pr-8 py-2 bg-gray-50 border-none rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm">
+        </div>
+        
+        <!-- Month/Year Filter -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <form action="{{ route('staff.attendance.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan</label>
+                    <select name="month" onchange="this.form.submit()" 
+                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer">
                         @foreach($months as $num => $name)
                             <option value="{{ $num }}" {{ $month == $num ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-4 h-4" />
-                    </div>
                 </div>
-
-                <div class="relative group flex-1 sm:flex-none">
-                    <select name="year" onchange="this.form.submit()" class="w-full sm:w-auto pl-3 pr-8 py-2 bg-gray-50 border-none rounded-xl text-xs sm:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none shadow-sm">
+                
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+                    <select name="year" onchange="this.form.submit()" 
+                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer">
                         @foreach($years as $y)
                             <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <x-lucide-chevron-down class="w-4 h-4" />
-                    </div>
                 </div>
             </form>
         </div>
-    </div>
 
-    <!-- Summary Statistics -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        <!-- Present Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-2.5 sm:p-3 lg:p-4 bg-emerald-50 text-emerald-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
-                <x-lucide-check-circle class="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1">Hadir</p>
-                <div class="flex items-baseline space-x-1">
-                    <span class="text-xl sm:text-2xl font-black text-gray-900">{{ $summary['present'] }}</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Hadir -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Hadir</span>
                 </div>
+                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $summary['present'] }}</p>
+                <p class="text-xs text-gray-500 mt-1">Hari</p>
             </div>
-        </div>
 
-        <!-- Late Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-2.5 sm:p-3 lg:p-4 bg-amber-50 text-amber-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
-                <x-lucide-clock class="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1 truncate">Terlambat</p>
-                <div class="flex items-baseline space-x-1">
-                    <span class="text-xl sm:text-2xl font-black text-amber-600">{{ $summary['late'] }}</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Kali</span>
+            <!-- Terlambat -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Telat</span>
                 </div>
+                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $summary['late'] }}</p>
+                <p class="text-xs text-gray-500 mt-1">Kali</p>
             </div>
-        </div>
 
-        <!-- Incomplete Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-2.5 sm:p-3 lg:p-4 bg-purple-50 text-purple-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
-                <x-lucide-alert-triangle class="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1 truncate">Tdk Lengkap</p>
-                <div class="flex items-baseline space-x-1">
-                    <span class="text-xl sm:text-2xl font-black text-purple-600">{{ $summary['incomplete'] }}</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
+            <!-- Tidak Lengkap -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Tdk Lengkap</span>
                 </div>
+                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $summary['incomplete'] }}</p>
+                <p class="text-xs text-gray-500 mt-1">Hari</p>
             </div>
-        </div>
 
-        <!-- Absent Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-3 sm:space-x-4 lg:space-x-5 transition-transform hover:scale-[1.02]">
-            <div class="p-2.5 sm:p-3 lg:p-4 bg-rose-50 text-rose-600 rounded-xl lg:rounded-2xl shadow-inner flex-shrink-0">
-                <x-lucide-x-circle class="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div class="min-w-0">
-                <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest mb-0.5 sm:mb-1">Alpa</p>
-                <div class="flex items-baseline space-x-1">
-                    <span class="text-xl sm:text-2xl font-black text-rose-600">{{ $summary['absent'] }}</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 font-medium">Hari</span>
+            <!-- Alpa -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-rose-600 bg-rose-50 px-2 py-1 rounded-full">Alpa</span>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Attendance Log Table -->
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-8 py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                <x-lucide-list class="w-5 h-5 mr-3 text-blue-600" />
-                Catatan Kehadiran Harian
-            </h3>
-            <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                    <div class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Live Updates</span>
-                </div>
+                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $summary['absent'] }}</p>
+                <p class="text-xs text-gray-500 mt-1">Hari</p>
             </div>
         </div>
 
-        <!-- Desktop Table View -->
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-50">
-                <thead>
-                    <tr class="bg-gray-50/50">
-                        <th class="px-8 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">Tanggal & Hari</th>
-                        <th class="px-8 py-4 text-center text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">Jam Masuk</th>
-                        <th class="px-8 py-4 text-center text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">Jam Keluar</th>
-                        <th class="px-8 py-4 text-center text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">Status</th>
-                        <th class="px-8 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">Informasi / Catatan</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    @forelse($history as $item)
-                        <tr class="hover:bg-blue-50/10 transition-colors">
-                            <td class="px-8 py-5">
-                                <div class="flex items-center space-x-4">
-                                    <div class="flex-shrink-0 w-12 h-12 rounded-2xl flex flex-col items-center justify-center 
-                                        {{ $item['is_weekend'] || $item['is_holiday'] ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600' }}">
-                                        <span class="text-lg font-black leading-none">{{ explode(' ', $item['formatted_date'])[0] }}</span>
-                                        <span class="text-[9px] font-bold uppercase">{{ substr($item['day_name'], 0, 3) }}</span>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-gray-900">{{ $item['formatted_date'] }}</p>
-                                        <p class="text-xs font-medium text-gray-500">{{ $item['day_name'] }}</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-8 py-5 text-center">
-                                @if($item['check_in'] && $item['check_in'] !== '-')
-                                    <span class="inline-flex flex-col">
-                                        <span class="text-sm font-black text-gray-900">{{ $item['check_in'] }}</span>
-                                        <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Recorded</span>
-                                    </span>
-                                @else
-                                    <span class="text-gray-300">--:--</span>
-                                @endif
-                            </td>
-                            <td class="px-8 py-5 text-center">
-                                @if($item['check_out'] && $item['check_out'] !== '-')
-                                    <span class="inline-flex flex-col">
-                                        <span class="text-sm font-black text-gray-900">{{ $item['check_out'] }}</span>
-                                        <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Recorded</span>
-                                    </span>
-                                @else
-                                    <span class="text-gray-300">--:--</span>
-                                @endif
-                            </td>
-                            <td class="px-8 py-5 text-center">
-                                @php
-                                    $badgeClasses = [
-                                        'blue' => 'bg-blue-50 text-blue-700 ring-blue-600/10',
-                                        'green' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
-                                        'yellow' => 'bg-amber-50 text-amber-700 ring-amber-600/10',
-                                        'red' => 'bg-rose-50 text-rose-700 ring-rose-600/10',
-                                        'orange' => 'bg-orange-50 text-orange-700 ring-orange-600/10',
-                                        'purple' => 'bg-purple-50 text-purple-700 ring-purple-600/10',
-                                        'gray' => 'bg-gray-50 text-gray-600 ring-gray-600/10',
-                                    ];
-                                    $color = $item['status_badge'] ?? 'gray';
-                                    $class = $badgeClasses[$color] ?? $badgeClasses['gray'];
-                                @endphp
-                                <span class="inline-flex items-center rounded-xl px-3 py-1 text-[11px] font-bold ring-1 ring-inset {{ $class }}">
-                                    {{ $item['status_label'] ?? '-' }}
-                                </span>
-                            </td>
-                            <td class="px-8 py-5">
-                                @if($item['is_holiday'])
-                                    <div class="flex items-center text-rose-500 space-x-2">
-                                        <x-lucide-party-popper class="w-4 h-4" />
-                                        <span class="text-xs font-bold italic">{{ $item['holiday_name'] }}</span>
-                                    </div>
-                                @elseif($item['notes'])
-                                    <p class="text-xs font-medium text-gray-500 bg-gray-50 px-3 py-2 rounded-xl border border-dotted border-gray-200 inline-block">
-                                        {{ $item['notes'] }}
-                                    </p>
-                                @else
-                                    <span class="text-[10px] text-gray-300 italic font-medium">Tidak ada catatan</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-8 py-20 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                        <x-lucide-calendar-x class="w-10 h-10 text-gray-300" />
-                                    </div>
-                                    <h4 class="text-lg font-bold text-gray-900">Data Tidak Ditemukan</h4>
-                                    <p class="text-gray-500 text-sm">Belum ada data absensi untuk periode ini.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Mobile Stacked View -->
-        <div class="lg:hidden divide-y divide-gray-50">
-            @forelse($history as $item)
-                <div class="p-4 space-y-4 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center 
-                                {{ $item['is_weekend'] || $item['is_holiday'] ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600' }}">
-                                <span class="text-base font-black leading-none">{{ explode(' ', $item['formatted_date'])[0] }}</span>
-                                <span class="text-[8px] font-bold uppercase">{{ substr($item['day_name'], 0, 3) }}</span>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-gray-900">{{ $item['formatted_date'] }}</p>
-                                <p class="text-[10px] text-gray-500">{{ $item['day_name'] }}</p>
-                            </div>
-                        </div>
-                        
-                        @php
-                            $badgeClasses = [
-                                'blue' => 'bg-blue-50 text-blue-700 ring-blue-600/10',
-                                'green' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
-                                'yellow' => 'bg-amber-50 text-amber-700 ring-amber-600/10',
-                                'red' => 'bg-rose-50 text-rose-700 ring-rose-600/10',
-                                'orange' => 'bg-orange-50 text-orange-700 ring-orange-600/10',
-                                'purple' => 'bg-purple-50 text-purple-700 ring-purple-600/10',
-                                'gray' => 'bg-gray-50 text-gray-600 ring-gray-600/10',
-                            ];
-                            $color = $item['status_badge'] ?? 'gray';
-                            $class = $badgeClasses[$color] ?? $badgeClasses['gray'];
-                        @endphp
-                        <span class="inline-flex items-center rounded-lg px-2 py-1 text-[9px] font-bold ring-1 ring-inset {{ $class }}">
-                            {{ $item['status_label'] ?? '-' }}
-                        </span>
+        <!-- Detail Kehadiran: 2 Kolom -->
+        @php
+            $riwayat = collect($history ?? [])->sortByDesc('date')->values();
+        @endphp
+        <div>
+            <section>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base lg:text-lg font-bold text-gray-800">Detail Kehadiran</h2>
+                        <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">Urutan: Terbaru</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
-                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter mb-1">Masuk</p>
-                            <p class="text-sm font-black text-gray-900">{{ $item['check_in'] && $item['check_in'] !== '-' ? $item['check_in'] : '--:--' }}</p>
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-center">
-                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter mb-1">Pulang</p>
-                            <p class="text-sm font-black text-gray-900">{{ $item['check_out'] && $item['check_out'] !== '-' ? $item['check_out'] : '--:--' }}</p>
-                        </div>
-                    </div>
+                    @if($riwayat->isNotEmpty())
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach($riwayat as $attendance)
+                                <div class="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 uppercase tracking-wide">
+                                                {{ \Carbon\Carbon::parse($attendance['date'])->locale('id')->isoFormat('ddd') }}
+                                            </p>
+                                            <p class="text-lg font-bold text-gray-900">
+                                                {{ \Carbon\Carbon::parse($attendance['date'])->locale('id')->isoFormat('D MMMM YYYY') }}
+                                            </p>
+                                        </div>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold
+                                            @if($attendance['status'] == 'present' || $attendance['status'] == 'on_time') bg-emerald-100 text-emerald-700
+                                            @elseif($attendance['status'] == 'late') bg-amber-100 text-amber-700
+                                            @elseif($attendance['status'] == 'absent') bg-rose-100 text-rose-700
+                                            @else bg-gray-200 text-gray-700 @endif">
+                                            @if($attendance['status'] == 'present' || $attendance['status'] == 'on_time')
+                                                Hadir
+                                            @elseif($attendance['status'] == 'late')
+                                                Terlambat
+                                            @elseif($attendance['status'] == 'absent')
+                                                Tidak Hadir
+                                            @elseif($attendance['status'] == 'permission')
+                                                Izin
+                                            @else
+                                                {{ ucfirst($attendance['status'] ?? '-') }}
+                                            @endif
+                                        </span>
+                                    </div>
 
-                    @if($item['is_holiday'])
-                        <div class="flex items-center text-rose-500 space-x-2 bg-rose-50 p-2.5 rounded-xl border border-rose-100">
-                            <x-lucide-party-popper class="w-3.5 h-3.5" />
-                            <span class="text-[10px] font-bold italic">{{ $item['holiday_name'] }}</span>
+                                    <div class="mt-3 grid grid-cols-2 gap-2">
+                                        <div class="bg-white rounded-xl border border-gray-100 p-2.5">
+                                            <p class="text-[10px] font-semibold uppercase text-gray-500">Jam Masuk</p>
+                                            <p class="text-sm font-bold text-gray-900 mt-0.5">{{ $attendance['check_in'] ?: '-' }}</p>
+                                        </div>
+                                        <div class="bg-white rounded-xl border border-gray-100 p-2.5">
+                                            <p class="text-[10px] font-semibold uppercase text-gray-500">Jam Pulang</p>
+                                            <p class="text-sm font-bold text-gray-900 mt-0.5">{{ $attendance['check_out'] ?: '-' }}</p>
+                                        </div>
+                                    </div>
+
+                                    @if(!empty($attendance['notes']))
+                                        <div class="mt-3 text-xs text-gray-600 bg-white border border-gray-100 rounded-xl p-2.5">
+                                            <span class="font-semibold">Catatan:</span> {{ $attendance['notes'] }}
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
                         </div>
-                    @elseif($item['notes'])
-                        <div class="p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
-                            <p class="text-[10px] font-medium text-blue-700 italic">"{{ $item['notes'] }}"</p>
+                    @else
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                            <p class="text-gray-600 font-medium">Belum ada data absensi</p>
+                            <p class="text-sm text-gray-500 mt-1">Data absensi akan muncul di sini</p>
                         </div>
                     @endif
                 </div>
-            @empty
-                <div class="p-10 text-center">
-                    <p class="text-xs text-gray-400">Belum ada data periode ini.</p>
-                </div>
-            @endforelse
+            </section>
         </div>
 
-
-        <!-- Legend Section -->
-        <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-50">
-            <div class="flex flex-wrap items-center gap-6">
-                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Legenda Status:</span>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
-                    <span class="text-[10px] font-bold text-gray-600 tracking-tight">Hadir Tepat Waktu</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-200"></div>
-                    <span class="text-[10px] font-bold text-gray-600 tracking-tight">Terlambat</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-200"></div>
-                    <span class="text-[10px] font-bold text-gray-600 tracking-tight">Tidak Hadir (Alpa)</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-purple-500 shadow-sm shadow-purple-200"></div>
-                    <span class="text-[10px] font-bold text-gray-600 tracking-tight">Absen Tidak Lengkap</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-gray-400 shadow-sm shadow-gray-100"></div>
-                    <span class="text-[10px] font-bold text-gray-600 tracking-tight">Libur / Akhir Pekan</span>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @endsection
