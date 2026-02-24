@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -117,7 +118,7 @@ class AnnouncementController extends Controller
         // For now, just return success response
         return response()->json([
             'success' => true,
-            'message' => 'Pengumuman ditandai sebagai sudah dibaca.'
+            'message' => 'Pengumuman ditandai sebagai sudah dibaca.',
         ]);
     }
 
