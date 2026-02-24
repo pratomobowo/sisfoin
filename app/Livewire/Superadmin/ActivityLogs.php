@@ -65,9 +65,35 @@ class ActivityLogs extends Component
 
         // Get unique log names for filter dropdown
         $logNames = ActivityLogModel::distinct()->pluck('log_name')->filter()->toArray();
-        $modules = ActivityLogModel::query()->distinct()->pluck('metadata->module')->filter()->values()->toArray();
-        $riskLevels = ActivityLogModel::query()->distinct()->pluck('metadata->risk_level')->filter()->values()->toArray();
-        $results = ActivityLogModel::query()->distinct()->pluck('metadata->result')->filter()->values()->toArray();
+        $modules = ActivityLogModel::query()
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.\"module\"')) as value")
+            ->whereNotNull('metadata')
+            ->whereRaw("JSON_EXTRACT(metadata, '$.\"module\"') IS NOT NULL")
+            ->distinct()
+            ->pluck('value')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $riskLevels = ActivityLogModel::query()
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.\"risk_level\"')) as value")
+            ->whereNotNull('metadata')
+            ->whereRaw("JSON_EXTRACT(metadata, '$.\"risk_level\"') IS NOT NULL")
+            ->distinct()
+            ->pluck('value')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $results = ActivityLogModel::query()
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.\"result\"')) as value")
+            ->whereNotNull('metadata')
+            ->whereRaw("JSON_EXTRACT(metadata, '$.\"result\"') IS NOT NULL")
+            ->distinct()
+            ->pluck('value')
+            ->filter()
+            ->values()
+            ->toArray();
 
         return view('livewire.superadmin.activity-log', [
             'activityLogs' => $activityLogs,
