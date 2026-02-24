@@ -124,18 +124,24 @@
                     <div class="row text-center">
                         <div class="col-md-4">
                             <div class="border-end">
-                                <h4 class="text-primary mb-1">22</h4>
+                                <h4 class="text-primary mb-1">{{ $quickStats['attendance_days_this_month'] ?? 0 }}</h4>
                                 <small class="text-muted">Hari Hadir Bulan Ini</small>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border-end">
-                                <h4 class="text-success mb-1">Rp 4.500.000</h4>
+                                <h4 class="text-success mb-1">
+                                    @if(!is_null($quickStats['latest_net_salary'] ?? null))
+                                        Rp {{ number_format($quickStats['latest_net_salary'], 0, ',', '.') }}
+                                    @else
+                                        Belum tersedia
+                                    @endif
+                                </h4>
                                 <small class="text-muted">Gaji Bulan Ini</small>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <h4 class="text-info mb-1">3</h4>
+                            <h4 class="text-info mb-1">{{ $quickStats['unread_announcements'] ?? 0 }}</h4>
                             <small class="text-muted">Pengumuman Baru</small>
                         </div>
                     </div>
