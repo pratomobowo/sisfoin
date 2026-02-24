@@ -75,6 +75,10 @@
                 Reset Filter
             </button>
         </div>
+
+        <div class="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            Gunakan tombol di header untuk <span class="font-semibold">Upload Data Slip Gaji</span>. Area ini khusus filter dan pencarian agar proses lebih mudah diikuti.
+        </div>
     </div>
 
     <!-- Data Table -->

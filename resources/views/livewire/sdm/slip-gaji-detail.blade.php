@@ -34,6 +34,10 @@
             </div>
         </div>
 
+        <div class="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            Gunakan <span class="font-semibold">Kirim Email Masal</span> untuk menjadwalkan seluruh email slip gaji. Sistem akan melewati data yang sudah pending/processing agar tidak duplikat.
+        </div>
+
         <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-gray-100 pt-4">
             <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</p>
@@ -112,6 +116,7 @@
 
         <div class="mt-4 border-t border-gray-200 pt-4">
             <livewire:sdm.queue-management />
+            <p class="mt-2 text-xs text-gray-500">Queue worker mengatur proses kirim email di background. Hentikan worker hanya saat benar-benar diperlukan.</p>
         </div>
     </div>
 

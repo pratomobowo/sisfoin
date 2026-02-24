@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\SDM;
+namespace App\Livewire\Sdm;
 
 use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\SlipGajiHeader;
