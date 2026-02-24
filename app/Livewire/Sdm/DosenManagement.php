@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Dosen;
 use App\Models\SyncRun;
 use App\Services\SevimaApiService;
@@ -18,7 +19,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class DosenManagement extends Component
 {
-    use SevimaDataMappingTrait, WithPagination;
+    use InteractsWithToast, SevimaDataMappingTrait, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -153,9 +154,9 @@ class DosenManagement extends Component
             $this->syncMessage = 'Sinkronisasi berhasil dijadwalkan.';
 
             if ($run->status === 'failed') {
-                session()->flash('warning', 'Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
+                $this->toastWarning('Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
             } else {
-                session()->flash('success', 'Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
+                $this->toastSuccess('Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
             }
         } catch (\Throwable $e) {
             Log::error('Failed to schedule dosen sync', [
@@ -165,7 +166,7 @@ class DosenManagement extends Component
 
             $this->syncProgress = 0;
             $this->syncMessage = 'Gagal menjadwalkan sinkronisasi.';
-            session()->flash('error', $this->formatUserFriendlyError($e));
+            $this->toastError($this->formatUserFriendlyError($e));
         } finally {
             $this->isSyncing = false;
         }

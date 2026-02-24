@@ -3,6 +3,7 @@
 namespace App\Livewire\Sdm;
 
 use App\Exports\AttendanceRecapExport;
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
 use App\Models\User;
@@ -16,7 +17,7 @@ use Spatie\Activitylog\Models\Activity;
 #[Layout('layouts.app')]
 class AttendanceRecap extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -328,18 +329,28 @@ class AttendanceRecap extends Component
 
     public function export()
     {
-        $data = $this->getRecapData();
+        try {
+            $data = $this->getRecapData();
 
-        $fileName = 'Rekap_Absensi_'.Carbon::create()->month($this->month)->year($this->year)->format('F_Y').'.xlsx';
-        if ($this->useCustomRange) {
-            $fileName = 'Rekap_Absensi_Custom_'.date('Ymd').'.xlsx';
+            $fileName = 'Rekap_Absensi_'.Carbon::create()->month($this->month)->year($this->year)->format('F_Y').'.xlsx';
+            if ($this->useCustomRange) {
+                $fileName = 'Rekap_Absensi_Custom_'.date('Ymd').'.xlsx';
+            }
+
+            $message = 'Export rekap absensi sedang diproses.';
+            $this->toastSuccess($message);
+
+            return Excel::download(new AttendanceRecapExport(
+                $data['employees'],
+                $data['attendanceMatrix'],
+                $data['days']
+            ), $fileName);
+        } catch (\Throwable $e) {
+            $message = 'Gagal mengekspor rekap absensi: '.$e->getMessage();
+            $this->toastError($message);
+
+            return null;
         }
-
-        return Excel::download(new AttendanceRecapExport(
-            $data['employees'],
-            $data['attendanceMatrix'],
-            $data['days']
-        ), $fileName);
     }
 
     private function getShortStatusLabel($status)

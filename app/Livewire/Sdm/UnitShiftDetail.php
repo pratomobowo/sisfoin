@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Employee;
 use App\Models\EmployeeShiftAssignment;
 use App\Models\User;
@@ -15,7 +16,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class UnitShiftDetail extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     public $unitName;
 
@@ -189,7 +190,7 @@ class UnitShiftDetail extends Component
             $assignment = EmployeeShiftAssignment::findOrFail($assignmentId);
 
             if (! $this->isUserInCurrentUnit((int) $assignment->user_id)) {
-                session()->flash('error', 'Akses ditolak: assignment bukan milik unit ini.');
+                $this->toastError('Akses ditolak: assignment bukan milik unit ini.');
 
                 return;
             }
@@ -202,7 +203,7 @@ class UnitShiftDetail extends Component
             $this->notes = $assignment->notes;
         } else {
             if ($userId && ! $this->isUserInCurrentUnit((int) $userId)) {
-                session()->flash('error', 'Akses ditolak: user bukan milik unit ini.');
+                $this->toastError('Akses ditolak: user bukan milik unit ini.');
 
                 return;
             }
@@ -234,7 +235,7 @@ class UnitShiftDetail extends Component
         if ($this->editingId) {
             $existing = EmployeeShiftAssignment::find($this->editingId);
             if (! $existing || ! $this->isUserInCurrentUnit((int) $existing->user_id)) {
-                session()->flash('error', 'Akses ditolak: assignment bukan milik unit ini.');
+                $this->toastError('Akses ditolak: assignment bukan milik unit ini.');
 
                 return;
             }
@@ -265,7 +266,7 @@ class UnitShiftDetail extends Component
         }
 
         $this->closeModal();
-        session()->flash('success', 'Assignment shift berhasil disimpan!');
+        $this->toastSuccess('Assignment shift berhasil disimpan!');
     }
 
     public function delete($id)
@@ -273,13 +274,13 @@ class UnitShiftDetail extends Component
         $assignment = EmployeeShiftAssignment::find($id);
 
         if (! $assignment || ! $this->isUserInCurrentUnit((int) $assignment->user_id)) {
-            session()->flash('error', 'Akses ditolak: assignment bukan milik unit ini.');
+            $this->toastError('Akses ditolak: assignment bukan milik unit ini.');
 
             return;
         }
 
         $assignment->delete();
-        session()->flash('success', 'Assignment shift berhasil dihapus!');
+        $this->toastSuccess('Assignment shift berhasil dihapus!');
     }
 
     private function isUserInCurrentUnit(int $userId): bool

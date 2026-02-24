@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Dosen;
 use App\Models\Employee;
 use App\Models\SyncRun;
@@ -20,7 +21,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class EmployeeManagement extends Component
 {
-    use SevimaDataMappingTrait, WithPagination;
+    use InteractsWithToast, SevimaDataMappingTrait, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -306,9 +307,9 @@ class EmployeeManagement extends Component
             $this->syncMessage = 'Sinkronisasi berhasil dijadwalkan.';
 
             if ($run->status === 'failed') {
-                session()->flash('warning', 'Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
+                $this->toastWarning('Sinkronisasi tidak dijadwalkan: proses untuk mode ini sedang berjalan.');
             } else {
-                session()->flash('success', 'Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
+                $this->toastSuccess('Sinkronisasi berjalan di background. Silakan refresh beberapa saat lagi untuk melihat hasil.');
             }
         } catch (\Throwable $e) {
             Log::error('Failed to schedule SDM sync', [
@@ -318,7 +319,7 @@ class EmployeeManagement extends Component
 
             $this->syncProgress = 0;
             $this->syncMessage = 'Gagal menjadwalkan sinkronisasi.';
-            session()->flash('error', $this->formatUserFriendlyError($e));
+            $this->toastError($this->formatUserFriendlyError($e));
         } finally {
             $this->isSyncing = false;
         }
@@ -617,7 +618,7 @@ class EmployeeManagement extends Component
                     ]);
                 }
 
-                session()->flash('success', 'Data karyawan berhasil diperbarui.');
+                $this->toastSuccess('Data karyawan berhasil diperbarui.');
             } else {
                 // Create new employee
                 $employee = Employee::create($employeeData);
@@ -650,7 +651,7 @@ class EmployeeManagement extends Component
                     ]);
                 }
 
-                session()->flash('success', 'Data karyawan manual berhasil dibuat.');
+                $this->toastSuccess('Data karyawan manual berhasil dibuat.');
             }
 
             DB::commit();
@@ -659,7 +660,7 @@ class EmployeeManagement extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error saving manual employee: '.$e->getMessage());
-            session()->flash('error', 'Gagal menyimpan: '.$e->getMessage());
+            $this->toastError('Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -669,10 +670,10 @@ class EmployeeManagement extends Component
             $employee = Employee::findOrFail($id);
             $employee->delete();
 
-            session()->flash('success', 'Data karyawan berhasil dihapus.');
+            $this->toastSuccess('Data karyawan berhasil dihapus.');
             $this->dispatch('refreshEmployees');
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal menghapus data karyawan: '.$e->getMessage());
+            $this->toastError('Gagal menghapus data karyawan: '.$e->getMessage());
         }
     }
 

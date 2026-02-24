@@ -3,23 +3,23 @@
         title="Monitor Absensi SDM"
         subtitle="Pantau kehadiran harian dan ringkasan rentang tanggal"
         :breadcrumbs="['Biro SDM' => '#', 'Monitor Absensi' => route('sdm.absensi.monitor')]"
-    />
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-                <h2 class="text-base font-semibold text-gray-800">Filter Monitor</h2>
-                <p class="text-xs text-gray-500">Jika ada perubahan log absensi yang belum masuk ke monitor, gunakan Proses Ulang.</p>
-            </div>
-            <button
-                type="button"
+    >
+        <x-slot name="actions">
+            <x-button
+                variant="warning"
                 wire:click="reprocessAllAttendance"
                 wire:loading.attr="disabled"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-sm disabled:opacity-60 disabled:cursor-wait"
             >
                 <span wire:loading.remove wire:target="reprocessAllAttendance">Proses Ulang Data Absensi</span>
                 <span wire:loading wire:target="reprocessAllAttendance">Memproses...</span>
-            </button>
+            </x-button>
+        </x-slot>
+    </x-page-header>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <div>
+            <h2 class="text-base font-semibold text-gray-900">Filter Monitor</h2>
+            <p class="text-xs text-gray-500">Atur mode dan rentang data untuk menampilkan monitor kehadiran.</p>
         </div>
 
         @if (session()->has('success'))

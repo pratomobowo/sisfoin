@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
 use App\Models\User;
@@ -17,7 +18,7 @@ use Spatie\Activitylog\Models\Activity;
 #[Layout('layouts.app')]
 class EmployeeAttendanceManagement extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -45,6 +46,8 @@ class EmployeeAttendanceManagement extends Component
     public $correctionStatus = '';
 
     public $clearConfirmation = '';
+
+    public bool $clearDangerAcknowledged = false;
 
     // Modal properties
     public $showCreateModal = false;
@@ -183,12 +186,14 @@ class EmployeeAttendanceManagement extends Component
     public function openClearSection(): void
     {
         $this->showClearSection = true;
+        $this->clearDangerAcknowledged = false;
     }
 
     public function closeClearSection(): void
     {
         $this->showClearSection = false;
         $this->clearConfirmation = '';
+        $this->clearDangerAcknowledged = false;
     }
 
     public function updatedCorrectionDate(): void
@@ -205,7 +210,7 @@ class EmployeeAttendanceManagement extends Component
     {
         $employee = Employee::find($employeeId);
         if (! $employee) {
-            session()->flash('error', 'Karyawan tidak ditemukan.');
+            $this->toastError('Karyawan tidak ditemukan.');
 
             return;
         }
@@ -214,7 +219,7 @@ class EmployeeAttendanceManagement extends Component
         $userId = $employeeToUserId[$employee->id] ?? null;
 
         if (! $userId) {
-            session()->flash('error', 'Akun user untuk karyawan ini belum terhubung. Hubungi admin untuk sinkronisasi akun.');
+            $this->toastError('Akun user untuk karyawan ini belum terhubung. Hubungi admin untuk sinkronisasi akun.');
 
             return;
         }
@@ -432,7 +437,7 @@ class EmployeeAttendanceManagement extends Component
     {
         $attendance = EmployeeAttendance::find($id);
         if (! $attendance) {
-            session()->flash('error', 'Data absensi tidak ditemukan.');
+            $this->toastError('Data absensi tidak ditemukan.');
 
             return;
         }
@@ -478,7 +483,7 @@ class EmployeeAttendanceManagement extends Component
         $userId = $this->mappingUserIds[$pin] ?? null;
 
         if (! $userId) {
-            session()->flash('error', 'Silakan pilih karyawan terlebih dahulu.');
+            $this->toastError('Silakan pilih karyawan terlebih dahulu.');
 
             return;
         }
@@ -514,11 +519,11 @@ class EmployeeAttendanceManagement extends Component
             // Refresh stats
             $this->dispatch('refreshStats'); // Optional if you have listeners, else render handles it
 
-            session()->flash('success', "PIN {$pin} berhasil dimapping ke {$user->name}. Data absensi telah diperbarui.");
+            $this->toastSuccess("PIN {$pin} berhasil dimapping ke {$user->name}. Data absensi telah diperbarui.");
 
         } catch (\Exception $e) {
             DB::rollback();
-            session()->flash('error', 'Gagal melakukan mapping: '.$e->getMessage());
+            $this->toastError('Gagal melakukan mapping: '.$e->getMessage());
         }
     }
 
@@ -526,7 +531,7 @@ class EmployeeAttendanceManagement extends Component
     {
         $attendance = EmployeeAttendance::with(['employee'])->find($id);
         if (! $attendance) {
-            session()->flash('error', 'Data absensi tidak ditemukan.');
+            $this->toastError('Data absensi tidak ditemukan.');
 
             return;
         }
@@ -544,7 +549,7 @@ class EmployeeAttendanceManagement extends Component
                 // Update existing attendance
                 $attendance = EmployeeAttendance::find($this->selectedAttendanceId);
                 if (! $attendance) {
-                    session()->flash('error', 'Data absensi tidak ditemukan.');
+                    $this->toastError('Data absensi tidak ditemukan.');
 
                     return;
                 }
@@ -563,7 +568,7 @@ class EmployeeAttendanceManagement extends Component
                     'notes' => $this->notes,
                 ]);
 
-                session()->flash('success', 'Data absensi berhasil diperbarui.');
+                $this->toastSuccess('Data absensi berhasil diperbarui.');
             } else {
                 // Create new attendance
                 $checkInDateTime = $this->check_in_time ?
@@ -581,12 +586,12 @@ class EmployeeAttendanceManagement extends Component
                     'created_by' => Auth::id(),
                 ]);
 
-                session()->flash('success', 'Data absensi berhasil ditambahkan.');
+                $this->toastSuccess('Data absensi berhasil ditambahkan.');
             }
 
             $this->closeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal menyimpan data absensi: '.$e->getMessage());
+            $this->toastError('Gagal menyimpan data absensi: '.$e->getMessage());
         }
     }
 
@@ -594,13 +599,13 @@ class EmployeeAttendanceManagement extends Component
     {
         $attendance = EmployeeAttendance::find($id);
         if (! $attendance) {
-            session()->flash('error', 'Data absensi tidak ditemukan.');
+            $this->toastError('Data absensi tidak ditemukan.');
 
             return;
         }
 
         $attendance->delete();
-        session()->flash('success', 'Data absensi berhasil dihapus.');
+        $this->toastSuccess('Data absensi berhasil dihapus.');
     }
 
     public function closeModal()
@@ -872,13 +877,13 @@ class EmployeeAttendanceManagement extends Component
                 ])
                 ->log('Process attendance logs');
 
-            session()->flash('success', $message);
+            $this->toastSuccess($message);
 
             // Refresh the data
             $this->render();
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses data absensi: '.$e->getMessage());
+            $this->toastError('Gagal memproses data absensi: '.$e->getMessage());
         }
     }
 
@@ -906,13 +911,13 @@ class EmployeeAttendanceManagement extends Component
                 ])
                 ->log('Reprocess all attendance logs');
 
-            session()->flash('success', $message);
+            $this->toastSuccess($message);
 
             // Refresh the data
             $this->render();
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses ulang data absensi: '.$e->getMessage());
+            $this->toastError('Gagal memproses ulang data absensi: '.$e->getMessage());
         }
     }
 
@@ -959,7 +964,7 @@ class EmployeeAttendanceManagement extends Component
     {
         try {
             if (trim((string) $this->clearConfirmation) !== 'HAPUS ABSENSI') {
-                session()->flash('error', 'Konfirmasi tidak valid. Ketik tepat: HAPUS ABSENSI');
+                $this->toastError('Konfirmasi tidak valid. Ketik tepat: HAPUS ABSENSI');
 
                 activity('attendance_operations')
                     ->causedBy(Auth::user())
@@ -969,6 +974,12 @@ class EmployeeAttendanceManagement extends Component
                         'input' => $this->clearConfirmation,
                     ])
                     ->log('Clear all employee attendance blocked by invalid confirmation');
+
+                return;
+            }
+
+            if (! $this->clearDangerAcknowledged) {
+                $this->toastWarning('Centang konfirmasi risiko sebelum menghapus seluruh data absensi.');
 
                 return;
             }
@@ -985,15 +996,16 @@ class EmployeeAttendanceManagement extends Component
                 ])
                 ->log('Clear all employee attendance records');
 
-            session()->flash('success', "Berhasil menghapus {$deletedCount} data absensi karyawan.");
+            $this->toastSuccess("Berhasil menghapus {$deletedCount} data absensi karyawan.");
             $this->clearConfirmation = '';
             $this->showClearSection = false;
+            $this->clearDangerAcknowledged = false;
 
             // Refresh the data
             $this->render();
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal menghapus data absensi: '.$e->getMessage());
+            $this->toastError('Gagal menghapus data absensi: '.$e->getMessage());
         }
     }
 

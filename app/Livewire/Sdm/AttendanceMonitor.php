@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
@@ -20,7 +21,7 @@ use Spatie\Activitylog\Models\Activity;
 #[Layout('layouts.app')]
 class AttendanceMonitor extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
@@ -74,11 +75,13 @@ class AttendanceMonitor extends Component
                 ])
                 ->log('Reprocess attendance from monitor');
 
-            session()->flash('success', ($result['message'] ?? 'Proses ulang selesai.').' (Monitor telah diperbarui)');
+            $message = ($result['message'] ?? 'Proses ulang selesai.').' (Monitor telah diperbarui)';
+            $this->toastSuccess($message);
 
             $this->resetPage();
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses ulang data absensi: '.$e->getMessage());
+            $message = 'Gagal memproses ulang data absensi: '.$e->getMessage();
+            $this->toastError($message);
         }
     }
 

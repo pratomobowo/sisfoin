@@ -2,13 +2,18 @@
 
 namespace App\Livewire\Sdm;
 
-use Livewire\Component;
+use App\Livewire\Concerns\InteractsWithToast;
 use Illuminate\Support\Facades\Log;
+use Livewire\Component;
 
 class QueueManagement extends Component
 {
+    use InteractsWithToast;
+
     public $isRunning = false;
+
     public $pids = [];
+
     public $lastUpdate = '';
 
     public function mount()
@@ -22,7 +27,7 @@ class QueueManagement extends Component
         $output = [];
         \exec($command, $output);
 
-        $this->isRunning = !empty($output);
+        $this->isRunning = ! empty($output);
         $this->pids = [];
 
         if ($this->isRunning) {
@@ -49,23 +54,23 @@ class QueueManagement extends Component
             // We use the same parameters as the user used before
             $command = "nohup {$php} {$artisan} queue:work --queue=emails,default --tries=3 --timeout=300 > /dev/null 2>&1 & echo $!";
 
-            Log::info("Starting queue worker: " . $command);
+            Log::info('Starting queue worker: '.$command);
 
             $pid_output = [];
             \exec($command, $pid_output);
-            $pid = !empty($pid_output) ? trim($pid_output[0]) : 'Unknown';
+            $pid = ! empty($pid_output) ? trim($pid_output[0]) : 'Unknown';
 
             sleep(1); // Give it a second to start
             $this->checkStatus();
 
             if ($this->isRunning) {
-                session()->flash('success', 'Email queue worker berhasil dijalankan (PID: ' . $pid . ')');
+                $this->toastSuccess('Email queue worker berhasil dijalankan (PID: '.$pid.')');
             } else {
-                session()->flash('error', 'Gagal menjalankan queue worker. Cek log untuk detail.');
+                $this->toastError('Gagal menjalankan queue worker. Cek log untuk detail.');
             }
         } catch (\Exception $e) {
-            Log::error("Failed to start queue: " . $e->getMessage());
-            session()->flash('error', 'Gagal menjalankan queue: ' . $e->getMessage());
+            Log::error('Failed to start queue: '.$e->getMessage());
+            $this->toastError('Gagal menjalankan queue: '.$e->getMessage());
         }
     }
 
@@ -74,24 +79,25 @@ class QueueManagement extends Component
         try {
             $this->checkStatus();
 
-            if (!$this->isRunning) {
-                session()->flash('warning', 'Queue worker tidak sedang berjalan.');
+            if (! $this->isRunning) {
+                $this->toastWarning('Queue worker tidak sedang berjalan.');
+
                 return;
             }
 
             foreach ($this->pids as $pid) {
                 $command = "kill -9 {$pid}";
                 \exec($command);
-                Log::info("Stopped queue worker PID: " . $pid);
+                Log::info('Stopped queue worker PID: '.$pid);
             }
 
             sleep(1);
             $this->checkStatus();
 
-            session()->flash('success', 'Email queue worker berhasil dihentikan.');
+            $this->toastSuccess('Email queue worker berhasil dihentikan.');
         } catch (\Exception $e) {
-            Log::error("Failed to stop queue: " . $e->getMessage());
-            session()->flash('error', 'Gagal menghentikan queue: ' . $e->getMessage());
+            Log::error('Failed to stop queue: '.$e->getMessage());
+            $this->toastError('Gagal menghentikan queue: '.$e->getMessage());
         }
     }
 

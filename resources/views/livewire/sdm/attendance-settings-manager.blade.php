@@ -19,7 +19,7 @@
         <!-- Schedule Settings -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center">
                     <x-lucide-clock class="w-5 h-5 mr-2 text-blue-600" />
                     Jadwal Kerja
                 </h3>
@@ -54,7 +54,7 @@
         <!-- Rules Settings -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-100">
-                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center">
                     <x-lucide-shield-check class="w-5 h-5 mr-2 text-purple-600" />
                     Aturan Absensi
                 </h3>
@@ -83,7 +83,7 @@
         <!-- Working Days -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
             <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
-                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center">
                     <x-lucide-calendar class="w-5 h-5 mr-2 text-green-600" />
                     Hari Kerja
                 </h3>
@@ -111,11 +111,11 @@
         <!-- Holiday Management -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
             <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">
-                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center">
                     <x-lucide-calendar-days class="w-5 h-5 mr-2 text-amber-600" />
                     Tanggal Libur SDM
                 </h3>
-                <p class="text-xs text-gray-600 mt-1">Hari libur tidak dihitung sebagai tidak hadir pada monitor/rekap absensi.</p>
+                <p class="text-xs text-gray-500 mt-1">Hari libur tidak dihitung sebagai tidak hadir pada monitor/rekap absensi.</p>
             </div>
 
             <div class="p-6 space-y-6">
@@ -154,7 +154,7 @@
                                 {{ $holidayId ? 'Update' : 'Tambah' }}
                             </button>
                             @if($holidayId)
-                                <button type="button" wire:click="resetHolidayForm" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold">Batal</button>
+                                <button type="button" wire:click="resetHolidayForm" class="px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold">Batal</button>
                             @endif
                         </div>
                     </div>
@@ -201,7 +201,7 @@
 
     <!-- Quick Reference -->
     <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl shadow-lg p-6 text-white">
-        <h3 class="text-lg font-bold mb-4 flex items-center">
+        <h3 class="text-base font-semibold mb-4 flex items-center">
             <x-lucide-info class="w-5 h-5 mr-2 text-blue-400" />
             Referensi Status
         </h3>

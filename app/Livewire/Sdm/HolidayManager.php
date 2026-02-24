@@ -2,27 +2,33 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Holiday;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout;
-use Carbon\Carbon;
 
 #[Layout('layouts.app')]
 class HolidayManager extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     public $showModal = false;
+
     public $editingId = null;
-    
+
     public $date = '';
+
     public $name = '';
+
     public $type = 'national';
+
     public $is_recurring = false;
+
     public $description = '';
 
     public $search = '';
+
     public $filterYear = '';
 
     protected $rules = [
@@ -46,7 +52,7 @@ class HolidayManager extends Component
     public function openModal($id = null)
     {
         $this->resetValidation();
-        
+
         if ($id) {
             $holiday = Holiday::findOrFail($id);
             $this->editingId = $id;
@@ -63,7 +69,7 @@ class HolidayManager extends Component
             $this->is_recurring = false;
             $this->description = '';
         }
-        
+
         $this->showModal = true;
     }
 
@@ -93,13 +99,13 @@ class HolidayManager extends Component
         }
 
         $this->closeModal();
-        session()->flash('message', 'Hari libur berhasil disimpan!');
+        $this->toastSuccess('Hari libur berhasil disimpan!');
     }
 
     public function delete($id)
     {
         Holiday::destroy($id);
-        session()->flash('message', 'Hari libur berhasil dihapus!');
+        $this->toastSuccess('Hari libur berhasil dihapus!');
     }
 
     public function getTypeLabels()
@@ -114,8 +120,8 @@ class HolidayManager extends Component
     public function render()
     {
         $holidays = Holiday::when($this->search, function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
-            })
+            $query->where('name', 'like', '%'.$this->search.'%');
+        })
             ->when($this->filterYear, function ($query) {
                 $query->whereYear('date', $this->filterYear);
             })

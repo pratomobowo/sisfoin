@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\AttendanceSetting;
 use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class AttendanceSettingsManager extends Component
 {
+    use InteractsWithToast;
+
     public $settings = [];
 
     public $workingDays = [];
@@ -78,7 +81,7 @@ class AttendanceSettingsManager extends Component
         // Clear cache
         AttendanceSetting::clearCache();
 
-        session()->flash('success', 'Pengaturan absensi berhasil disimpan!');
+        $this->flashToast('success', 'Pengaturan absensi berhasil disimpan!');
 
         $this->dispatch('settings-saved');
     }
@@ -105,7 +108,7 @@ class AttendanceSettingsManager extends Component
     {
         $holiday = Holiday::find($id);
         if (! $holiday) {
-            session()->flash('error', 'Data libur tidak ditemukan.');
+            $this->flashToast('error', 'Data libur tidak ditemukan.');
 
             return;
         }
@@ -142,7 +145,7 @@ class AttendanceSettingsManager extends Component
         if ($this->holidayId) {
             $holiday = Holiday::find($this->holidayId);
             if (! $holiday) {
-                session()->flash('error', 'Data libur tidak ditemukan.');
+                $this->flashToast('error', 'Data libur tidak ditemukan.');
 
                 return;
             }
@@ -155,7 +158,7 @@ class AttendanceSettingsManager extends Component
                 'description' => $validated['holidayDescription'] ?? null,
             ]);
 
-            session()->flash('success', 'Tanggal libur berhasil diperbarui.');
+            $this->flashToast('success', 'Tanggal libur berhasil diperbarui.');
         } else {
             Holiday::create([
                 'date' => $validated['holidayDate'],
@@ -166,7 +169,7 @@ class AttendanceSettingsManager extends Component
                 'created_by' => Auth::id(),
             ]);
 
-            session()->flash('success', 'Tanggal libur berhasil ditambahkan.');
+            $this->flashToast('success', 'Tanggal libur berhasil ditambahkan.');
         }
 
         $this->loadHolidays();
@@ -177,7 +180,7 @@ class AttendanceSettingsManager extends Component
     {
         $holiday = Holiday::find($id);
         if (! $holiday) {
-            session()->flash('error', 'Data libur tidak ditemukan.');
+            $this->flashToast('error', 'Data libur tidak ditemukan.');
 
             return;
         }
@@ -189,7 +192,7 @@ class AttendanceSettingsManager extends Component
             $this->resetHolidayForm();
         }
 
-        session()->flash('success', 'Tanggal libur berhasil dihapus.');
+        $this->flashToast('success', 'Tanggal libur berhasil dihapus.');
     }
 
     public function getDayLabelsProperty()

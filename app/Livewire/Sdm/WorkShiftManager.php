@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\WorkShift;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class WorkShiftManager extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     public $showModal = false;
 
@@ -130,7 +131,7 @@ class WorkShiftManager extends Component
         }
 
         $this->closeModal();
-        session()->flash('message', 'Shift berhasil disimpan!');
+        $this->toastSuccess('Shift berhasil disimpan!');
     }
 
     public function delete($id)
@@ -138,9 +139,9 @@ class WorkShiftManager extends Component
         $shift = WorkShift::find($id);
         if ($shift && ! $shift->is_default) {
             $shift->delete();
-            session()->flash('message', 'Shift berhasil dihapus!');
+            $this->toastSuccess('Shift berhasil dihapus!');
         } else {
-            session()->flash('error', 'Shift default tidak dapat dihapus!');
+            $this->toastError('Shift default tidak dapat dihapus!');
         }
     }
 
@@ -149,20 +150,20 @@ class WorkShiftManager extends Component
         $target = WorkShift::find($id);
 
         if (! $target) {
-            session()->flash('error', 'Shift tidak ditemukan!');
+            $this->toastError('Shift tidak ditemukan!');
 
             return;
         }
 
         if (! $target->is_active) {
-            session()->flash('error', 'Shift nonaktif tidak dapat dijadikan default!');
+            $this->toastError('Shift nonaktif tidak dapat dijadikan default!');
 
             return;
         }
 
         WorkShift::where('is_default', true)->update(['is_default' => false]);
         $target->update(['is_default' => true]);
-        session()->flash('message', 'Shift berhasil diset sebagai default!');
+        $this->toastSuccess('Shift berhasil diset sebagai default!');
     }
 
     public function render()

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\Employee;
 use App\Models\EmployeeShiftAssignment;
 use App\Models\User;
@@ -16,6 +17,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class UnitShiftCalendar extends Component
 {
+    use InteractsWithToast;
+
     public $unitName;
 
     public $unitSlug;
@@ -188,7 +191,7 @@ class UnitShiftCalendar extends Component
         $userId = (int) $userId;
 
         if (! $this->isUserInCurrentUnit($userId)) {
-            session()->flash('error', 'Akses ditolak: user bukan milik unit ini.');
+            $this->toastError('Akses ditolak: user bukan milik unit ini.');
             $this->closeQuickEdit();
 
             return;
@@ -203,7 +206,7 @@ class UnitShiftCalendar extends Component
                 ->first();
 
             if (! $shift) {
-                session()->flash('error', 'Shift tidak valid atau tidak aktif.');
+                $this->toastError('Shift tidak valid atau tidak aktif.');
 
                 return;
             }
@@ -245,7 +248,7 @@ class UnitShiftCalendar extends Component
         });
 
         $this->closeQuickEdit();
-        session()->flash('success', 'Shift berhasil di-update!');
+        $this->toastSuccess('Shift berhasil di-update!');
     }
 
     private function isUserInCurrentUnit(int $userId): bool

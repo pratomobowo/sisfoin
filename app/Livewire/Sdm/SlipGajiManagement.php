@@ -2,27 +2,32 @@
 
 namespace App\Livewire\Sdm;
 
+use App\Exports\SlipGajiDataExport;
+use App\Exports\SlipGajiTemplateExport;
+use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\SlipGajiHeader;
-use App\Models\SlipGajiDetail;
-use Livewire\Component;
-use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Livewire\Component;
+use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\SlipGajiTemplateExport;
-use App\Exports\SlipGajiDataExport;
 
 class SlipGajiManagement extends Component
 {
-    use WithPagination;
+    use InteractsWithToast, WithPagination;
 
     protected $paginationTheme = 'tailwind';
 
     public $search = '';
+
     public $perPage = 10;
+
     public $sortField = 'created_at';
+
     public $sortDirection = 'desc';
+
     public $filterPeriode = '';
+
     public $filterTahun = '';
 
     // Modal states
@@ -80,7 +85,7 @@ class SlipGajiManagement extends Component
 
     public function deleteSlipGaji()
     {
-        if (!$this->selectedHeader) {
+        if (! $this->selectedHeader) {
             return;
         }
 
@@ -89,35 +94,35 @@ class SlipGajiManagement extends Component
 
             // Delete details first
             $this->selectedHeader->details()->delete();
-            
+
             // Delete header
             $this->selectedHeader->delete();
 
             DB::commit();
 
             $this->closeDeleteModal();
-            
+
             // Redirect to show toast notification
             return redirect()->route('sdm.slip-gaji.index')
                 ->with('success', 'Data slip gaji berhasil dihapus!');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Slip Gaji delete error: ' . $e->getMessage());
-            
+            Log::error('Slip Gaji delete error: '.$e->getMessage());
+
             // Redirect with error message
             return redirect()->route('sdm.slip-gaji.index')
-                ->with('error', 'Gagal menghapus data slip gaji: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus data slip gaji: '.$e->getMessage());
         }
     }
 
     public function downloadTemplate()
     {
         try {
-            return Excel::download(new SlipGajiTemplateExport(), 'template_slip_gaji_' . date('Y-m-d') . '.xlsx');
+            return Excel::download(new SlipGajiTemplateExport, 'template_slip_gaji_'.date('Y-m-d').'.xlsx');
         } catch (\Exception $e) {
-            Log::error('Download template error: ' . $e->getMessage());
-            session()->flash('error', 'Gagal mendownload template: ' . $e->getMessage());
+            Log::error('Download template error: '.$e->getMessage());
+            $this->toastError('Gagal mendownload template: '.$e->getMessage());
         }
     }
 
@@ -125,12 +130,12 @@ class SlipGajiManagement extends Component
     {
         try {
             $header = SlipGajiHeader::findOrFail($headerId);
-            $filename = 'data_slip_gaji_' . str_replace(' ', '_', $header->periode) . '_' . date('YmdHis') . '.xlsx';
-            
+            $filename = 'data_slip_gaji_'.str_replace(' ', '_', $header->periode).'_'.date('YmdHis').'.xlsx';
+
             return Excel::download(new SlipGajiDataExport($headerId), $filename);
         } catch (\Exception $e) {
-            Log::error('Export Excel error: ' . $e->getMessage());
-            session()->flash('error', 'Gagal mengekspor data ke Excel: ' . $e->getMessage());
+            Log::error('Export Excel error: '.$e->getMessage());
+            $this->toastError('Gagal mengekspor data ke Excel: '.$e->getMessage());
         }
     }
 
@@ -143,19 +148,19 @@ class SlipGajiManagement extends Component
             // Search functionality
             if ($this->search) {
                 $query->where(function ($q) {
-                    $q->where('periode', 'like', '%' . $this->search . '%')
-                      ->orWhere('file_original', 'like', '%' . $this->search . '%');
+                    $q->where('periode', 'like', '%'.$this->search.'%')
+                        ->orWhere('file_original', 'like', '%'.$this->search.'%');
                 });
             }
 
             // Filter by periode
             if ($this->filterPeriode) {
-                $query->where('periode', 'like', $this->filterPeriode . '%');
+                $query->where('periode', 'like', $this->filterPeriode.'%');
             }
 
             // Filter by tahun
             if ($this->filterTahun) {
-                $query->where('periode', 'like', $this->filterTahun . '%');
+                $query->where('periode', 'like', $this->filterTahun.'%');
             }
 
             // Sorting
@@ -163,10 +168,10 @@ class SlipGajiManagement extends Component
 
             return $query->paginate($this->perPage);
         } catch (\Exception $e) {
-            Log::error('SlipGajiManagement render error: ' . $e->getMessage(), [
+            Log::error('SlipGajiManagement render error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
         }
     }
@@ -215,10 +220,10 @@ class SlipGajiManagement extends Component
             ]);
 
         } catch (\Exception $e) {
-            Log::error('SlipGajiManagement render error: ' . $e->getMessage(), [
+            Log::error('SlipGajiManagement render error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return view('livewire.sdm.slip-gaji-management', [
                 'headers' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage),
                 'availablePeriodes' => collect([]),
@@ -256,7 +261,7 @@ class SlipGajiManagement extends Component
      */
     public function handleSlipGajiSaved()
     {
-        session()->flash('success', 'Data slip gaji berhasil disimpan');
+        $this->toastSuccess('Data slip gaji berhasil disimpan');
         $this->resetPage();
     }
 
@@ -265,7 +270,7 @@ class SlipGajiManagement extends Component
      */
     public function handleSlipGajiUploaded()
     {
-        session()->flash('success', 'Data slip gaji berhasil diupload');
+        $this->toastSuccess('Data slip gaji berhasil diupload');
         $this->resetPage();
     }
 }

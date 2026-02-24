@@ -7,13 +7,13 @@
                 <x-lucide-clock class="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div class="flex flex-col min-w-0">
-                <span class="text-[9px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Waktu Server</span>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Waktu Server</span>
                 <span class="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">{{ now()->format('H:i') }}</span>
                 <div class="flex items-center gap-1.5 mt-0.5 sm:mt-1">
-                    <span class="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] sm:text-[10px] font-bold rounded uppercase tracking-tight">
+                    <span class="px-1.5 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded uppercase tracking-wide">
                         {{ $shift->name ?? 'Normal' }}
                     </span>
-                    <span class="text-[9px] sm:text-xs text-gray-500 font-medium truncate">
+                    <span class="text-xs text-gray-500 font-medium truncate">
                         {{ substr($shift->start_time ?? '08:00', 0, 5) }} - {{ substr($shift->end_time ?? '16:30', 0, 5) }}
                     </span>
                 </div>
@@ -22,31 +22,31 @@
 
         <!-- BLOCK 2: ABSEN MASUK -->
         <div class="flex flex-col pl-3 sm:pl-5 border-l-2 {{ $attendance && $attendance->check_in_time ? 'border-emerald-500' : 'border-gray-100' }}">
-            <span class="text-[9px] sm:text-xs font-semibold {{ $attendance && $attendance->check_in_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wider">Jam Masuk</span>
+            <span class="text-xs font-semibold {{ $attendance && $attendance->check_in_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wide">Jam Masuk</span>
             <span class="text-lg sm:text-2xl font-bold {{ $attendance && $attendance->check_in_time ? 'text-gray-900' : 'text-gray-200' }}">
                 {{ $attendance && $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '--:--' }}
             </span>
             @if($attendance && $attendance->check_in_time)
                 <div class="flex items-center mt-0.5 text-emerald-600">
-                    <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-tight">Tercatat</span>
+                    <span class="text-xs font-semibold uppercase tracking-wide">Tercatat</span>
                 </div>
             @else
-                <span class="text-[8px] sm:text-[10px] font-medium text-gray-300 uppercase tracking-tight mt-0.5">Belum Absen</span>
+                <span class="text-xs font-medium text-gray-300 uppercase tracking-wide mt-0.5">Belum Absen</span>
             @endif
         </div>
 
         <!-- BLOCK 3: ABSEN PULANG -->
         <div class="flex flex-col pl-3 sm:pl-5 border-l-2 {{ $attendance && $attendance->check_out_time ? 'border-indigo-500' : 'border-gray-100' }}">
-            <span class="text-[9px] sm:text-xs font-semibold {{ $attendance && $attendance->check_out_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wider">Jam Pulang</span>
+            <span class="text-xs font-semibold {{ $attendance && $attendance->check_out_time ? 'text-gray-500' : 'text-gray-400' }} uppercase tracking-wide">Jam Pulang</span>
             <span class="text-lg sm:text-2xl font-bold {{ $attendance && $attendance->check_out_time ? 'text-gray-900' : 'text-gray-200' }}">
                 {{ $attendance && $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : '--:--' }}
             </span>
             @if($attendance && $attendance->check_out_time)
                 <div class="flex items-center mt-0.5 text-indigo-600">
-                    <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-tight">Tercatat</span>
+                    <span class="text-xs font-semibold uppercase tracking-wide">Tercatat</span>
                 </div>
             @else
-                <span class="text-[8px] sm:text-[10px] font-medium text-gray-300 uppercase tracking-tight mt-0.5">Belum Absen</span>
+                <span class="text-xs font-medium text-gray-300 uppercase tracking-wide mt-0.5">Belum Absen</span>
             @endif
         </div>
 
@@ -63,14 +63,14 @@
                     ];
                     $statusClass = $statusColors[$attendance->status] ?? 'bg-gray-50 text-gray-700 ring-gray-600/20';
                 @endphp
-                <span class="text-[9px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider lg:mb-2">Status</span>
-                <div class="inline-flex items-center rounded-lg px-2.5 py-1 sm:px-4 sm:py-2 text-[9px] sm:text-xs font-bold uppercase tracking-wide ring-1 ring-inset {{ $statusClass }}">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide lg:mb-2">Status</span>
+                <div class="inline-flex items-center rounded-lg px-2.5 py-1 sm:px-4 sm:py-2 text-xs font-semibold uppercase tracking-wide ring-1 ring-inset {{ $statusClass }}">
                     {{ $attendance->status_label }}
                 </div>
             @else
                 <div class="flex flex-row lg:flex-col items-center lg:items-end justify-between w-full lg:w-auto opacity-40">
-                    <span class="text-[9px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider lg:mb-1">Status Kehadiran</span>
-                    <span class="text-[9px] sm:text-xs font-bold text-gray-400 italic">Data Belum Tersedia</span>
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide lg:mb-1">Status Kehadiran</span>
+                    <span class="text-xs font-semibold text-gray-400 italic">Data Belum Tersedia</span>
                 </div>
             @endif
         </div>

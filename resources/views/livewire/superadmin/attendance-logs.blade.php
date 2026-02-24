@@ -140,25 +140,25 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             PIN
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Nama
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Mesin
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Waktu
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Status
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Verifikasi
                         </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Aksi
                         </th>
                     </tr>
@@ -242,10 +242,10 @@
                     <p class="text-sm text-gray-500">Apakah Anda yakin ingin menghapus data absensi ini?</p>
                 </div>
                 <div class="items-center px-4 py-3">
-                    <button wire:click="deleteAttendanceLog" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                    <button wire:click="deleteAttendanceLog" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
                         Ya
                     </button>
-                    <button wire:click="$set('showDeleteModal', false)" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    <button wire:click="$set('showDeleteModal', false)" class="px-4 py-2 bg-gray-500 text-white text-sm font-semibold rounded-lg w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
                         Tidak
                     </button>
                 </div>
@@ -297,11 +297,11 @@
                     <!-- Date Range Fields (always visible when pullOption is range) -->
                     <div wire:show="pullOption === 'range'" class="mt-4 grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1.5">Dari Tanggal</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Dari Tanggal</label>
                             <input type="date" wire:model="pullDateFrom" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1.5">Sampai Tanggal</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Sampai Tanggal</label>
                             <input type="date" wire:model="pullDateTo" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                     </div>
@@ -366,10 +366,10 @@
 
             <!-- Modal Footer -->
             <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
-                <button wire:click="$set('showPullDataModal', false)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors">
+                <button wire:click="$set('showPullDataModal', false)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-semibold rounded-lg transition-colors">
                     Batal
                 </button>
-                <button wire:click="pullFingerprintData" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2">
+                <button wire:click="pullFingerprintData" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2">
                     <span wire:loading.remove>Tarik Data</span>
                     <span wire:loading>Memproses...</span>
                 </button>
@@ -391,10 +391,10 @@
                     <p class="text-sm text-gray-500">Apakah Anda yakin ingin menghapus SEMUA data absensi? Tindakan ini tidak dapat dibatalkan!</p>
                 </div>
                 <div class="items-center px-4 py-3">
-                    <button wire:click="clearAllAttendanceLogs" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                    <button wire:click="clearAllAttendanceLogs" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
                         Ya
                     </button>
-                    <button wire:click="$set('showClearAllModal', false)" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    <button wire:click="$set('showClearAllModal', false)" class="px-4 py-2 bg-gray-500 text-white text-sm font-semibold rounded-lg w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
                         Tidak
                     </button>
                 </div>

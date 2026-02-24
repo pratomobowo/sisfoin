@@ -4,24 +4,23 @@
         title="Rekap Absensi Bulanan" 
         subtitle="Laporan kehadiran seluruh karyawan per bulan"
         :breadcrumbs="['Biro SDM' => '#', 'Rekap Absensi' => route('sdm.absensi.recap')]"
-    />
-
-    <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Filter & Export</h2>
-            <button 
-                wire:click="export" 
-                wire:loading.attr="disabled"
-                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50 disabled:cursor-wait">
+    >
+        <x-slot name="actions">
+            <x-button variant="success" wire:click="export" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="export" class="flex items-center">
                     <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 22v-7.82a2 2 0 0 0-1.07-1.78l-.34-.17c-1.3-.65-2.2-1.99-2.2-3.48a4 4 0 0 1 8 0c0 1.5-.9 2.83-2.2 3.48l-.34.17A2 2 0 0 0 12 14.18V22l-3-3"/><path d="M15 22l3-3"/></svg>
                     Export Excel
                 </span>
-                <span wire:loading wire:target="export">
-                    Generating...
-                </span>
-            </button>
+                <span wire:loading wire:target="export">Generating...</span>
+            </x-button>
+        </x-slot>
+    </x-page-header>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="mb-4">
+            <h2 class="text-base font-semibold text-gray-900">Filter Rekap</h2>
+            <p class="text-xs text-gray-500">Atur periode dan unit kerja untuk menampilkan data rekap yang dibutuhkan.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -122,14 +121,14 @@
     <!-- Matrix Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col" style="max-height: calc(100vh - 250px);">
         <!-- Legend -->
-        <div class="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-500">
+        <div class="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-4 text-xs uppercase font-semibold tracking-wide text-gray-500">
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> Hadir</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Terlambat</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Data Tidak Lengkap</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Tidak Hadir</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Setengah Hari</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span> Sakit</div>
-            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-pink-400 mr-2"></span> Cuti</div>
+            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-indigo-400 mr-2"></span> Cuti</div>
         </div>
 
         <div class="overflow-auto flex-grow h-[600px]">

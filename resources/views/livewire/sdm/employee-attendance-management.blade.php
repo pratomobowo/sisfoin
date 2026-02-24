@@ -36,7 +36,7 @@
                 class="px-4 py-3 rounded-lg text-left transition border {{ $currentTab === 'daily-correction' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}"
             >
                 <div class="text-sm font-semibold">Koreksi Harian SDM</div>
-                <div class="text-xs opacity-80">Tampilkan semua karyawan aktif, lalu koreksi manual yang lupa absen / sakit / cuti.</div>
+                <div class="text-xs text-gray-500">Tampilkan semua karyawan aktif, lalu koreksi manual yang lupa absen / sakit / cuti.</div>
             </button>
             <button
                 type="button"
@@ -44,7 +44,7 @@
                 class="px-4 py-3 rounded-lg text-left transition border {{ $currentTab === 'history' ? 'bg-slate-50 border-slate-300 text-slate-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}"
             >
                 <div class="text-sm font-semibold">Riwayat Record Absensi</div>
-                <div class="text-xs opacity-80">Daftar record absensi yang sudah tersimpan untuk audit dan koreksi lanjutan.</div>
+                <div class="text-xs text-gray-500">Daftar record absensi yang sudah tersimpan untuk audit dan koreksi lanjutan.</div>
             </button>
         </div>
     </div>
@@ -67,12 +67,17 @@
             </div>
         </div>
         <div class="mt-3 flex items-center justify-end gap-2">
-            <button wire:click="closeClearSection" class="px-3 py-1.5 text-xs rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">Tutup</button>
+            <label class="mr-auto inline-flex items-start gap-2 text-xs text-red-800 bg-white/80 border border-red-200 rounded-lg px-3 py-2">
+                <input type="checkbox" wire:model.live="clearDangerAcknowledged" class="mt-0.5 rounded border-red-300 text-red-600 focus:ring-red-500">
+                <span>Saya memahami tindakan ini akan menghapus <span class="font-semibold">semua data absensi karyawan</span> dan tidak bisa dibatalkan.</span>
+            </label>
+            <button wire:click="closeClearSection" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">Tutup</button>
             <button
                 wire:click="clearAllEmployeeAttendance"
                 wire:loading.attr="disabled"
                 onclick="return confirm('Lanjutkan hapus seluruh data absensi?')"
-                class="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700"
+                @disabled(trim((string) $clearConfirmation) !== 'HAPUS ABSENSI' || !$clearDangerAcknowledged)
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
             >
                 Hapus Sekarang
             </button>
@@ -121,7 +126,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Koreksi</label>
                 <input type="date" wire:model.live="correctionDate" class="w-full border border-gray-300 rounded-lg px-3 py-2" />
@@ -151,11 +156,10 @@
                     <option value="leave">Cuti</option>
                 </select>
             </div>
-            <div class="flex items-end">
-                <button wire:click="create" class="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">
-                    Tambah Manual
-                </button>
-            </div>
+        </div>
+
+        <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+            Gunakan tombol <span class="font-semibold">Tambah Absensi</span> pada header untuk menambahkan koreksi manual baru.
         </div>
     </div>
 
@@ -263,7 +267,7 @@
             <div class="flex items-end">
                 <button 
                     wire:click="resetFilters"
-                    class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    class="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
                     Reset Filter
                 </button>
             </div>
@@ -377,14 +381,14 @@
             <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <form wire:submit.prevent="save">
                     <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">
                             {{ $showEditModal ? 'Edit Data Absensi' : 'Tambah Data Absensi' }}
                         </h3>
                         
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Karyawan</label>
-                                <select wire:model="user_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <select wire:model="user_id" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="">Pilih Karyawan</option>
                                     @foreach($employees as $employee)
                                         <option value="{{ $employee['id'] }}">{{ $employee['full_name_with_title'] ?? $employee['name'] }} ({{ $employee['nip'] }})</option>
@@ -395,26 +399,26 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Tanggal</label>
-                                <input type="date" wire:model="date" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <input type="date" wire:model="date" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 @error('date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Waktu Masuk</label>
-                                    <input type="time" wire:model="check_in_time" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <input type="time" wire:model="check_in_time" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     @error('check_in_time') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Waktu Pulang</label>
-                                    <input type="time" wire:model="check_out_time" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <input type="time" wire:model="check_out_time" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     @error('check_out_time') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Status</label>
-                                <select wire:model="status_form" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <select wire:model="status_form" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="">Pilih Status</option>
                                     <option value="on_time">Hadir</option>
                                     <option value="early_arrival">Datang Awal</option>
@@ -430,16 +434,16 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Catatan</label>
-                                <textarea wire:model="notes" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                                <textarea wire:model="notes" rows="3" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
                                 @error('notes') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto">
                             Simpan
                         </button>
-                        <button type="button" wire:click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button type="button" wire:click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto">
                             Batal
                         </button>
                     </div>
@@ -487,11 +491,11 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Shift</span>
+                                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Nama Shift</span>
                                 <span class="block text-sm font-semibold text-slate-700 mt-0.5">{{ $this->getAttendanceShiftName() }}</span>
                             </div>
                             <div>
-                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jam Kerja</span>
+                                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Jam Kerja</span>
                                 <span class="block text-sm font-semibold text-slate-700 mt-0.5">{{ $this->getAttendanceShiftTime() }}</span>
                             </div>
                         </div>
@@ -508,11 +512,11 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-100 flex flex-col items-center">
                                 <span class="text-xl font-black text-emerald-600 tabular-nums">{{ $this->getAttendanceEarlyFormatted() }}</span>
-                                <span class="text-[9px] font-bold text-emerald-800/60 uppercase tracking-widest mt-1">Datang Awal</span>
+                                <span class="text-xs font-semibold text-emerald-800/70 uppercase tracking-wide mt-1">Datang Awal</span>
                             </div>
                             <div class="bg-white p-3 rounded-lg shadow-sm border border-orange-100 flex flex-col items-center">
                                 <span class="text-xl font-black text-orange-500 tabular-nums">{{ $this->getAttendanceOvertimeFormatted() }}</span>
-                                <span class="text-[9px] font-bold text-orange-800/60 uppercase tracking-widest mt-1">Jam Lembur</span>
+                                <span class="text-xs font-semibold text-orange-800/70 uppercase tracking-wide mt-1">Jam Lembur</span>
                             </div>
                         </div>
                     </div>
@@ -555,11 +559,11 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">PIN</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Total Log</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Terakhir Dilihat</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Mesin</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mapping ke Karyawan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">PIN</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Total Log</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Terakhir Dilihat</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Mesin</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mapping ke Karyawan</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -584,7 +588,7 @@
                                         <div class="flex items-center gap-2">
                                             <select 
                                                 wire:model="mappingUserIds.{{ $log['pin'] }}" 
-                                                class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                                                class="block w-full max-w-xs pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg"
                                             >
                                                 <option value="">Pilih Karyawan...</option>
                                                 @foreach($employees as $employee)
@@ -600,7 +604,7 @@
                                                 type="button" 
                                                 wire:click="mapPin('{{ $log['pin'] }}')"
                                                 wire:loading.attr="disabled"
-                                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
+                                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
                                             >
                                                 <span wire:loading.remove wire:target="mapPin('{{ $log['pin'] }}')">
                                                     Simpan
