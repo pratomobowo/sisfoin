@@ -68,6 +68,8 @@
                     <p class="mt-1 text-sm text-gray-600">Kelola log email yang terkirim dari sistem</p>
                 </div>
                 <div class="mt-4 sm:mt-0 flex flex-wrap gap-2 justify-end items-center">
+                    <livewire:sdm.queue-management />
+
                     <!-- Action Dropdown -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" 
