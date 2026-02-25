@@ -269,8 +269,23 @@
             @endif
         </div>
 
-        <div class="px-4 py-3 border-t border-gray-200 bg-white">
-            {{ $rows->links() }}
-        </div>
+        @if($rows->hasPages())
+            <div class="px-4 py-3 border-t border-gray-200 bg-white">
+                <x-superadmin.pagination
+                    :currentPage="$rows->currentPage()"
+                    :lastPage="$rows->lastPage()"
+                    :total="$rows->total()"
+                    :perPage="$rows->perPage()"
+                    :perPageOptions="[15, 25, 50, 100]"
+                    :showPageInfo="true"
+                    :showPerPage="true"
+                    alignment="justify-between"
+                    perPageWireModel="perPage"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
+            </div>
+        @endif
     </div>
 </div>

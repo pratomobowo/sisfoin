@@ -158,16 +158,11 @@
                         <tr class="hover:bg-blue-50/30 transition-colors group">
                             <!-- Sticky Employee Name -->
                             <td class="sticky left-0 z-20 bg-white group-hover:bg-blue-50 px-6 py-4 whitespace-nowrap border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                                        {{ strtoupper(substr(($employee->nama ?? 'U'), 0, 2)) }}
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900 truncate max-w-[220px]" title="{{ $employee->nama }}">
+                                        {{ $employee->nama ?? 'N/A' }}
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-semibold text-gray-900 truncate max-w-[180px]" title="{{ $employee->nama }}">
-                                            {{ $employee->nama ?? 'N/A' }}
-                                        </div>
-                                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">{{ $employee->nip ?? 'TANPA NIP' }}</div>
-                                    </div>
+                                    <div class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">{{ $employee->nip ?? 'TANPA NIP' }}</div>
                                 </div>
                             </td>
 

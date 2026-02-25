@@ -242,9 +242,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-4">
-                {{ $email_logs->links() }}
-            </div>
+            @if($email_logs->hasPages())
+                <div class="mt-4 bg-white px-4 py-3 border border-gray-200 rounded-xl">
+                    {{ $email_logs->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

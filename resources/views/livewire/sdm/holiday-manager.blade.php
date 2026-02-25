@@ -108,8 +108,20 @@
         </table>
         
         @if($holidays->hasPages())
-            <div class="px-6 py-4 border-t border-gray-100">
-                {{ $holidays->links() }}
+            <div class="px-6 py-4 border-t border-gray-100 bg-white">
+                <x-superadmin.pagination
+                    :currentPage="$holidays->currentPage()"
+                    :lastPage="$holidays->lastPage()"
+                    :total="$holidays->total()"
+                    :perPage="$holidays->perPage()"
+                    :perPageOptions="[15, 25, 50, 100]"
+                    :showPageInfo="true"
+                    :showPerPage="false"
+                    alignment="justify-between"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
             </div>
         @endif
     </div>

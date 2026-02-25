@@ -1,4 +1,5 @@
 @props([
+    'paginator' => null,
     'currentPage' => 1,           // Current page number
     'lastPage' => 1,             // Total pages
     'total' => 0,                // Total records
@@ -15,9 +16,16 @@
 ])
 
 @php
+if ($paginator) {
+    $currentPage = $paginator->currentPage();
+    $lastPage = $paginator->lastPage();
+    $total = method_exists($paginator, 'total') ? $paginator->total() : $paginator->count();
+    $perPage = $paginator->perPage();
+}
+
 // Calculate from and to for page info
-$from = ($currentPage - 1) * $perPage + 1;
-$to = min($currentPage * $perPage, $total);
+$from = $total > 0 ? (($currentPage - 1) * $perPage + 1) : 0;
+$to = $total > 0 ? min($currentPage * $perPage, $total) : 0;
 
 // Generate page numbers with ellipsis for large page counts
 $pageNumbers = [];
@@ -78,10 +86,10 @@ $alignmentClasses = match($alignment) {
 };
 @endphp
 
-<div class="flex flex-col sm:flex-row items-center {{ $alignmentClasses }} gap-4">
+<div class="flex flex-col gap-3 sm:flex-row sm:items-center {{ $alignmentClasses }}">
     <!-- Page Info (kiri) -->
     @if($showPageInfo)
-        <div class="text-sm text-gray-700 order-2 sm:order-1">
+        <div class="text-sm text-gray-600 order-2 sm:order-1">
             Menampilkan <span class="font-medium">{{ $from }}</span> hingga 
             <span class="font-medium">{{ $to }}</span> dari 
             <span class="font-medium">{{ $total }}</span> hasil
@@ -89,13 +97,13 @@ $alignmentClasses = match($alignment) {
     @endif
     
     <!-- Controls (kanan) -->
-    <div class="flex items-center gap-4 order-1 sm:order-2">
+    <div class="flex flex-wrap items-center gap-3 order-1 sm:order-2">
         <!-- Per Page Dropdown -->
         @if($showPerPage)
             <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-700">Per halaman:</label>
+                <label class="text-sm text-gray-600">Per halaman:</label>
                 <select wire:model.live="{{ $perPageWireModel }}" 
-                        class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        class="border border-gray-200 bg-white rounded-md px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
                     @foreach($perPageOptions as $option)
                         <option value="{{ $option }}">{{ $option }}</option>
                     @endforeach
@@ -104,18 +112,18 @@ $alignmentClasses = match($alignment) {
         @endif
         
         <!-- Pagination Buttons -->
-        <div class="flex items-center space-x-1">
+        <div class="flex items-center gap-1">
             <!-- Previous Button -->
             @if($currentPage <= 1)
                 <button disabled 
-                        class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-300 rounded-md cursor-not-allowed">
+                        class="relative inline-flex items-center px-3 py-2 border border-gray-200 bg-gray-50 text-sm font-medium text-gray-300 rounded-md cursor-not-allowed">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
             @else
                 <button wire:click="{{ $previousPageWireModel }}" 
-                        class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+                        class="relative inline-flex items-center px-3 py-2 border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -130,12 +138,12 @@ $alignmentClasses = match($alignment) {
                     </span>
                 @elseif($page == $currentPage)
                     <button wire:click="{{ $gotoPageWireModel }}({{ $page }})"
-                            class="relative inline-flex items-center px-3 py-2 border border-blue-500 bg-blue-500 text-sm font-medium text-white rounded-md">
+                            class="relative inline-flex items-center px-3 py-2 border border-blue-600 bg-blue-600 text-sm font-semibold text-white rounded-md shadow-sm">
                         {{ $page }}
                     </button>
                 @else
                     <button wire:click="{{ $gotoPageWireModel }}({{ $page }})"
-                            class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+                            class="relative inline-flex items-center px-3 py-2 border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors">
                         {{ $page }}
                     </button>
                 @endif
@@ -144,14 +152,14 @@ $alignmentClasses = match($alignment) {
             <!-- Next Button -->
             @if($currentPage >= $lastPage)
                 <button disabled 
-                        class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-300 rounded-md cursor-not-allowed">
+                        class="relative inline-flex items-center px-3 py-2 border border-gray-200 bg-gray-50 text-sm font-medium text-gray-300 rounded-md cursor-not-allowed">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                 </button>
             @else
                 <button wire:click="{{ $nextPageWireModel }}" 
-                        class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+                        class="relative inline-flex items-center px-3 py-2 border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>

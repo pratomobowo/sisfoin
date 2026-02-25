@@ -90,19 +90,14 @@
                     @forelse($roles as $role)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                                        {{ strtoupper(substr($role->display_name ?? $role->name, 0, 2)) }}
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ $role->display_name ?? ucfirst(str_replace('-', ' ', $role->name)) }}
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $role->display_name ?? ucfirst(str_replace('-', ' ', $role->name)) }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">{{ $role->name }}</div>
-                                        @if($role->description)
-                                            <div class="text-xs text-gray-400 mt-1">{{ $role->description }}</div>
-                                        @endif
-                                    </div>
+                                    <div class="text-sm text-gray-500">{{ $role->name }}</div>
+                                    @if($role->description)
+                                        <div class="text-xs text-gray-400 mt-1">{{ $role->description }}</div>
+                                    @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

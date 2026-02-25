@@ -309,16 +309,11 @@
                     @forelse($attendances as $attendance)
                     <tr class="hover:bg-blue-50/30 transition-colors">
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                                    {{ strtoupper(substr(($attendance->employee->full_name_with_title ?? $attendance->employee->name ?? 'U'), 0, 2)) }}
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900">
+                                    {{ $attendance->employee->full_name_with_title ?? $attendance->employee->name ?? 'N/A' }}
                                 </div>
-                                <div class="ml-3">
-                                    <div class="text-sm font-semibold text-gray-900">
-                                        {{ $attendance->employee->full_name_with_title ?? $attendance->employee->name ?? 'N/A' }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">{{ $attendance->employee->nip ?? 'N/A' }}</div>
-                                </div>
+                                <div class="text-xs text-gray-500">{{ $attendance->employee->nip ?? 'N/A' }}</div>
                             </div>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
@@ -368,9 +363,24 @@
         </div>
 
         <!-- Pagination -->
-        <div class="px-4 py-3 border-t border-gray-200 bg-white">
-            {{ $attendances->links() }}
-        </div>
+        @if($attendances->hasPages())
+            <div class="px-4 py-3 border-t border-gray-200 bg-white">
+                <x-superadmin.pagination
+                    :currentPage="$attendances->currentPage()"
+                    :lastPage="$attendances->lastPage()"
+                    :total="$attendances->total()"
+                    :perPage="$attendances->perPage()"
+                    :perPageOptions="[10, 25, 50, 100]"
+                    :showPageInfo="true"
+                    :showPerPage="true"
+                    alignment="justify-between"
+                    perPageWireModel="perPage"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
+            </div>
+        @endif
     </div>
     @endif
 

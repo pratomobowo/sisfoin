@@ -97,17 +97,12 @@
                         @forelse($users as $user)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                            {{ strtoupper(substr($user->name, 0, 2)) }}
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                                            @if($user->nip)
-                                                <div class="text-xs text-gray-400 mt-0.5">NIP: {{ $user->nip }}</div>
-                                            @endif
-                                        </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
+                                        <div class="text-sm text-gray-500">{{ $user->email }}</div>
+                                        @if($user->nip)
+                                            <div class="text-xs text-gray-400 mt-0.5">NIP: {{ $user->nip }}</div>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -189,8 +184,21 @@
 
             <!-- Pagination -->
             @if($users->hasPages())
-                <div class="px-6 py-4 border-t border-gray-200">
-                    {{ $users->links() }}
+                <div class="px-6 py-4 border-t border-gray-200 bg-white">
+                    <x-superadmin.pagination
+                        :currentPage="$users->currentPage()"
+                        :lastPage="$users->lastPage()"
+                        :total="$users->total()"
+                        :perPage="$users->perPage()"
+                        :perPageOptions="[10, 25, 50, 100]"
+                        :showPageInfo="true"
+                        :showPerPage="true"
+                        alignment="justify-between"
+                        perPageWireModel="perPage"
+                        previousPageWireModel="previousPage"
+                        nextPageWireModel="nextPage"
+                        gotoPageWireModel="gotoPage"
+                    />
                 </div>
             @endif
         </div>
