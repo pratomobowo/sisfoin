@@ -38,7 +38,7 @@
         @if($totalSlips > 0)
             <!-- Summary Cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <!-- Total Gaji -->
+                <!-- Gaji Terakhir -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -46,12 +46,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
-                        <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Total</span>
+                        <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Terbaru</span>
                     </div>
                     <p class="text-lg lg:text-xl font-bold text-gray-800 truncate">
-                        Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}
+                        Rp {{ number_format($latestGajiBersih ?? 0, 0, ',', '.') }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-1">Gaji Bersih</p>
+                    <p class="text-xs text-gray-500 mt-1">Gaji Terakhir {{ $latestGajiPeriode ? '(' . $latestGajiPeriode . ')' : '' }}</p>
                 </div>
 
                 <!-- Potongan -->

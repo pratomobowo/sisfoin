@@ -23,6 +23,8 @@ class PayrollController extends Controller
         $totalPajakKurangPotong = 0;
         $availableSlips = 0;
         $totalSlips = 0;
+        $latestGajiBersih = 0;
+        $latestGajiPeriode = null;
         $slipGajiDetails = null;
 
         if ($nip) {
@@ -72,6 +74,21 @@ class PayrollController extends Controller
             $totalPajakKurangPotong = $allSlips->where('status', 'Tersedia')->sum('pph21_kurang_dipotong');
             $availableSlips = $allSlips->where('status', 'Tersedia')->count();
             $totalSlips = $allSlips->count();
+
+            $latestSlip = $allSlips
+                ->where('status', 'Tersedia')
+                ->sortByDesc(function ($detail) {
+                    $periode = $detail->header?->getRawPeriode() ?? '';
+                    $createdTimestamp = $detail->created_at?->timestamp ?? 0;
+
+                    return sprintf('%s-%010d', $periode, $createdTimestamp);
+                })
+                ->first();
+
+            if ($latestSlip) {
+                $latestGajiBersih = $latestSlip->penerimaan_bersih ?? 0;
+                $latestGajiPeriode = $latestSlip->header?->formatted_periode;
+            }
         }
 
         return view('staff.penggajian', [
@@ -83,6 +100,8 @@ class PayrollController extends Controller
             'totalPajakKurangPotong' => $totalPajakKurangPotong,
             'availableSlips' => $availableSlips,
             'totalSlips' => $totalSlips,
+            'latestGajiBersih' => $latestGajiBersih,
+            'latestGajiPeriode' => $latestGajiPeriode,
             'search' => $request->get('search', ''),
             'perPage' => $request->get('per_page', 10),
         ]);
