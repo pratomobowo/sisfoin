@@ -71,11 +71,13 @@
                         </p>
                         @if($todayAttendance->check_in_time)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1
-                                @if($todayAttendance->status == 'on_time' || $todayAttendance->status == 'present') bg-green-100 text-green-700
+                                @if($todayAttendance->status == 'on_time' || $todayAttendance->status == 'present' || $todayAttendance->status == 'early_arrival') bg-green-100 text-green-700
                                 @elseif($todayAttendance->status == 'late') bg-yellow-100 text-yellow-700
                                 @else bg-gray-100 text-gray-600 @endif">
                                 @if($todayAttendance->status == 'on_time' || $todayAttendance->status == 'present')
                                     Tepat Waktu
+                                @elseif($todayAttendance->status == 'early_arrival')
+                                    Datang Lebih Awal
                                 @elseif($todayAttendance->status == 'late')
                                     Terlambat
                                 @else
@@ -116,12 +118,14 @@
                             <span class="text-sm font-medium text-gray-600">Status</span>
                         </div>
                         <p class="text-xl font-bold
-                            @if($todayAttendance->status == 'present' || $todayAttendance->status == 'on_time') text-green-600
+                            @if($todayAttendance->status == 'present' || $todayAttendance->status == 'on_time' || $todayAttendance->status == 'early_arrival') text-green-600
                             @elseif($todayAttendance->status == 'late') text-yellow-600
                             @elseif($todayAttendance->status == 'absent') text-red-600
                             @else text-gray-600 @endif">
                             @if($todayAttendance->status == 'present' || $todayAttendance->status == 'on_time')
                                 Hadir
+                            @elseif($todayAttendance->status == 'early_arrival')
+                                Datang Lebih Awal
                             @elseif($todayAttendance->status == 'late')
                                 Terlambat
                             @elseif($todayAttendance->status == 'absent')
@@ -149,7 +153,7 @@
         </div>
     </div>
 
-    <!-- Employee Information -->
+    <!-- Employee Information + Quick Summary -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 lg:p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -195,82 +199,61 @@
                     <p class="text-base font-semibold text-gray-800">{{ $employeeInfo['nip'] }}</p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Quick Stats Cards -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            <!-- Attendance Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all duration-300 group cursor-pointer"
-                 @click="window.location.href='{{ route('staff.attendance.index') }}'">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                    <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Bulan Ini</span>
-                </div>
-                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $quickStats['attendance_days_this_month'] ?? 0 }}</p>
-                <p class="text-xs lg:text-sm text-gray-500 mt-1">Hari Hadir</p>
-            </div>
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+                    <!-- Hari Hadir -->
+                    <a href="{{ route('staff.attendance.index') }}" class="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 transition-all duration-300 group">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Bulan Ini</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">{{ $quickStats['attendance_days_this_month'] ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Hari Hadir</p>
+                    </a>
 
-            <!-- Salary Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all duration-300 group cursor-pointer"
-                 @click="window.location.href='{{ route('staff.penggajian.index') }}'">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                    <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">Gaji Terakhir</span>
-                </div>
-                <p class="text-xl lg:text-2xl font-bold text-gray-800 truncate">
-                    @if(!is_null($quickStats['latest_net_salary'] ?? null))
-                        Rp {{ number_format($quickStats['latest_net_salary'], 0, ',', '.') }}
-                    @else
-                        <span class="text-gray-400 text-sm">{{ $quickStats['salary_error_message'] ?? '-' }}</span>
-                    @endif
-                </p>
-                @if(!is_null($quickStats['latest_net_salary'] ?? null) && !empty($quickStats['latest_salary_period']))
-                    <p class="text-xs lg:text-sm text-gray-500 mt-1">
-                        {{ \Carbon\Carbon::parse($quickStats['latest_salary_period'] . '-01')->locale('id')->isoFormat('MMMM YYYY') }}
-                    </p>
-                @endif
-            </div>
+                    <!-- Gaji Terakhir -->
+                    <a href="{{ route('staff.penggajian.index') }}" class="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/40 transition-all duration-300 group">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] font-medium text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">Terbaru</span>
+                        </div>
+                        @if(!is_null($quickStats['latest_net_salary'] ?? null))
+                            <p class="text-xl font-bold text-gray-800 truncate">Rp {{ number_format($quickStats['latest_net_salary'], 0, ',', '.') }}</p>
+                        @else
+                            <p class="text-sm font-medium text-gray-400 truncate">{{ $quickStats['salary_error_message'] ?? '-' }}</p>
+                        @endif
+                        @if(!is_null($quickStats['latest_net_salary'] ?? null) && !empty($quickStats['latest_salary_period']))
+                            <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($quickStats['latest_salary_period'] . '-01')->locale('id')->isoFormat('MMMM YYYY') }}</p>
+                        @else
+                            <p class="text-xs text-gray-500 mt-1">Gaji Terakhir</p>
+                        @endif
+                    </a>
 
-            <!-- Announcements Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all duration-300 group cursor-pointer"
-                 @click="window.location.href='{{ route('staff.pengumuman.index') }}'">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
-                        </svg>
-                    </div>
-                    @if(($quickStats['unread_announcements'] ?? 0) > 0)
-                        <span class="text-xs font-medium text-white bg-red-500 px-2 py-1 rounded-full animate-pulse">{{ $quickStats['unread_announcements'] }} baru</span>
-                    @endif
+                    <!-- Pengumuman -->
+                    <a href="{{ route('staff.pengumuman.index') }}" class="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-sky-200 hover:bg-sky-50/40 transition-all duration-300 group">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-9 h-9 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                                </svg>
+                            </div>
+                            @if(($quickStats['unread_announcements'] ?? 0) > 0)
+                                <span class="text-[11px] font-medium text-white bg-red-500 px-2 py-0.5 rounded-full">{{ $quickStats['unread_announcements'] }} baru</span>
+                            @endif
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">{{ $quickStats['unread_announcements'] ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Pengumuman Belum Dibaca</p>
+                    </a>
                 </div>
-                <p class="text-2xl lg:text-3xl font-bold text-gray-800">{{ $quickStats['unread_announcements'] ?? 0 }}</p>
-                <p class="text-xs lg:text-sm text-gray-500 mt-1">Pengumuman</p>
-            </div>
-
-            <!-- Profile Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5 hover:shadow-md transition-all duration-300 group cursor-pointer"
-                 @click="window.location.href='{{ route('staff.profile') }}'">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                    </div>
-                    <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Lihat</span>
-                </div>
-                <p class="text-lg lg:text-xl font-bold text-gray-800 truncate">{{ auth()->user()->name }}</p>
-                <p class="text-xs lg:text-sm text-gray-500 mt-1">Profil Saya</p>
             </div>
         </div>
     </div>

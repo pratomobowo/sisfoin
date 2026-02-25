@@ -255,7 +255,7 @@
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Semua Status</option>
                     <option value="on_time">Tepat Waktu</option>
-                    <option value="early_arrival">Datang Awal</option>
+                    <option value="early_arrival">Datang Lebih Awal</option>
                     <option value="late">Terlambat</option>
                     <option value="absent">Tidak Hadir</option>
                     <option value="sick">Sakit</option>
@@ -421,7 +421,7 @@
                                 <select wire:model="status_form" class="mt-1 block w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="">Pilih Status</option>
                                     <option value="on_time">Hadir</option>
-                                    <option value="early_arrival">Datang Awal</option>
+                                    <option value="early_arrival">Datang Lebih Awal</option>
                                     <option value="late">Terlambat</option>
                                     <option value="sick">Sakit</option>
                                     <option value="leave">Cuti</option>
@@ -512,7 +512,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-100 flex flex-col items-center">
                                 <span class="text-xl font-black text-emerald-600 tabular-nums">{{ $this->getAttendanceEarlyFormatted() }}</span>
-                                <span class="text-xs font-semibold text-emerald-800/70 uppercase tracking-wide mt-1">Datang Awal</span>
+                                <span class="text-xs font-semibold text-emerald-800/70 uppercase tracking-wide mt-1">Datang Lebih Awal</span>
                             </div>
                             <div class="bg-white p-3 rounded-lg shadow-sm border border-orange-100 flex flex-col items-center">
                                 <span class="text-xl font-black text-orange-500 tabular-nums">{{ $this->getAttendanceOvertimeFormatted() }}</span>

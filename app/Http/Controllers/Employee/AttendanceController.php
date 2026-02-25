@@ -104,6 +104,8 @@ class AttendanceController extends Controller
             $checkIn = null;
             $checkOut = null;
             $notes = null;
+            $lateMinutes = null;
+            $overtimeHours = null;
 
             if ($record) {
                 $status = $record->status;
@@ -112,6 +114,23 @@ class AttendanceController extends Controller
                 $checkIn = $record->check_in_time ? $record->check_in_time->format('H:i') : '-';
                 $checkOut = $record->check_out_time ? $record->check_out_time->format('H:i') : '-';
                 $notes = $record->notes;
+
+                if ($status === 'late' && $record->check_in_time) {
+                    $shift = $record->effective_shift;
+                    if ($shift) {
+                        $lateThreshold = Carbon::parse($record->date->format('Y-m-d').' '.$shift->late_threshold);
+                        if ($record->check_in_time->gt($lateThreshold)) {
+                            $lateMinutes = (int) round($lateThreshold->floatDiffInMinutes($record->check_in_time));
+                        }
+                    }
+                }
+
+                if ($record->check_in_time && $record->check_out_time) {
+                    $computedOvertimeHours = $record->overtime_hours ?? $record->calculateOvertimeHours();
+                    if ((float) $computedOvertimeHours > 0) {
+                        $overtimeHours = round((float) $computedOvertimeHours, 2);
+                    }
+                }
 
                 // Simple summary mapping
                 if (in_array($status, ['on_time', 'early_arrival', 'present'])) {
@@ -176,6 +195,8 @@ class AttendanceController extends Controller
                 'status_badge' => $statusBadge,
                 'check_in' => $checkIn,
                 'check_out' => $checkOut,
+                'late_minutes' => $lateMinutes,
+                'overtime_hours' => $overtimeHours,
                 'notes' => $notes,
             ];
         }

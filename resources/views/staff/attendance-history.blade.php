@@ -145,12 +145,14 @@
                                             </p>
                                         </div>
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold
-                                            @if($attendance['status'] == 'present' || $attendance['status'] == 'on_time') bg-emerald-100 text-emerald-700
+                                            @if($attendance['status'] == 'present' || $attendance['status'] == 'on_time' || $attendance['status'] == 'early_arrival') bg-emerald-100 text-emerald-700
                                             @elseif($attendance['status'] == 'late') bg-amber-100 text-amber-700
                                             @elseif($attendance['status'] == 'absent') bg-rose-100 text-rose-700
                                             @else bg-gray-200 text-gray-700 @endif">
                                             @if($attendance['status'] == 'present' || $attendance['status'] == 'on_time')
                                                 Hadir
+                                            @elseif($attendance['status'] == 'early_arrival')
+                                                Datang Lebih Awal
                                             @elseif($attendance['status'] == 'late')
                                                 Terlambat
                                             @elseif($attendance['status'] == 'absent')
@@ -174,9 +176,43 @@
                                         </div>
                                     </div>
 
-                                    @if(!empty($attendance['notes']))
+                                    @php
+                                        $notesText = trim((string) ($attendance['notes'] ?? ''));
+
+                                        // For legacy auto-generated late notes (e.g. "Terlambat 6 menit"
+                                        // or "Terlambat 70 menit, Multiple scans: 3 kali"),
+                                        // prefer computed metric and keep only the extra suffix note.
+                                        if (!is_null($attendance['late_minutes'])) {
+                                            if (preg_match('/^terlambat\s*-?\d+\s*menit\s*(?:,\s*(.*))?$/i', $notesText, $matches)) {
+                                                $notesText = trim((string) ($matches[1] ?? ''));
+                                            }
+                                        }
+
+                                        $normalizedNotes = function_exists('mb_strtolower')
+                                            ? mb_strtolower($notesText)
+                                            : strtolower($notesText);
+
+                                        $performanceNotes = [];
+
+                                        if (!is_null($attendance['late_minutes'])) {
+                                            $performanceNotes[] = 'Terlambat '.$attendance['late_minutes'].' menit';
+                                        }
+
+                                        if (!is_null($attendance['overtime_hours']) && !str_contains($normalizedNotes, 'lembur')) {
+                                            $performanceNotes[] = 'Lembur '.number_format($attendance['overtime_hours'], 2, ',', '.').' jam';
+                                        }
+                                    @endphp
+
+                                    @if(!empty($notesText) || !empty($performanceNotes))
                                         <div class="mt-3 text-xs text-gray-600 bg-white border border-gray-100 rounded-xl p-2.5">
-                                            <span class="font-semibold">Catatan:</span> {{ $attendance['notes'] }}
+                                            <span class="font-semibold">Catatan:</span>
+                                            @if(!empty($notesText))
+                                                {{ $notesText }}
+                                            @endif
+                                            @if(!empty($performanceNotes))
+                                                @if(!empty($notesText)) · @endif
+                                                {{ implode(' · ', $performanceNotes) }}
+                                            @endif
                                         </div>
                                     @endif
                                 </div>

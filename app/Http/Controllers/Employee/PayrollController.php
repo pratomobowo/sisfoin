@@ -24,6 +24,8 @@ class PayrollController extends Controller
         $availableSlips = 0;
         $totalSlips = 0;
         $latestGajiBersih = 0;
+        $latestTotalPotongan = 0;
+        $latestTotalHonor = 0;
         $latestGajiPeriode = null;
         $slipGajiDetails = null;
 
@@ -66,17 +68,16 @@ class PayrollController extends Controller
                 ->with(['header', 'employee', 'dosen'])
                 ->get();
 
-            $totalGajiBersih = $allSlips->where('status', 'Tersedia')->sum('penerimaan_bersih');
-            $totalPotongan = $allSlips->where('status', 'Tersedia')->sum('total_potongan');
-            $totalHonor = $allSlips->where('status', 'Tersedia')->sum(function ($detail) {
+            $totalGajiBersih = $allSlips->sum('penerimaan_bersih');
+            $totalPotongan = $allSlips->sum('total_potongan');
+            $totalHonor = $allSlips->sum(function ($detail) {
                 return ($detail->honor_tetap ?? 0) + ($detail->honor_tunai ?? 0) + ($detail->insentif_golongan ?? 0);
             });
-            $totalPajakKurangPotong = $allSlips->where('status', 'Tersedia')->sum('pph21_kurang_dipotong');
-            $availableSlips = $allSlips->where('status', 'Tersedia')->count();
+            $totalPajakKurangPotong = $allSlips->sum('pph21_kurang_dipotong');
+            $availableSlips = $allSlips->count();
             $totalSlips = $allSlips->count();
 
             $latestSlip = $allSlips
-                ->where('status', 'Tersedia')
                 ->sortByDesc(function ($detail) {
                     $periode = $detail->header?->getRawPeriode() ?? '';
                     $createdTimestamp = $detail->created_at?->timestamp ?? 0;
@@ -87,6 +88,8 @@ class PayrollController extends Controller
 
             if ($latestSlip) {
                 $latestGajiBersih = $latestSlip->penerimaan_bersih ?? 0;
+                $latestTotalPotongan = $latestSlip->total_potongan ?? 0;
+                $latestTotalHonor = ($latestSlip->honor_tetap ?? 0) + ($latestSlip->honor_tunai ?? 0) + ($latestSlip->insentif_golongan ?? 0);
                 $latestGajiPeriode = $latestSlip->header?->formatted_periode;
             }
         }
@@ -101,6 +104,8 @@ class PayrollController extends Controller
             'availableSlips' => $availableSlips,
             'totalSlips' => $totalSlips,
             'latestGajiBersih' => $latestGajiBersih,
+            'latestTotalPotongan' => $latestTotalPotongan,
+            'latestTotalHonor' => $latestTotalHonor,
             'latestGajiPeriode' => $latestGajiPeriode,
             'search' => $request->get('search', ''),
             'perPage' => $request->get('per_page', 10),

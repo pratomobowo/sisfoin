@@ -91,7 +91,7 @@
                     <select wire:model.live="statusFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                         <option value="">Semua</option>
                         <option value="on_time">Hadir</option>
-                        <option value="early_arrival">Datang Awal</option>
+                        <option value="early_arrival">Datang Lebih Awal</option>
                         <option value="late">Terlambat</option>
                         <option value="incomplete">Tidak Lengkap</option>
                         <option value="sick">Sakit</option>

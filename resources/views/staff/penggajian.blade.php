@@ -54,7 +54,7 @@
                     <p class="text-xs text-gray-500 mt-1">Gaji Terakhir {{ $latestGajiPeriode ? '(' . $latestGajiPeriode . ')' : '' }}</p>
                 </div>
 
-                <!-- Potongan -->
+                <!-- Potongan Terakhir -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
@@ -62,15 +62,15 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
                             </svg>
                         </div>
-                        <span class="text-xs font-medium text-rose-600 bg-rose-50 px-2 py-1 rounded-full">Potongan</span>
+                        <span class="text-xs font-medium text-rose-600 bg-rose-50 px-2 py-1 rounded-full">Terbaru</span>
                     </div>
                     <p class="text-lg lg:text-xl font-bold text-gray-800 truncate">
-                        Rp {{ number_format($totalPotongan, 0, ',', '.') }}
+                        Rp {{ number_format($latestTotalPotongan ?? 0, 0, ',', '.') }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-1">Total Potongan</p>
+                    <p class="text-xs text-gray-500 mt-1">Potongan Terakhir</p>
                 </div>
 
-                <!-- Honor -->
+                <!-- Honor Terakhir -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
@@ -78,12 +78,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                         </div>
-                        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Honor</span>
+                        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Terbaru</span>
                     </div>
                     <p class="text-lg lg:text-xl font-bold text-gray-800 truncate">
-                        Rp {{ number_format($totalHonor, 0, ',', '.') }}
+                        Rp {{ number_format($latestTotalHonor ?? 0, 0, ',', '.') }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-1">Tunjangan</p>
+                    <p class="text-xs text-gray-500 mt-1">Honor Terakhir</p>
                 </div>
 
                 <!-- Jumlah Slip -->

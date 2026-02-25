@@ -2,13 +2,13 @@
 
 namespace App\Models\Employee;
 
+use App\Models\EmployeeShiftAssignment;
 use App\Models\User;
+use App\Models\WorkShift;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\WorkShift;
-use App\Models\EmployeeShiftAssignment;
 
 class Attendance extends Model
 {
@@ -77,13 +77,13 @@ class Attendance extends Model
      */
     public function getEffectiveShiftAttribute(): ?WorkShift
     {
-        if (!$this->user_id || !$this->date) {
+        if (! $this->user_id || ! $this->date) {
             return WorkShift::getDefault();
         }
 
         // Check for assigned shift for this user on this date
         $assignedShift = EmployeeShiftAssignment::getShiftForDate($this->user_id, Carbon::parse($this->date));
-        
+
         if ($assignedShift) {
             return $assignedShift;
         }
@@ -123,7 +123,7 @@ class Attendance extends Model
     public function calculateOvertimeHours(): float
     {
         $totalHours = $this->calculateTotalHours();
-        
+
         $shift = $this->effective_shift;
         $standardHours = $shift ? (float) $shift->work_hours : 8.0;
 
@@ -136,7 +136,7 @@ class Attendance extends Model
     public function getStatusBadgeAttribute(): string
     {
         return match ($this->status) {
-            'early_arrival' => 'blue',
+            'early_arrival' => 'green',
             'on_time' => 'green',
             'present' => 'green',
             'late' => 'yellow',
@@ -175,7 +175,7 @@ class Attendance extends Model
         $shift = EmployeeShiftAssignment::getShiftForDate($this->user_id, $this->date);
 
         // Fallback to default shift
-        if (!$shift) {
+        if (! $shift) {
             $shift = WorkShift::getDefault();
         }
 
@@ -222,6 +222,7 @@ class Attendance extends Model
 
         // Fallback to hardcoded if no shift found (should not happen with default shift)
         $standardCheckIn = Carbon::parse($this->date->format('Y-m-d').' 08:00:00');
+
         return $this->check_in_time->gt($standardCheckIn);
     }
 
@@ -236,11 +237,13 @@ class Attendance extends Model
 
         $shift = $this->effective_shift;
         if ($shift && $shift->end_time) {
-            $standardCheckOut = Carbon::parse($this->date->format('Y-m-d'). ' ' . $shift->end_time);
+            $standardCheckOut = Carbon::parse($this->date->format('Y-m-d').' '.$shift->end_time);
+
             return $this->check_out_time->lt($standardCheckOut);
         }
 
         $standardCheckOut = Carbon::parse($this->date->format('Y-m-d').' 17:00:00');
+
         return $this->check_out_time->lt($standardCheckOut);
     }
 
