@@ -129,6 +129,7 @@
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Setengah Hari</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span> Sakit</div>
             <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-indigo-400 mr-2"></span> Cuti</div>
+            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Izin</div>
         </div>
 
         <div class="overflow-auto flex-grow h-[600px]">
@@ -185,6 +186,7 @@
                                             'half_day' => 'bg-blue-400 text-white font-bold',
                                             'sick' => 'bg-gray-400 text-white font-bold',
                                             'leave' => 'bg-pink-400 text-white font-bold',
+                                            'permission' => 'bg-blue-500 text-white font-bold',
                                             default => ''
                                         };
                                     }

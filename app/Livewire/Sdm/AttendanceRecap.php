@@ -364,6 +364,7 @@ class AttendanceRecap extends Component
             'half_day' => 'HD', // Half Day
             'sick' => 'S', // Sakit
             'leave' => 'C', // Cuti
+            'permission' => 'I', // Izin
             'incomplete' => '?', // Absen Tidak Lengkap
             default => '?'
         };

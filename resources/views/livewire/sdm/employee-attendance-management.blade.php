@@ -154,6 +154,7 @@
                     <option value="incomplete">Tidak Lengkap</option>
                     <option value="sick">Sakit</option>
                     <option value="leave">Cuti</option>
+                    <option value="permission">Izin</option>
                 </select>
             </div>
         </div>
@@ -192,6 +193,7 @@
                                     @elseif($row['status']==='late') bg-yellow-100 text-yellow-800
                                     @elseif($row['status']==='sick') bg-gray-100 text-gray-700
                                     @elseif($row['status']==='leave') bg-indigo-100 text-indigo-700
+                                    @elseif($row['status']==='permission') bg-blue-100 text-blue-700
                                     @elseif($row['status']==='incomplete') bg-purple-100 text-purple-700
                                     @else bg-red-100 text-red-800 @endif">
                                     {{ $row['status_label'] }}
@@ -260,6 +262,7 @@
                     <option value="absent">Tidak Hadir</option>
                     <option value="sick">Sakit</option>
                     <option value="leave">Cuti</option>
+                    <option value="permission">Izin</option>
                     <option value="incomplete">Absen Tidak Lengkap</option>
                 </select>
             </div>
@@ -425,6 +428,7 @@
                                     <option value="late">Terlambat</option>
                                     <option value="sick">Sakit</option>
                                     <option value="leave">Cuti</option>
+                                    <option value="permission">Izin</option>
                                     <option value="absent">Mangkir</option>
                                     <option value="incomplete">Absen Tidak Lengkap</option>
                                     <option value="checkout-only">Cek Pulang Saja</option>

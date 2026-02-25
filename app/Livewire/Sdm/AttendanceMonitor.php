@@ -251,6 +251,7 @@ class AttendanceMonitor extends Component
             $incomplete = 0;
             $sick = 0;
             $leave = 0;
+            $permission = 0;
             $halfDay = 0;
             $absent = 0;
             $workingDays = 0;
@@ -260,6 +261,7 @@ class AttendanceMonitor extends Component
                 'tidak_hadir' => [],
                 'sakit' => [],
                 'cuti' => [],
+                'izin' => [],
                 'tidak_lengkap' => [],
                 'setengah_hari' => [],
             ];
@@ -301,6 +303,9 @@ class AttendanceMonitor extends Component
                 } elseif ($status === 'leave') {
                     $leave++;
                     $statusDates['cuti'][] = $cursor->copy()->format('Y-m-d');
+                } elseif ($status === 'permission') {
+                    $permission++;
+                    $statusDates['izin'][] = $cursor->copy()->format('Y-m-d');
                 } elseif ($status === 'half_day') {
                     $halfDay++;
                     $statusDates['setengah_hari'][] = $cursor->copy()->format('Y-m-d');
@@ -330,6 +335,7 @@ class AttendanceMonitor extends Component
                 'half_day' => $halfDay,
                 'sick' => $sick,
                 'leave' => $leave,
+                'permission' => $permission,
                 'absent' => $absent,
                 'status_dates' => $statusDates,
                 'attendance_rate' => $attendanceRate,

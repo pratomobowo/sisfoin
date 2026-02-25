@@ -96,6 +96,7 @@
                         <option value="incomplete">Tidak Lengkap</option>
                         <option value="sick">Sakit</option>
                         <option value="leave">Cuti</option>
+                        <option value="permission">Izin</option>
                         <option value="absent">Tidak Hadir</option>
                         <option value="holiday">Libur</option>
                     </select>
@@ -118,6 +119,7 @@
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Tidak Hadir</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Sakit</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Cuti</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Izin</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Aksi</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">% Kehadiran</th>
                         </tr>
@@ -156,6 +158,11 @@
                                         {{ $row['leave'] }}
                                     </button>
                                 </td>
+                                <td class="px-4 py-3 text-center text-sm text-blue-700">
+                                    <button type="button" wire:click="toggleRangeDetails({{ $row['employee_id'] }})" class="hover:underline decoration-dotted">
+                                        {{ $row['permission'] ?? 0 }}
+                                    </button>
+                                </td>
                                 <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     <button type="button" wire:click="toggleRangeDetails({{ $row['employee_id'] }})" class="inline-flex items-center px-2 py-1 rounded-md border border-gray-300 hover:bg-gray-50 text-xs font-medium">
                                         {{ $expandedRangeEmployeeId === $row['employee_id'] ? 'Tutup' : 'Lihat Hari' }}
@@ -175,6 +182,7 @@
                                                     ['key' => 'tidak_hadir', 'label' => 'Tidak Hadir', 'chip' => 'bg-red-50 text-red-700 border-red-200'],
                                                     ['key' => 'sakit', 'label' => 'Sakit', 'chip' => 'bg-gray-100 text-gray-700 border-gray-200'],
                                                     ['key' => 'cuti', 'label' => 'Cuti', 'chip' => 'bg-indigo-50 text-indigo-700 border-indigo-200'],
+                                                    ['key' => 'izin', 'label' => 'Izin', 'chip' => 'bg-blue-50 text-blue-700 border-blue-200'],
                                                     ['key' => 'tidak_lengkap', 'label' => 'Tidak Lengkap', 'chip' => 'bg-purple-50 text-purple-700 border-purple-200'],
                                                     ['key' => 'setengah_hari', 'label' => 'Setengah Hari', 'chip' => 'bg-blue-50 text-blue-700 border-blue-200'],
                                                 ];
@@ -202,7 +210,7 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="10" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada data monitor pada periode ini.</td>
+                                <td colspan="11" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada data monitor pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -236,6 +244,7 @@
                                             'holiday' => 'bg-slate-100 text-slate-700',
                                             'sick' => 'bg-gray-100 text-gray-700',
                                             'leave' => 'bg-indigo-100 text-indigo-700',
+                                            'permission' => 'bg-blue-100 text-blue-700',
                                             'incomplete' => 'bg-purple-100 text-purple-700',
                                             default => 'bg-gray-100 text-gray-700',
                                         };
