@@ -2,12 +2,10 @@
 
 @section('page-title', 'Konfigurasi SMTP')
 
-@section('breadcrumb')
-    <x-superadmin.breadcrumb-topbar :items="[
-        ['title' => 'Dashboard', 'url' => route('superadmin.dashboard')],
-        ['title' => 'Konfigurasi SMTP', 'url' => null]
-    ]" />
-@endsection
+<x-breadcrumb-section :items="[
+    ['title' => 'Dashboard', 'url' => route('superadmin.dashboard')],
+    ['title' => 'Konfigurasi SMTP', 'url' => null],
+]" />
 
 @section('page-header')
     <x-superadmin.page-header 

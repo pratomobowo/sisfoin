@@ -1,23 +1,20 @@
-@extends('layouts.sdm')
+@extends('layouts.app')
 
 @section('page-title', 'Log Email Slip Gaji - ' . $header->periode)
 
-@section('breadcrumb')
-    <x-sdm.breadcrumb-topbar :items="[
-        ['title' => 'Dashboard', 'url' => route('sdm.dashboard')],
-        ['title' => 'Slip Gaji', 'url' => route('sdm.slip-gaji.index')],
-        ['title' => 'Detail Slip Gaji', 'url' => route('sdm.slip-gaji.show', $header)],
-        ['title' => 'Log Email', 'url' => null]
-    ]" />
-@endsection
-
-@section('page-header')
-    <x-sdm.page-header 
+@section('content')
+<div class="space-y-6">
+    <x-page-header
         :title="'Log Email Slip Gaji - ' . $header->periode"
-        description="Monitor status pengiriman email slip gaji untuk periode {{ $header->periode }}"
-        icon="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        :subtitle="'Monitor status pengiriman email slip gaji untuk periode ' . $header->periode"
+        :breadcrumbs="[
+            'Dashboard' => route('sdm.dashboard'),
+            'Slip Gaji' => route('sdm.slip-gaji.index'),
+            'Detail Slip Gaji' => route('sdm.slip-gaji.show', $header),
+            'Log Email' => null,
+        ]"
     >
-        <div class="flex flex-wrap gap-2">
+        <x-slot name="actions">
             <a href="{{ route('sdm.slip-gaji.show', $header) }}" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -35,12 +32,9 @@
                     </button>
                 </form>
             @endif
-        </div>
-    </x-sdm.page-header>
-@endsection
+        </x-slot>
+    </x-page-header>
 
-@section('content')
-<div class="space-y-6">
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="bg-white overflow-hidden shadow rounded-lg">

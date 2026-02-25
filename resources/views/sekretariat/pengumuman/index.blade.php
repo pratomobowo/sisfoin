@@ -2,31 +2,6 @@
 
 @section('page-title', 'Pengumuman Sekretariat')
 
-@section('breadcrumb')
-<nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
-        <li class="inline-flex items-center">
-            <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                <x-lucide-house class="w-4 h-4 mr-2" />
-                Dashboard
-            </a>
-        </li>
-        <li>
-            <div class="flex items-center">
-                <x-lucide-chevron-right class="w-4 h-4 text-gray-400" />
-                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Sekretariat</span>
-            </div>
-        </li>
-        <li>
-            <div class="flex items-center">
-                <x-lucide-chevron-right class="w-4 h-4 text-gray-400" />
-                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Pengumuman</span>
-            </div>
-        </li>
-    </ol>
-</nav>
-@endsection
-
 @section('content')
 <div class="space-y-6" x-data="{ showCreateForm: {{ $errors->any() ? 'true' : 'false' }} }">
     <x-page-header

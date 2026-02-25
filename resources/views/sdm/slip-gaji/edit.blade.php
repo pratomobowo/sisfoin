@@ -2,16 +2,12 @@
 
 @section('page-title', 'Edit Slip Gaji')
 
-@section('breadcrumb')
-    <x-superadmin.breadcrumb-topbar 
-        :items="[
-            ['title' => 'SDM', 'url' => route('sdm.employees.index')],
-            ['title' => 'Slip Gaji', 'url' => route('sdm.slip-gaji.index')],
-            ['title' => 'Detail', 'url' => route('sdm.slip-gaji.show', $detail->header)],
-            ['title' => 'Edit', 'url' => null]
-        ]"
-    />
-@endsection
+<x-breadcrumb-section :items="[
+    ['title' => 'SDM', 'url' => route('sdm.employees.index')],
+    ['title' => 'Slip Gaji', 'url' => route('sdm.slip-gaji.index')],
+    ['title' => 'Detail', 'url' => route('sdm.slip-gaji.show', $detail->header)],
+    ['title' => 'Edit', 'url' => null],
+]" />
 
 
 @section('content')

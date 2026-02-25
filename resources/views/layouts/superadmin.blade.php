@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
-@section('breadcrumb')
-    <x-superadmin.breadcrumb-topbar :items="getBreadcrumb()" />
-@endsection
+<x-breadcrumb-section :items="getBreadcrumb()" />
 
 @section('content')
 <div class="container-fluid px-4">
