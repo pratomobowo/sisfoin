@@ -4,6 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <link rel="icon" type="image/jpeg" href="{{ asset('images/logo-usbypkp.jpg') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/logo-usbypkp.jpg') }}">
 
         <title>{{ config('app.name', 'Laravel') }} - @yield('page-title')</title>
 

@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#2563eb">
+        <link rel="icon" type="image/jpeg" href="{{ asset('images/logo-usbypkp.jpg') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/logo-usbypkp.jpg') }}">
 
         <title>{{ config('app.name', 'Laravel') }} - Staff Portal</title>
 
