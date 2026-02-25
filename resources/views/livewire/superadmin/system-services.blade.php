@@ -64,6 +64,25 @@
                                     {{ $service->last_run_at ? $service->last_run_at->diffForHumans() : 'Belum pernah' }}
                                 </span>
                             </div>
+                            <div class="space-y-2 normal-case tracking-normal text-xs font-medium text-gray-600 pt-2">
+                                <label for="schedule-{{ $service->id }}" class="block text-[11px] font-semibold uppercase tracking-widest text-gray-400">Jadwal</label>
+                                <select
+                                    id="schedule-{{ $service->id }}"
+                                    wire:change="updateSchedulePreset({{ $service->id }}, $event.target.value)"
+                                    class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 focus:border-blue-300 focus:ring focus:ring-blue-100"
+                                >
+                                    @foreach($schedulePresets as $presetKey => $presetLabel)
+                                        <option value="{{ $presetKey }}" @selected(($service->schedule_preset ?? 'disabled') === $presetKey)>
+                                            {{ $presetLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @if(!empty($service->last_run_result))
+                                    <p class="text-[11px] {{ $service->last_run_result === 'success' ? 'text-emerald-600' : 'text-red-600' }}">
+                                        {{ $service->last_run_result === 'success' ? 'Eksekusi terakhir berhasil' : 'Eksekusi terakhir gagal' }}
+                                    </p>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -83,6 +102,69 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-base font-bold text-gray-800">Log Eksekusi Service</h3>
+                <span class="text-xs text-gray-500">Menampilkan {{ $logs->count() }} log terbaru</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Waktu</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Service</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Trigger</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Durasi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ringkasan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($logs as $log)
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                    {{ optional($log->started_at)->format('d M Y H:i:s') ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
+                                    {{ $log->service_name }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                    @if($log->triggered_by === 'manual')
+                                        Manual{{ $log->triggerUser ? ' · ' . $log->triggerUser->name : '' }}
+                                    @else
+                                        Scheduler
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold
+                                        {{ $log->status === 'success' ? 'bg-emerald-100 text-emerald-700' : ($log->status === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
+                                        {{ strtoupper($log->status) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                    @if($log->started_at && $log->finished_at)
+                                        {{ $log->finished_at->diffInSeconds($log->started_at) }} dtk
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    <div class="max-w-xl truncate" title="{{ $log->message ?: $log->output }}">
+                                        {{ $log->message ?: ($log->output ? \Illuminate\Support\Str::limit($log->output, 120) : '-') }}
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-4 py-6 text-center text-gray-500">Belum ada log eksekusi service.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Info Card -->

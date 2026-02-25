@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Schedules are registered in routes/console.php for Laravel 11+ style bootstrap.
     }
 
     /**

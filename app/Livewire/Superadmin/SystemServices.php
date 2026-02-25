@@ -3,16 +3,28 @@
 namespace App\Livewire\Superadmin;
 
 use App\Models\SystemService;
+use App\Models\SystemServiceExecutionLog;
+use App\Services\SystemServiceRunner;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
 class SystemServices extends Component
 {
+    public array $schedulePresets = [];
+
+    public int $logLimit = 30;
+
+    public function mount(): void
+    {
+        $this->schedulePresets = SystemService::SCHEDULE_PRESETS;
+    }
+
     public function toggleService($serviceId)
     {
         $service = SystemService::findOrFail($serviceId);
-        $service->is_active = !$service->is_active;
+        $service->is_active = ! $service->is_active;
         $service->status = $service->is_active ? 'running' : 'stopped';
         $service->save();
 
@@ -23,21 +35,44 @@ class SystemServices extends Component
     public function runService($serviceId)
     {
         $service = SystemService::findOrFail($serviceId);
-        
-        // Simulating running a service
-        $service->last_run_at = now();
-        $service->status = 'running';
+
+        $result = app(SystemServiceRunner::class)->run($service, 'manual', Auth::id());
+
+        if ($result['success']) {
+            session()->flash('success', "Service {$service->name} telah dijalankan secara manual.");
+        } else {
+            session()->flash('error', $result['message']);
+        }
+    }
+
+    public function updateSchedulePreset($serviceId, $preset)
+    {
+        $service = SystemService::findOrFail($serviceId);
+
+        if (! array_key_exists($preset, SystemService::SCHEDULE_PRESETS)) {
+            session()->flash('error', 'Preset jadwal tidak valid.');
+
+            return;
+        }
+
+        $service->schedule_preset = $preset;
         $service->save();
 
-        session()->flash('success', "Service {$service->name} telah dijalankan secara manual.");
+        session()->flash('success', "Jadwal {$service->name} diatur ke {$service->schedule_preset_label}.");
     }
 
     public function render()
     {
         $services = SystemService::all();
-        
+        $logs = SystemServiceExecutionLog::query()
+            ->with('triggerUser:id,name')
+            ->latest('started_at')
+            ->limit($this->logLimit)
+            ->get();
+
         return view('livewire.superadmin.system-services', [
-            'services' => $services
+            'services' => $services,
+            'logs' => $logs,
         ]);
     }
 }
