@@ -22,12 +22,15 @@
             <div class="mb-6">
                 <div class="flex items-center justify-center space-x-2">
                     <img src="{{ asset('images/logo-usbypkp.jpg') }}" alt="USB PKP Logo" class="w-12 h-12 rounded-xl shadow-lg object-cover">
-                    <div class="text-2xl font-semibold text-gray-800">USBYPKP</div>
+                    <div>
+                        <div class="text-2xl font-semibold text-gray-800 leading-tight">SISFOIN</div>
+                        <div class="text-xs text-gray-500 leading-tight">Sistem Informasi Internal</div>
+                    </div>
                 </div>
             </div>
 
             <!-- Content Card -->
-            <div class="w-full sm:max-w-md">
+            <div class="w-full px-4 sm:px-0 sm:max-w-md">
                 <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
                     <div class="px-8 py-6">
                         {{ $slot }}
@@ -37,7 +40,7 @@
 
             <!-- Footer -->
             <div class="mt-6 text-center text-sm text-gray-500">
-                © {{ date('Y') }} Universitas Sanggabuana Bandung. All rights reserved.
+                © {{ date('Y') }} Biro Teknologi Informasi Sanggabuana
             </div>
         </div>
     </body>

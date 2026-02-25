@@ -88,17 +88,5 @@
             </button>
         </div>
 
-        <!-- Register Link -->
-        @if (Route::has('register'))
-            <div class="text-center pt-4 border-t border-gray-200">
-                <p class="text-sm text-gray-600">
-                    Belum punya akun?
-                    <a href="{{ route('register') }}" 
-                       class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                        {{ __('Register') }}
-                    </a>
-                </p>
-            </div>
-        @endif
     </form>
 </x-guest-layout>
