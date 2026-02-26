@@ -149,8 +149,11 @@ class SlipGajiController extends Controller
 
             \Log::info('Redirecting to index after successful upload', ['header_id' => $result['header_id']]);
 
-            return redirect()->route('sdm.slip-gaji.index')
-                ->with('success', 'File slip gaji berhasil diupload dan diproses untuk periode '.$periode);
+            $processedCount = $result['processed_count'] ?? 0;
+            $successMessage = 'Upload berhasil: '.$processedCount.' data diproses untuk periode '.$periode.'.';
+
+            return redirect()->route('sdm.slip-gaji.show', $result['header_id'])
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             \Log::error('Error processing upload: '.$e->getMessage(), [

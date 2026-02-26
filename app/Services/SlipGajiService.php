@@ -112,6 +112,7 @@ class SlipGajiService
                 'success' => true,
                 'message' => 'Data slip gaji berhasil diimpor',
                 'header_id' => $header->id,
+                'processed_count' => $importedCount,
             ];
 
             if (! empty($warnings)) {
