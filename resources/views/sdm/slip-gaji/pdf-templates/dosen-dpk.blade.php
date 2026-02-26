@@ -268,7 +268,7 @@
                         <table class="salary-table">
                             <tbody>
                                 <tr><td>Tunjangan Golongan</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_golongan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
-                                <tr><td>Tunjangan Dosen Bantuan Kopertis</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_dosen_bantuan_kopertis ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Tunjangan Dosen Bantuan Kopertis</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pendidikan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Tunjangan PMB</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pmb ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Tunjangan Struktural</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->tunjangan_struktural ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="plus-icon">+</span></td></tr>
                                 <tr class="total-row"><td><strong>Total Penerimaan Kotor</strong></td><td class="currency"><strong>Rp</strong></td><td class="amount"><strong>{{ number_format($detail->penerimaan_kotor ?? 0, 0, ',', '.') }}</strong></td><td class="icon-column"></td></tr>
