@@ -148,38 +148,19 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">
-                                        @if($detail->employee)
-                                            {{ trim(($detail->employee->gelar_depan ? $detail->employee->gelar_depan . ' ' : '') . 
-                                                   $detail->employee->nama . 
-                                                   ($detail->employee->gelar_belakang ? ', ' . $detail->employee->gelar_belakang : '')) }}
-                                        @elseif($detail->dosen)
-                                            {{ trim(($detail->dosen->gelar_depan ? $detail->dosen->gelar_depan . ' ' : '') . 
-                                                   $detail->dosen->nama . 
-                                                   ($detail->dosen->gelar_belakang ? ', ' . $detail->dosen->gelar_belakang : '')) }}
+                                        @if($detail->resolved_nama)
+                                            {{ $detail->resolved_nama }}
                                         @else
                                             <span class="text-gray-500">Data tidak ditemukan</span>
                                         @endif
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        @if($detail->employee)
-                                            @if($detail->employee->email_kampus)
-                                                {{ $detail->employee->email_kampus }}
+                                        @if($detail->resolved_email)
+                                            {{ $detail->resolved_email }}
+                                            @if($detail->resolved_email_source === 'kampus')
                                                 <span class="text-xs text-gray-400">(kampus)</span>
-                                            @elseif($detail->employee->email)
-                                                {{ $detail->employee->email }}
+                                            @elseif($detail->resolved_email_source === 'pribadi')
                                                 <span class="text-xs text-gray-400">(pribadi)</span>
-                                            @else
-                                                <span class="text-red-500">Tidak ada email</span>
-                                            @endif
-                                        @elseif($detail->dosen)
-                                            @if($detail->dosen->email_kampus)
-                                                {{ $detail->dosen->email_kampus }}
-                                                <span class="text-xs text-gray-400">(kampus)</span>
-                                            @elseif($detail->dosen->email)
-                                                {{ $detail->dosen->email }}
-                                                <span class="text-xs text-gray-400">(pribadi)</span>
-                                            @else
-                                                <span class="text-red-500">Tidak ada email</span>
                                             @endif
                                         @else
                                             <span class="text-red-500">Tidak ada email</span>

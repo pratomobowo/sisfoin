@@ -67,13 +67,58 @@ class SlipGajiService
             $import = new SlipGajiImport($header->id);
             Excel::import($import, $file);
 
+            $importedCount = SlipGajiDetail::where('header_id', $header->id)->count();
+            if ($importedCount === 0) {
+                DB::rollBack();
+
+                $rowErrors = method_exists($import, 'getErrors') ? $import->getErrors() : [];
+                $errors = ['Tidak ada data valid yang berhasil diimpor. Pastikan kolom NIP terisi dan format file sesuai template terbaru.'];
+
+                if (! empty($rowErrors)) {
+                    $errors = array_merge($errors, array_slice($rowErrors, 0, 5));
+                }
+
+                return [
+                    'success' => false,
+                    'errors' => $errors,
+                ];
+            }
+
+            $unmatchedNips = SlipGajiDetail::query()
+                ->from('slip_gaji_detail as s')
+                ->leftJoin('employees as e_nip', 'e_nip.nip', '=', 's.nip')
+                ->leftJoin('employees as e_nip_pns', 'e_nip_pns.nip_pns', '=', 's.nip')
+                ->leftJoin('dosens as d_nip', 'd_nip.nip', '=', 's.nip')
+                ->leftJoin('dosens as d_nip_pns', 'd_nip_pns.nip_pns', '=', 's.nip')
+                ->where('s.header_id', $header->id)
+                ->whereNull('e_nip.id')
+                ->whereNull('e_nip_pns.id')
+                ->whereNull('d_nip.id')
+                ->whereNull('d_nip_pns.id')
+                ->distinct()
+                ->pluck('s.nip')
+                ->filter(fn ($nip) => ! empty($nip))
+                ->values();
+
+            $warnings = [];
+            if ($unmatchedNips->isNotEmpty()) {
+                $sample = $unmatchedNips->take(10)->implode(', ');
+                $warnings[] = 'Sebagian data tidak terhubung ke master pegawai/dosen (NIP tidak ditemukan). Jumlah: '.$unmatchedNips->count().'. Contoh NIP: '.$sample;
+            }
+
             DB::commit();
 
-            return [
+            $response = [
                 'success' => true,
                 'message' => 'Data slip gaji berhasil diimpor',
                 'header_id' => $header->id,
             ];
+
+            if (! empty($warnings)) {
+                $response['warnings'] = $warnings;
+            }
+
+            return $response;
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -372,7 +417,7 @@ class SlipGajiService
     {
         $header = SlipGajiHeader::with('uploader')->findOrFail($headerId);
 
-        $query = SlipGajiDetail::with(['employee', 'dosen'])->where('header_id', $headerId);
+        $query = SlipGajiDetail::with(['employee', 'dosen', 'employeeByNipPns', 'dosenByNipPns'])->where('header_id', $headerId);
 
         // Filter by search (NIP or nama from relations)
         if (! empty($filters['search'])) {
@@ -383,7 +428,17 @@ class SlipGajiService
                             ->orWhere('gelar_depan', 'like', '%'.$filters['search'].'%')
                             ->orWhere('gelar_belakang', 'like', '%'.$filters['search'].'%');
                     })
+                    ->orWhereHas('employeeByNipPns', function ($subQ) use ($filters) {
+                        $subQ->where('nama', 'like', '%'.$filters['search'].'%')
+                            ->orWhere('gelar_depan', 'like', '%'.$filters['search'].'%')
+                            ->orWhere('gelar_belakang', 'like', '%'.$filters['search'].'%');
+                    })
                     ->orWhereHas('dosen', function ($subQ) use ($filters) {
+                        $subQ->where('nama', 'like', '%'.$filters['search'].'%')
+                            ->orWhere('gelar_depan', 'like', '%'.$filters['search'].'%')
+                            ->orWhere('gelar_belakang', 'like', '%'.$filters['search'].'%');
+                    })
+                    ->orWhereHas('dosenByNipPns', function ($subQ) use ($filters) {
                         $subQ->where('nama', 'like', '%'.$filters['search'].'%')
                             ->orWhere('gelar_depan', 'like', '%'.$filters['search'].'%')
                             ->orWhere('gelar_belakang', 'like', '%'.$filters['search'].'%');
@@ -404,7 +459,17 @@ class SlipGajiService
                         ->orWhere('gelar_depan', 'like', '%'.$filters['nama'].'%')
                         ->orWhere('gelar_belakang', 'like', '%'.$filters['nama'].'%');
                 })
+                    ->orWhereHas('employeeByNipPns', function ($subQ) use ($filters) {
+                        $subQ->where('nama', 'like', '%'.$filters['nama'].'%')
+                            ->orWhere('gelar_depan', 'like', '%'.$filters['nama'].'%')
+                            ->orWhere('gelar_belakang', 'like', '%'.$filters['nama'].'%');
+                    })
                     ->orWhereHas('dosen', function ($subQ) use ($filters) {
+                        $subQ->where('nama', 'like', '%'.$filters['nama'].'%')
+                            ->orWhere('gelar_depan', 'like', '%'.$filters['nama'].'%')
+                            ->orWhere('gelar_belakang', 'like', '%'.$filters['nama'].'%');
+                    })
+                    ->orWhereHas('dosenByNipPns', function ($subQ) use ($filters) {
                         $subQ->where('nama', 'like', '%'.$filters['nama'].'%')
                             ->orWhere('gelar_depan', 'like', '%'.$filters['nama'].'%')
                             ->orWhere('gelar_belakang', 'like', '%'.$filters['nama'].'%');
@@ -419,7 +484,13 @@ class SlipGajiService
                     $q->whereHas('employee', function ($subQ) {
                         $subQ->where('status_aktif', true);
                     })
+                        ->orWhereHas('employeeByNipPns', function ($subQ) {
+                            $subQ->where('status_aktif', true);
+                        })
                         ->orWhereHas('dosen', function ($subQ) {
+                            $subQ->where('status_aktif', true);
+                        })
+                        ->orWhereHas('dosenByNipPns', function ($subQ) {
                             $subQ->where('status_aktif', true);
                         });
                 });
@@ -428,7 +499,13 @@ class SlipGajiService
                     $q->whereHas('employee', function ($subQ) {
                         $subQ->where('status_aktif', false);
                     })
+                        ->orWhereHas('employeeByNipPns', function ($subQ) {
+                            $subQ->where('status_aktif', false);
+                        })
                         ->orWhereHas('dosen', function ($subQ) {
+                            $subQ->where('status_aktif', false);
+                        })
+                        ->orWhereHas('dosenByNipPns', function ($subQ) {
                             $subQ->where('status_aktif', false);
                         });
                 });
@@ -444,7 +521,19 @@ class SlipGajiService
                             ->whereNull('email');
                     });
                 })
+                    ->orWhereHas('employeeByNipPns', function ($subQ) {
+                        $subQ->where(function ($subSubQ) {
+                            $subSubQ->whereNull('email_kampus')
+                                ->whereNull('email');
+                        });
+                    })
                     ->orWhereHas('dosen', function ($subQ) {
+                        $subQ->where(function ($subSubQ) {
+                            $subSubQ->whereNull('email_kampus')
+                                ->whereNull('email');
+                        });
+                    })
+                    ->orWhereHas('dosenByNipPns', function ($subQ) {
                         $subQ->where(function ($subSubQ) {
                             $subSubQ->whereNull('email_kampus')
                                 ->whereNull('email');
@@ -452,7 +541,9 @@ class SlipGajiService
                     })
                     ->orWhere(function ($q) {
                         $q->whereDoesntHave('employee')
-                            ->whereDoesntHave('dosen');
+                            ->whereDoesntHave('employeeByNipPns')
+                            ->whereDoesntHave('dosen')
+                            ->whereDoesntHave('dosenByNipPns');
                     });
             });
         }
@@ -476,13 +567,28 @@ class SlipGajiService
                 $query->orderByRaw('(COALESCE(potongan_arisan, 0) + COALESCE(potongan_koperasi, 0) + COALESCE(potongan_lazmaal, 0) + COALESCE(potongan_bpjs_kesehatan, 0) + COALESCE(potongan_bpjs_ketenagakerjaan, 0) + COALESCE(potongan_bkd, 0) + COALESCE(pph21_terhutang, 0) + COALESCE(pph21_sudah_dipotong, 0) + COALESCE(pph21_kurang_dipotong, 0) + COALESCE(pajak, 0)) ASC');
                 break;
             default:
-                // Use lightweight joins for name sorting to avoid expensive nested subqueries.
+                // Join deduplicated name sources by NIP to avoid duplicate rows when
+                // employees/dosens tables contain repeated records for the same NIP.
+                $employeeNameSubquery = DB::table('employees as e')
+                    ->selectRaw('e.nip, MAX(TRIM(CONCAT(COALESCE(e.gelar_depan, ""), " ", COALESCE(e.nama, ""), CASE WHEN e.gelar_belakang IS NOT NULL AND e.gelar_belakang != "" THEN CONCAT(", ", e.gelar_belakang) ELSE "" END))) as full_name')
+                    ->whereNotNull('e.nip')
+                    ->groupBy('e.nip');
+
+                $dosenNameSubquery = DB::table('dosens as d')
+                    ->selectRaw('d.nip, MAX(TRIM(CONCAT(COALESCE(d.gelar_depan, ""), " ", COALESCE(d.nama, ""), CASE WHEN d.gelar_belakang IS NOT NULL AND d.gelar_belakang != "" THEN CONCAT(", ", d.gelar_belakang) ELSE "" END))) as full_name')
+                    ->whereNotNull('d.nip')
+                    ->groupBy('d.nip');
+
                 $query
-                    ->leftJoin('employees as sg_emp', 'sg_emp.nip', '=', 'slip_gaji_detail.nip')
-                    ->leftJoin('dosens as sg_dsn', 'sg_dsn.nip', '=', 'slip_gaji_detail.nip')
+                    ->leftJoinSub($employeeNameSubquery, 'sg_emp', function ($join) {
+                        $join->on('sg_emp.nip', '=', 'slip_gaji_detail.nip');
+                    })
+                    ->leftJoinSub($dosenNameSubquery, 'sg_dsn', function ($join) {
+                        $join->on('sg_dsn.nip', '=', 'slip_gaji_detail.nip');
+                    })
                     ->orderByRaw('COALESCE(
-                        NULLIF(TRIM(CONCAT(COALESCE(sg_emp.gelar_depan, ""), " ", COALESCE(sg_emp.nama, ""), CASE WHEN sg_emp.gelar_belakang IS NOT NULL AND sg_emp.gelar_belakang != "" THEN CONCAT(", ", sg_emp.gelar_belakang) ELSE "" END)), ""),
-                        NULLIF(TRIM(CONCAT(COALESCE(sg_dsn.gelar_depan, ""), " ", COALESCE(sg_dsn.nama, ""), CASE WHEN sg_dsn.gelar_belakang IS NOT NULL AND sg_dsn.gelar_belakang != "" THEN CONCAT(", ", sg_dsn.gelar_belakang) ELSE "" END)), ""),
+                        NULLIF(sg_emp.full_name, ""),
+                        NULLIF(sg_dsn.full_name, ""),
                         ""
                     ) ASC')
                     ->select('slip_gaji_detail.*');
@@ -502,7 +608,7 @@ class SlipGajiService
 
     public function getSlipGajiDetailById(int $detailId): ?SlipGajiDetail
     {
-        return SlipGajiDetail::with(['employee', 'dosen'])->find($detailId);
+        return SlipGajiDetail::with(['employee', 'dosen', 'employeeByNipPns', 'dosenByNipPns'])->find($detailId);
     }
 
     private function formatPeriode(string $periode): string

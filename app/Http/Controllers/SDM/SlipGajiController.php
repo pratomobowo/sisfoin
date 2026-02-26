@@ -17,6 +17,7 @@ use Spatie\Activitylog\Models\Activity;
 class SlipGajiController extends Controller
 {
     private $slipGajiService;
+
     private $slipGajiEmailService;
 
     public function __construct(SlipGajiService $slipGajiService, SlipGajiEmailService $slipGajiEmailService)
@@ -93,7 +94,7 @@ class SlipGajiController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB
             'bulan' => 'required|string|in:01,02,03,04,05,06,07,08,09,10,11,12',
-            'tahun' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            'tahun' => 'required|integer|min:2020|max:'.(date('Y') + 1),
             'mode' => 'required|in:standard,gaji_13', // New: mode validation
         ], [
             'file.required' => 'File Excel wajib diupload',
@@ -110,7 +111,7 @@ class SlipGajiController extends Controller
         ]);
 
         // Buat periode dengan format YYYY-MM menggunakan tahun yang dipilih
-        $periode = $request->tahun . '-' . $request->bulan;
+        $periode = $request->tahun.'-'.$request->bulan;
 
         \Log::info('Validation passed');
 
@@ -131,6 +132,10 @@ class SlipGajiController extends Controller
                 return back()
                     ->withErrors($result['errors'])
                     ->withInput();
+            }
+
+            if (! empty($result['warnings'])) {
+                session()->flash('warning', implode(' | ', $result['warnings']));
             }
 
             // Log activity
@@ -425,7 +430,7 @@ class SlipGajiController extends Controller
     {
         try {
             $selectedDetails = $request->input('selected_details', []);
-            
+
             $result = $this->slipGajiEmailService->sendBulkEmail($header->id, $selectedDetails);
 
             if (! $result['success']) {
@@ -540,6 +545,7 @@ class SlipGajiController extends Controller
             return redirect()->back()->with('error', 'Gagal menghapus slip gaji: '.$e->getMessage());
         }
     }
+
     /**
      * Download PDF for staff slip gaji
      */

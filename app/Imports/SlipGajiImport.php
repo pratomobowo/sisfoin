@@ -281,8 +281,15 @@ class SlipGajiImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
             return null;
         }
 
-        // Convert to string
-        $nipString = (string) $nip;
+        // Convert to string and normalize whitespace/quotes from Excel exports
+        $nipString = trim((string) $nip);
+        $nipString = ltrim($nipString, "'\"");
+
+        // If already pure digits, return as-is to preserve exact value.
+        // NEVER cast long identifiers to float (precision loss on 16+ digits).
+        if ($nipString !== '' && ctype_digit($nipString)) {
+            return $nipString;
+        }
 
         // If it's in scientific notation, convert it back
         if (preg_match('/^(\d+)(?:\.(\d+))?E\+(\d+)$/i', $nipString, $matches)) {
@@ -300,13 +307,10 @@ class SlipGajiImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
             return $fullNip;
         }
 
-        // If it's a float that represents a whole number, format it properly
-        if (is_numeric($nipString) && strpos($nipString, '.') === false) {
-            // If it's a very large number, it might have been converted to float
-            $floatVal = (float) $nipString;
-            if ($floatVal > 999999999999999) { // Larger than what float can precisely represent
-                return number_format($floatVal, 0, '', '');
-            }
+        // Fallback: keep digits only for mixed artifacts (spaces, separators, etc.)
+        $digitsOnly = preg_replace('/\D+/', '', $nipString);
+        if (! empty($digitsOnly)) {
+            return $digitsOnly;
         }
 
         return $nipString;

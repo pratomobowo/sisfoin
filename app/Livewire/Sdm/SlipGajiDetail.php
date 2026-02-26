@@ -185,14 +185,8 @@ class SlipGajiDetail extends Component
             $this->confirmingEmailSend = $detailId;
 
             // Get employee name
-            if ($detail->employee) {
-                $this->confirmingEmployeeName = trim(($detail->employee->gelar_depan ? $detail->employee->gelar_depan.' ' : '').
-                                                   $detail->employee->nama_lengkap.
-                                                   ($detail->employee->gelar_belakang ? ', '.$detail->employee->gelar_belakang : ''));
-            } elseif ($detail->dosen) {
-                $this->confirmingEmployeeName = trim(($detail->dosen->gelar_depan ? $detail->dosen->gelar_depan.' ' : '').
-                                                   $detail->dosen->nama.
-                                                   ($detail->dosen->gelar_belakang ? ', '.$detail->dosen->gelar_belakang : ''));
+            if ($detail->resolved_nama) {
+                $this->confirmingEmployeeName = $detail->resolved_nama;
             } else {
                 $this->confirmingEmployeeName = 'Karyawan';
             }

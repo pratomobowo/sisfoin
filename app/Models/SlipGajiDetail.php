@@ -113,11 +113,77 @@ class SlipGajiDetail extends Model
     }
 
     /**
+     * Relasi fallback ke Employee berdasarkan NIP PNS.
+     */
+    public function employeeByNipPns(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'nip', 'nip_pns');
+    }
+
+    /**
      * Relasi ke Dosen berdasarkan NIP
      */
     public function dosen(): BelongsTo
     {
         return $this->belongsTo(Dosen::class, 'nip', 'nip');
+    }
+
+    /**
+     * Relasi fallback ke Dosen berdasarkan NIP PNS.
+     */
+    public function dosenByNipPns(): BelongsTo
+    {
+        return $this->belongsTo(Dosen::class, 'nip', 'nip_pns');
+    }
+
+    public function getResolvedEmployeeAttribute(): ?Employee
+    {
+        return $this->employee ?: $this->employeeByNipPns;
+    }
+
+    public function getResolvedDosenAttribute(): ?Dosen
+    {
+        return $this->dosen ?: $this->dosenByNipPns;
+    }
+
+    public function getResolvedNamaAttribute(): ?string
+    {
+        $person = $this->resolved_employee ?: $this->resolved_dosen;
+        if (! $person) {
+            return null;
+        }
+
+        $nama = trim((($person->gelar_depan ?? null) ? $person->gelar_depan.' ' : '').($person->nama ?? '').(($person->gelar_belakang ?? null) ? ', '.$person->gelar_belakang : ''));
+
+        return $nama !== '' ? $nama : null;
+    }
+
+    public function getResolvedEmailAttribute(): ?string
+    {
+        $person = $this->resolved_employee ?: $this->resolved_dosen;
+        if (! $person) {
+            return null;
+        }
+
+        return $person->email_kampus ?: $person->email;
+    }
+
+    public function getResolvedEmailSourceAttribute(): ?string
+    {
+        $person = $this->resolved_employee ?: $this->resolved_dosen;
+        if (! $person) {
+            return null;
+        }
+
+        if (! empty($person->email_kampus)) {
+            return 'kampus';
+        }
+
+        if (! empty($person->email)) {
+            return 'pribadi';
+        }
+
+        return null;
     }
 
     /**
@@ -133,12 +199,12 @@ class SlipGajiDetail extends Model
      */
     public function getNamaFromRelationAttribute()
     {
-        if ($this->employee) {
-            return $this->employee->nama_lengkap_with_gelar;
+        if ($this->resolved_employee) {
+            return $this->resolved_employee->nama_lengkap_with_gelar;
         }
 
-        if ($this->dosen) {
-            return $this->dosen->nama_lengkap_with_gelar;
+        if ($this->resolved_dosen) {
+            return $this->resolved_dosen->nama_lengkap_with_gelar;
         }
 
         // No fallback to nama column since it's being removed
@@ -156,7 +222,7 @@ class SlipGajiDetail extends Model
                ($this->potongan_bpjs_kesehatan ?? 0) +
                ($this->potongan_bpjs_ketenagakerjaan ?? 0) +
                ($this->potongan_bkd ?? 0) +
-               ($this->pph21_kurang_dipotong ?? 0) ;
+               ($this->pph21_kurang_dipotong ?? 0);
     }
 
     /**
