@@ -315,9 +315,9 @@
                         <div class="section-title">PERHITUNGAN PAJAK</div>
                         <table class="salary-table">
                             <tbody>
-                                <tr><td>PPh Terhutang<br><span class="small-text">(PPh Terhutang - Pajak Sudah Dipotong)</span></td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_terhutang ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>PPh Terhutang</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_terhutang ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                                 <tr><td>Pajak Sudah Dipotong</td><td class="currency" style="border-bottom: 1.2px solid #000000ff;">Rp</td><td class="amount" style="border-bottom: 1.2px solid #000000ff;">{{ number_format($detail->pph21_sudah_dipotong ?? 0, 0, ',', '.') }}</td><td class="icon-column" style="border-bottom: 1.2px solid #000000ff;"><span class="minus-icon">-</span></td></tr>
-                                <tr><td>Pajak Kurang Potong</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_kurang_dipotong ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
+                                <tr><td>Pajak Kurang Potong<br><span class="small-text">(PPh Terhutang - Pajak Sudah Dipotong)</span></td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->pph21_kurang_dipotong ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                             </tbody>
                         </table>
                     </td>
