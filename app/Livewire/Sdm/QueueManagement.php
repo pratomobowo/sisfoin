@@ -177,12 +177,35 @@ class QueueManagement extends Component
         ];
 
         foreach ($candidates as $candidate) {
-            if (is_string($candidate) && $candidate !== '' && is_executable($candidate)) {
+            if (is_string($candidate) && $candidate !== '' && $this->isCliPhpBinary($candidate)) {
                 return $candidate;
             }
         }
 
         return 'php';
+    }
+
+    private function isCliPhpBinary(string $binary): bool
+    {
+        if ($binary === '') {
+            return false;
+        }
+
+        if ($binary !== 'php' && ! is_executable($binary)) {
+            return false;
+        }
+
+        $output = [];
+        $exitCode = 0;
+        \exec(escapeshellarg($binary).' -v 2>&1', $output, $exitCode);
+
+        if ($exitCode !== 0 || empty($output)) {
+            return false;
+        }
+
+        $banner = strtolower(implode(' ', $output));
+
+        return str_contains($banner, 'php') && ! str_contains($banner, 'php-fpm');
     }
 
     private function isWorkerPidRunning(int $pid): bool
