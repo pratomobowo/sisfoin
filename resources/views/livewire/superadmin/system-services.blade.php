@@ -107,7 +107,7 @@
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-base font-bold text-gray-800">Log Eksekusi Service</h3>
-                <span class="text-xs text-gray-500">Menampilkan {{ $logs->count() }} log terbaru</span>
+                <span class="text-xs text-gray-500">Menampilkan {{ $logs->count() }} dari {{ $logs->total() }} log</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -165,6 +165,24 @@
                     </tbody>
                 </table>
             </div>
+            @if($logs->hasPages())
+                <div class="px-6 py-4 border-t border-gray-100 bg-white">
+                    <x-superadmin.pagination
+                        :currentPage="$logs->currentPage()"
+                        :lastPage="$logs->lastPage()"
+                        :total="$logs->total()"
+                        :perPage="$logs->perPage()"
+                        :perPageOptions="[10]"
+                        :showPageInfo="true"
+                        :showPerPage="true"
+                        alignment="justify-between"
+                        perPageWireModel="perPage"
+                        previousPageWireModel="previousPage"
+                        nextPageWireModel="nextPage"
+                        gotoPageWireModel="gotoPage"
+                    />
+                </div>
+            @endif
         </div>
 
         <!-- Info Card -->

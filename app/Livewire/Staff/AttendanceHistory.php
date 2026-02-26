@@ -2,31 +2,36 @@
 
 namespace App\Livewire\Staff;
 
-use App\Models\Employee\Attendance as EmployeeAttendance;
-use App\Models\WorkShift;
-use App\Models\Holiday;
 use App\Models\AttendanceSetting;
+use App\Models\Employee\Attendance as EmployeeAttendance;
+use App\Models\Holiday;
+use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Carbon\Carbon;
-use Livewire\Attributes\Layout;
 
 #[Layout('layouts.app')]
 class AttendanceHistory extends Component
 {
     use WithPagination;
 
+    public int $perPage = 10;
+
     // Filters
     public $month;
+
     public $year;
+
     public $statusFilter = '';
-    
+
     // UI State
     public $title = 'Riwayat Absensi';
 
     protected $queryString = [
         'month' => ['except' => ''],
         'year' => ['except' => ''],
+        'perPage' => ['except' => 10],
     ];
 
     public function mount()
@@ -42,7 +47,7 @@ class AttendanceHistory extends Component
 
         $days = [];
         $current = $startDate->copy();
-        
+
         // Get working days setting (1=Mon, 2=Tue, ..., 7=Sun)
         $workingDays = AttendanceSetting::getValue('working_days', '1,2,3,4,5,6');
         $workingDaysArray = is_array($workingDays) ? $workingDays : explode(',', $workingDays);
@@ -51,17 +56,17 @@ class AttendanceHistory extends Component
             $isHoliday = Holiday::isHoliday($current);
             $holidayInfo = $isHoliday ? Holiday::getHolidayInfo($current) : null;
             $isWorkingDay = in_array($current->dayOfWeekIso, $workingDaysArray);
-            
+
             $days[] = [
                 'date' => $current->format('Y-m-d'),
                 'day' => $current->day,
                 'day_name' => $current->locale('id')->isoFormat('dddd'),
                 'formatted_date' => $current->format('d M Y'),
-                'is_weekend' => !$isWorkingDay,
+                'is_weekend' => ! $isWorkingDay,
                 'is_holiday' => $isHoliday,
                 'holiday_name' => $holidayInfo?->name,
             ];
-            
+
             $current->addDay();
         }
 
@@ -78,7 +83,7 @@ class AttendanceHistory extends Component
         $records = EmployeeAttendance::where('user_id', $user->id)
             ->whereBetween('date', [$startDate, $endDate])
             ->get()
-            ->keyBy(function($item) {
+            ->keyBy(function ($item) {
                 return $item->date->format('Y-m-d');
             });
 
@@ -110,19 +115,27 @@ class AttendanceHistory extends Component
                 $notes = $record->notes;
 
                 // Simple summary mapping
-                if (in_array($status, ['on_time', 'early_arrival', 'present'])) $summary['present']++;
-                elseif ($status === 'late') { $summary['present']++; $summary['late']++; }
-                elseif ($status === 'incomplete') $summary['incomplete']++;
-                elseif ($status === 'absent') $summary['absent']++;
+                if (in_array($status, ['on_time', 'early_arrival', 'present'])) {
+                    $summary['present']++;
+                } elseif ($status === 'late') {
+                    $summary['present']++;
+                    $summary['late']++;
+                } elseif ($status === 'incomplete') {
+                    $summary['incomplete']++;
+                } elseif ($status === 'absent') {
+                    $summary['absent']++;
+                }
             } else {
                 // Synthesis for missing records
-                $isPastDay = Carbon::parse($date)->isPast() && !Carbon::parse($date)->isToday();
-                
+                $isPastDay = Carbon::parse($date)->isPast() && ! Carbon::parse($date)->isToday();
+
                 if ($day['is_holiday'] || $day['is_weekend']) {
                     $status = 'off';
                     $statusLabel = $day['is_holiday'] ? 'Libur' : 'Weekend';
                     $statusBadge = 'gray';
-                    if ($day['is_holiday']) $summary['holiday']++;
+                    if ($day['is_holiday']) {
+                        $summary['holiday']++;
+                    }
                 } elseif ($isPastDay) {
                     $status = 'absent';
                     $statusLabel = 'Tidak Hadir';
@@ -133,13 +146,21 @@ class AttendanceHistory extends Component
 
             // Apply status filter
             if ($this->statusFilter && $status !== $this->statusFilter) {
-                if ($this->statusFilter === 'present' && !in_array($status, ['on_time', 'early_arrival', 'present', 'late'])) continue;
-                if ($this->statusFilter === 'late' && $status !== 'late') continue;
-                if ($this->statusFilter === 'absent' && $status !== 'absent') continue;
-                if ($this->statusFilter === 'incomplete' && $status !== 'incomplete') continue;
-                
+                if ($this->statusFilter === 'present' && ! in_array($status, ['on_time', 'early_arrival', 'present', 'late'])) {
+                    continue;
+                }
+                if ($this->statusFilter === 'late' && $status !== 'late') {
+                    continue;
+                }
+                if ($this->statusFilter === 'absent' && $status !== 'absent') {
+                    continue;
+                }
+                if ($this->statusFilter === 'incomplete' && $status !== 'incomplete') {
+                    continue;
+                }
+
                 // If filtering by specific status and it doesn't match, skip
-                if (!in_array($this->statusFilter, ['present', 'late', 'absent', 'incomplete'])) {
+                if (! in_array($this->statusFilter, ['present', 'late', 'absent', 'incomplete'])) {
                     continue;
                 }
             }
@@ -169,14 +190,25 @@ class AttendanceHistory extends Component
     public function render()
     {
         $data = $this->getAttendanceData();
-        
+        $historyCollection = collect($data['history']);
+        $history = new LengthAwarePaginator(
+            $historyCollection->forPage($this->getPage(), $this->perPage)->values(),
+            $historyCollection->count(),
+            $this->perPage,
+            $this->getPage(),
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
+
         return view('livewire.staff.attendance-history', [
-            'history' => $data['history'],
+            'history' => $history,
             'summary' => $data['summary'],
             'months' => [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
                 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
             ],
             'years' => range(now()->year, 2024, -1),
         ]);

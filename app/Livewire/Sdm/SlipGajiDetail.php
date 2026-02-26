@@ -21,7 +21,7 @@ class SlipGajiDetail extends Component
 
     public string $sort = 'nama';
 
-    public int $perPage = 20;
+    public int $perPage = 10;
 
     public array $selectedDetails = [];
 
@@ -43,7 +43,7 @@ class SlipGajiDetail extends Component
         'search' => ['except' => ''],
         'sort' => ['except' => 'nama'],
         'page' => ['except' => 1],
-        'perPage' => ['except' => 20],
+        'perPage' => ['except' => 10],
         'filterNoEmail' => ['except' => false],
     ];
 
@@ -98,7 +98,7 @@ class SlipGajiDetail extends Component
     {
         $this->search = '';
         $this->sort = 'nama';
-        $this->perPage = 20;
+        $this->perPage = 10;
         $this->filterNoEmail = false;
         $this->resetPage();
     }

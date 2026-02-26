@@ -8,11 +8,12 @@ use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class AttendanceSettingsManager extends Component
 {
-    use InteractsWithToast;
+    use InteractsWithToast, WithPagination;
 
     public $settings = [];
 
@@ -20,7 +21,7 @@ class AttendanceSettingsManager extends Component
 
     public $showSuccessMessage = false;
 
-    public $holidays = [];
+    public int $perPage = 10;
 
     public $holidayId = null;
 
@@ -47,7 +48,6 @@ class AttendanceSettingsManager extends Component
     public function mount()
     {
         $this->loadSettings();
-        $this->loadHolidays();
     }
 
     public function loadSettings()
@@ -84,24 +84,6 @@ class AttendanceSettingsManager extends Component
         $this->flashToast('success', 'Pengaturan absensi berhasil disimpan!');
 
         $this->dispatch('settings-saved');
-    }
-
-    public function loadHolidays(): void
-    {
-        $this->holidays = Holiday::query()
-            ->orderBy('date')
-            ->get()
-            ->map(function (Holiday $holiday) {
-                return [
-                    'id' => $holiday->id,
-                    'date' => $holiday->date?->format('Y-m-d'),
-                    'name' => $holiday->name,
-                    'type' => $holiday->type,
-                    'is_recurring' => (bool) $holiday->is_recurring,
-                    'description' => $holiday->description,
-                ];
-            })
-            ->toArray();
     }
 
     public function editHoliday(int $id): void
@@ -172,7 +154,6 @@ class AttendanceSettingsManager extends Component
             $this->flashToast('success', 'Tanggal libur berhasil ditambahkan.');
         }
 
-        $this->loadHolidays();
         $this->resetHolidayForm();
     }
 
@@ -186,7 +167,6 @@ class AttendanceSettingsManager extends Component
         }
 
         $holiday->delete();
-        $this->loadHolidays();
 
         if ($this->holidayId === $id) {
             $this->resetHolidayForm();
@@ -208,8 +188,23 @@ class AttendanceSettingsManager extends Component
             ->get()
             ->groupBy('group');
 
+        $holidays = Holiday::query()
+            ->orderBy('date')
+            ->paginate($this->perPage)
+            ->through(function (Holiday $holiday) {
+                return [
+                    'id' => $holiday->id,
+                    'date' => $holiday->date?->format('Y-m-d'),
+                    'name' => $holiday->name,
+                    'type' => $holiday->type,
+                    'is_recurring' => (bool) $holiday->is_recurring,
+                    'description' => $holiday->description,
+                ];
+            });
+
         return view('livewire.sdm.attendance-settings-manager', [
             'groupedSettings' => $groupedSettings,
+            'holidays' => $holidays,
         ]);
     }
 }

@@ -126,7 +126,7 @@ class HolidayManager extends Component
                 $query->whereYear('date', $this->filterYear);
             })
             ->orderBy('date', 'desc')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('livewire.sdm.holiday-manager', [
             'holidays' => $holidays,

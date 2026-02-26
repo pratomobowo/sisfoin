@@ -182,7 +182,7 @@
                     :lastPage="$roles->lastPage()"
                     :total="$roles->total()"
                     :perPage="$roles->perPage()"
-                    :perPageOptions="[10, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :showPageInfo="true"
                     :showPerPage="true"
                     alignment="justify-between"

@@ -194,6 +194,25 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if($holidays->hasPages())
+                        <div class="px-6 py-4 border-t border-gray-200 bg-white">
+                            <x-superadmin.pagination
+                                :currentPage="$holidays->currentPage()"
+                                :lastPage="$holidays->lastPage()"
+                                :total="$holidays->total()"
+                                :perPage="$holidays->perPage()"
+                                :perPageOptions="[10]"
+                                :showPageInfo="true"
+                                :showPerPage="true"
+                                alignment="justify-between"
+                                perPageWireModel="perPage"
+                                previousPageWireModel="previousPage"
+                                nextPageWireModel="nextPage"
+                                gotoPageWireModel="gotoPage"
+                            />
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

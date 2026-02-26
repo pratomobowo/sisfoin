@@ -125,7 +125,7 @@ class AttendanceRecap extends Component
         return $this->daysInRange;
     }
 
-    public function getRecapData()
+    public function getRecapData(bool $paginate = true)
     {
         if ($this->useCustomRange && $this->dateFrom && $this->dateTo) {
             $startDate = Carbon::parse($this->dateFrom);
@@ -135,7 +135,7 @@ class AttendanceRecap extends Component
             $endDate = Carbon::createFromDate($this->year, $this->month, 1)->endOfMonth();
         }
 
-        $employees = Employee::query()
+        $employeeQuery = Employee::query()
             ->active()
             ->when($this->search, function ($query) {
                 $term = trim($this->search);
@@ -146,10 +146,15 @@ class AttendanceRecap extends Component
                 });
             })
             ->when($this->unitKerja, fn ($query) => $query->where('satuan_kerja', $this->unitKerja))
-            ->orderBy('nama')
-            ->get(['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja']);
+            ->orderBy('nama');
 
-        [$employeeToUserId, $userIds] = $this->buildEmployeeUserMap($employees);
+        $employees = $paginate
+            ? $employeeQuery->paginate($this->perPage, ['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja'])
+            : $employeeQuery->get(['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja']);
+
+        $employeeCollection = $paginate ? collect($employees->items()) : $employees;
+
+        [$employeeToUserId, $userIds] = $this->buildEmployeeUserMap($employeeCollection);
 
         $attendances = EmployeeAttendance::query()
             ->whereIn('user_id', $userIds)
@@ -162,7 +167,7 @@ class AttendanceRecap extends Component
         // Use daysInRange property which is robust
         $daysInRange = $this->daysInRange;
 
-        foreach ($employees as $employee) {
+        foreach ($employeeCollection as $employee) {
             $userId = $employeeToUserId[$employee->id] ?? null;
             $employeeAttendances = $userId ? $attendances->get($userId, collect()) : collect();
             $dailyStatus = [];
@@ -309,7 +314,7 @@ class AttendanceRecap extends Component
 
     public function render()
     {
-        $data = $this->getRecapData();
+        $data = $this->getRecapData(true);
 
         return view('livewire.sdm.attendance-recap', [
             'employees' => $data['employees'],
@@ -330,7 +335,7 @@ class AttendanceRecap extends Component
     public function export()
     {
         try {
-            $data = $this->getRecapData();
+            $data = $this->getRecapData(false);
 
             $fileName = 'Rekap_Absensi_'.Carbon::create()->month($this->month)->year($this->year)->format('F_Y').'.xlsx';
             if ($this->useCustomRange) {

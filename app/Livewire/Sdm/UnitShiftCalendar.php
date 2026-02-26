@@ -13,11 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class UnitShiftCalendar extends Component
 {
-    use InteractsWithToast;
+    use InteractsWithToast, WithPagination;
 
     public $unitName;
 
@@ -26,6 +27,8 @@ class UnitShiftCalendar extends Component
     public $year;
 
     public $month;
+
+    public int $perPage = 10;
 
     // Quick edit state
     public $selectedCell = null; // Format: "userId_date"
@@ -47,7 +50,7 @@ class UnitShiftCalendar extends Component
         return WorkShift::active()->orderBy('name')->get();
     }
 
-    public function getEmployeesProperty()
+    public function getEmployeesQueryProperty()
     {
         $employees = Employee::where('satuan_kerja', $this->unitName)
             ->where('status_aktif', 'Aktif')
@@ -94,6 +97,27 @@ class UnitShiftCalendar extends Component
         }
 
         return collect($result);
+    }
+
+    public function getEmployeesProperty()
+    {
+        return $this->employeesQuery
+            ->forPage($this->getPage(), $this->perPage)
+            ->values();
+    }
+
+    public function getEmployeesPaginatedProperty()
+    {
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $this->employees,
+            $this->employeesQuery->count(),
+            $this->perPage,
+            $this->getPage(),
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
     }
 
     public function getCalendarDatesProperty()
@@ -146,6 +170,7 @@ class UnitShiftCalendar extends Component
         $date = Carbon::create($this->year, $this->month, 1)->subMonth();
         $this->year = $date->year;
         $this->month = $date->month;
+        $this->resetPage();
     }
 
     public function nextMonth()
@@ -153,6 +178,7 @@ class UnitShiftCalendar extends Component
         $date = Carbon::create($this->year, $this->month, 1)->addMonth();
         $this->year = $date->year;
         $this->month = $date->month;
+        $this->resetPage();
     }
 
     public function openQuickEdit($userId, $date)

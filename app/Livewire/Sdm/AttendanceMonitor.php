@@ -40,7 +40,7 @@ class AttendanceMonitor extends Component
 
     public string $statusFilter = '';
 
-    public int $perPage = 15;
+    public int $perPage = 10;
 
     public ?int $expandedRangeEmployeeId = null;
 

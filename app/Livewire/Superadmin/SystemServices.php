@@ -8,13 +8,16 @@ use App\Services\SystemServiceRunner;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class SystemServices extends Component
 {
+    use WithPagination;
+
     public array $schedulePresets = [];
 
-    public int $logLimit = 30;
+    public int $perPage = 10;
 
     public function mount(): void
     {
@@ -67,8 +70,7 @@ class SystemServices extends Component
         $logs = SystemServiceExecutionLog::query()
             ->with('triggerUser:id,name')
             ->latest('started_at')
-            ->limit($this->logLimit)
-            ->get();
+            ->paginate($this->perPage);
 
         return view('livewire.superadmin.system-services', [
             'services' => $services,

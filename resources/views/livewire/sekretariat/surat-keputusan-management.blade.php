@@ -222,94 +222,20 @@
         <!-- Pagination -->
         @if($suratKeputusan->hasPages())
             <div class="px-6 py-4 border-t border-gray-200 bg-white">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div class="text-sm text-gray-700">
-                        Menampilkan <span class="font-medium">{{ $suratKeputusan->firstItem() }}</span> hingga
-                        <span class="font-medium">{{ $suratKeputusan->lastItem() }}</span> dari
-                        <span class="font-medium">{{ $suratKeputusan->total() }}</span> hasil
-                    </div>
-                    
-                    <div class="flex items-center space-x-1">
-                        {{-- Previous Button --}}
-                        @if($suratKeputusan->onFirstPage())
-                            <button disabled class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-300 rounded-md">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                        @else
-                            <button wire:click="previousPage" class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                        @endif
-                        
-                        {{-- Page Numbers --}}
-                        @php
-                            $currentPage = $suratKeputusan->currentPage();
-                            $lastPage = $suratKeputusan->lastPage();
-                            
-                            // Show limited page numbers
-                            $maxPageLinks = 5;
-                            $startPage = max(1, $currentPage - floor($maxPageLinks / 2));
-                            $endPage = min($lastPage, $startPage + $maxPageLinks - 1);
-                            
-                            // Adjust start page if we're near the end
-                            if ($endPage - $startPage < $maxPageLinks - 1) {
-                                $startPage = max(1, $endPage - $maxPageLinks + 1);
-                            }
-                        @endphp
-                        
-                        {{-- First page and ellipsis if needed --}}
-                        @if($startPage > 1)
-                            <button wire:click="gotoPage(1)" class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
-                                1
-                            </button>
-                            @if($startPage > 2)
-                                <span class="relative inline-flex items-center px-2 py-2 text-sm text-gray-500">...</span>
-                            @endif
-                        @endif
-                        
-                        {{-- Page numbers --}}
-                        @for($i = $startPage; $i <= $endPage; $i++)
-                            @if($i == $currentPage)
-                                <button class="relative inline-flex items-center px-3 py-2 border border-blue-500 bg-blue-500 text-sm font-medium text-white rounded-md">
-                                    {{ $i }}
-                                </button>
-                            @else
-                                <button wire:click="gotoPage({{ $i }})" class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
-                                    {{ $i }}
-                                </button>
-                            @endif
-                        @endfor
-                        
-                        {{-- Last page and ellipsis if needed --}}
-                        @if($endPage < $lastPage)
-                            @if($endPage < $lastPage - 1)
-                                <span class="relative inline-flex items-center px-2 py-2 text-sm text-gray-500">...</span>
-                            @endif
-                            <button wire:click="gotoPage({{ $lastPage }})" class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
-                                {{ $lastPage }}
-                            </button>
-                        @endif
-                        
-                        {{-- Next Button --}}
-                        @if($suratKeputusan->hasMorePages())
-                            <button wire:click="nextPage" class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                        @else
-                            <button disabled class="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-300 rounded-md">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                        @endif
-                    </div>
-                </div>
+                <x-superadmin.pagination
+                    :currentPage="$suratKeputusan->currentPage()"
+                    :lastPage="$suratKeputusan->lastPage()"
+                    :total="$suratKeputusan->total()"
+                    :perPage="$suratKeputusan->perPage()"
+                    :perPageOptions="[10]"
+                    :showPageInfo="true"
+                    :showPerPage="true"
+                    alignment="justify-between"
+                    perPageWireModel="perPage"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
             </div>
         @endif
     </div>

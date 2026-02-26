@@ -311,7 +311,7 @@
             :lastPage="$pagination->lastPage()"
             :total="$pagination->total()"
             :perPage="$pagination->perPage()"
-            :perPageOptions="[10, 25, 50, 100]"
+            :perPageOptions="[10]"
             :showPageInfo="true"
             :showPerPage="true"
             alignment="justify-between"

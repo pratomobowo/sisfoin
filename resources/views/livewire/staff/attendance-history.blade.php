@@ -272,6 +272,25 @@
             @endforelse
         </div>
 
+        @if($history->hasPages())
+            <div class="px-8 py-6 border-t border-gray-100 bg-white">
+                <x-superadmin.pagination
+                    :currentPage="$history->currentPage()"
+                    :lastPage="$history->lastPage()"
+                    :total="$history->total()"
+                    :perPage="$history->perPage()"
+                    :perPageOptions="[10]"
+                    :showPageInfo="true"
+                    :showPerPage="true"
+                    alignment="justify-between"
+                    perPageWireModel="perPage"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
+            </div>
+        @endif
+
 
         <!-- Legend Section -->
         <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-50">

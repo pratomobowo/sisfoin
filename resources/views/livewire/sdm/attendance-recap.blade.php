@@ -233,5 +233,24 @@
         </div>
         
     </div>
+
+    @if($employees->hasPages())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
+            <x-superadmin.pagination
+                :currentPage="$employees->currentPage()"
+                :lastPage="$employees->lastPage()"
+                :total="$employees->total()"
+                :perPage="$employees->perPage()"
+                :perPageOptions="[10]"
+                :showPageInfo="true"
+                :showPerPage="true"
+                alignment="justify-between"
+                perPageWireModel="perPage"
+                previousPageWireModel="previousPage"
+                nextPageWireModel="nextPage"
+                gotoPageWireModel="gotoPage"
+            />
+        </div>
+    @endif
 </div>
 </div>

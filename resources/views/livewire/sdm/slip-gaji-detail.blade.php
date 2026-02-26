@@ -255,7 +255,7 @@
                     :lastPage="$details->lastPage()"
                     :total="$details->total()"
                     :perPage="$details->perPage()"
-                    :perPageOptions="[10, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :showPageInfo="true"
                     :showPerPage="true"
                     :alignment="'justify-between'"

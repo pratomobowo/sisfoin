@@ -352,7 +352,7 @@
                         :lastPage="$logs->lastPage()"
                         :total="$logs->total()"
                         :perPage="$logs->perPage()"
-                        :perPageOptions="[10, 25, 50, 100]"
+                        :perPageOptions="[10]"
                         :showPageInfo="true"
                         :showPerPage="false"
                         alignment="justify-between"

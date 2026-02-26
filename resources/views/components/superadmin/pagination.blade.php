@@ -4,7 +4,7 @@
     'lastPage' => 1,             // Total pages
     'total' => 0,                // Total records
     'perPage' => 10,             // Records per page
-    'perPageOptions' => [10, 25, 50, 100], // Available per page options
+    'perPageOptions' => [10], // Available per page options
     'showPageInfo' => true,      // Show "Showing X to Y of Z"
     'showPerPage' => true,        // Show per page dropdown
     'alignment' => 'justify-between', // Tailwind alignment classes
@@ -68,10 +68,10 @@ if ($lastPage <= $maxPageLinks) {
 // Ensure perPageOptions is an array
 if (is_string($perPageOptions)) {
     // Handle JSON string format
-    $perPageOptions = json_decode($perPageOptions, true) ?? [10, 25, 50, 100];
+    $perPageOptions = json_decode($perPageOptions, true) ?? [10];
 } elseif (!is_array($perPageOptions)) {
     // Default fallback
-    $perPageOptions = [10, 25, 50, 100];
+    $perPageOptions = [10];
 }
 
 // Determine alignment classes

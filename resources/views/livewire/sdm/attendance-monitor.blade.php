@@ -276,7 +276,7 @@
                     :lastPage="$rows->lastPage()"
                     :total="$rows->total()"
                     :perPage="$rows->perPage()"
-                    :perPageOptions="[15, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :showPageInfo="true"
                     :showPerPage="true"
                     alignment="justify-between"

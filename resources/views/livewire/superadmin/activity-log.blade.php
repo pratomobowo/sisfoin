@@ -199,7 +199,7 @@
                     :lastPage="$activities->lastPage()"
                     :total="$activities->total()"
                     :perPage="$activities->perPage()"
-                    :perPageOptions="[10, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :showPageInfo="true"
                     :showPerPage="false"
                     alignment="justify-between"

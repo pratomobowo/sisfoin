@@ -114,7 +114,7 @@
                     :lastPage="$holidays->lastPage()"
                     :total="$holidays->total()"
                     :perPage="$holidays->perPage()"
-                    :perPageOptions="[15, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :showPageInfo="true"
                     :showPerPage="false"
                     alignment="justify-between"

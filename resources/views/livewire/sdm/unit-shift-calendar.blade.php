@@ -28,7 +28,7 @@
         </x-slot>
     </x-page-header>
 
-    @if($this->employees->isEmpty())
+    @if($this->employeesPaginated->total() === 0)
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
             <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,6 +54,23 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+            <x-superadmin.pagination
+                :currentPage="$this->employeesPaginated->currentPage()"
+                :lastPage="$this->employeesPaginated->lastPage()"
+                :total="$this->employeesPaginated->total()"
+                :perPage="$this->employeesPaginated->perPage()"
+                :perPageOptions="[10]"
+                :showPageInfo="true"
+                :showPerPage="true"
+                alignment="justify-between"
+                perPageWireModel="perPage"
+                previousPageWireModel="previousPage"
+                nextPageWireModel="nextPage"
+                gotoPageWireModel="gotoPage"
+            />
         </div>
 
         {{-- Calendar Grid --}}
@@ -150,6 +167,25 @@
                 </div>
             </div>
         </div>
+
+        @if($this->employeesPaginated->hasPages())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+                <x-superadmin.pagination
+                    :currentPage="$this->employeesPaginated->currentPage()"
+                    :lastPage="$this->employeesPaginated->lastPage()"
+                    :total="$this->employeesPaginated->total()"
+                    :perPage="$this->employeesPaginated->perPage()"
+                    :perPageOptions="[10]"
+                    :showPageInfo="false"
+                    :showPerPage="false"
+                    alignment="justify-end"
+                    perPageWireModel="perPage"
+                    previousPageWireModel="previousPage"
+                    nextPageWireModel="nextPage"
+                    gotoPageWireModel="gotoPage"
+                />
+            </div>
+        @endif
     @endif
 
     {{-- Quick Edit Modal --}}

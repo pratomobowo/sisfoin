@@ -326,7 +326,7 @@
                     :perPage="$dosens->perPage()"
                     :showPageInfo="true"
                     :showPerPage="true"
-                    :perPageOptions="[10, 25, 50, 100]"
+                    :perPageOptions="[10]"
                     :alignment="'justify-between'"
                     perPageWireModel="perPage"
                     previousPageWireModel="previousPage"
