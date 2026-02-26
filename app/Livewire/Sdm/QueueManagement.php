@@ -70,6 +70,12 @@ class QueueManagement extends Component
                 return;
             }
 
+            if ($php === null) {
+                $this->toastError('Tidak menemukan PHP CLI valid. Setel env QUEUE_PHP_BINARY ke path php-cli (contoh: /usr/bin/php).');
+
+                return;
+            }
+
             $command = sprintf(
                 'nohup %s %s queue:work --queue=emails,default --tries=3 --timeout=300 --sleep=3 >> %s 2>&1 & echo $!',
                 escapeshellarg($php),
@@ -165,9 +171,11 @@ class QueueManagement extends Component
         return function_exists('exec') && ! in_array('exec', $disabled, true);
     }
 
-    private function resolvePhpBinary(): string
+    private function resolvePhpBinary(): ?string
     {
+        $envBinary = env('QUEUE_PHP_BINARY');
         $candidates = [
+            is_string($envBinary) ? trim($envBinary) : null,
             PHP_BINARY,
             PHP_BINDIR.'/php',
             '/usr/bin/php',
@@ -182,7 +190,7 @@ class QueueManagement extends Component
             }
         }
 
-        return 'php';
+        return null;
     }
 
     private function isCliPhpBinary(string $binary): bool
@@ -197,15 +205,15 @@ class QueueManagement extends Component
 
         $output = [];
         $exitCode = 0;
-        \exec(escapeshellarg($binary).' -v 2>&1', $output, $exitCode);
+        \exec(escapeshellarg($binary).' -r '.escapeshellarg('echo PHP_SAPI;').' 2>&1', $output, $exitCode);
 
         if ($exitCode !== 0 || empty($output)) {
             return false;
         }
 
-        $banner = strtolower(implode(' ', $output));
+        $sapi = strtolower(trim(implode('', $output)));
 
-        return str_contains($banner, 'php') && ! str_contains($banner, 'php-fpm');
+        return $sapi === 'cli';
     }
 
     private function isWorkerPidRunning(int $pid): bool
