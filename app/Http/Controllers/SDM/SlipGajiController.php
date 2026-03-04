@@ -95,7 +95,7 @@ class SlipGajiController extends Controller
             'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB
             'bulan' => 'required|string|in:01,02,03,04,05,06,07,08,09,10,11,12',
             'tahun' => 'required|integer|min:2020|max:'.(date('Y') + 1),
-            'mode' => 'required|in:standard,gaji_13', // New: mode validation
+            'mode' => 'required|in:standard,gaji_13,thr',
         ], [
             'file.required' => 'File Excel wajib diupload',
             'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',

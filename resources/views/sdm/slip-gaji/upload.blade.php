@@ -152,6 +152,7 @@
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="standard">Slip Gaji Standard</option>
                     <option value="gaji_13">Slip Gaji 13</option>
+                    <option value="thr">Slip Gaji THR</option>
                 </select>
                 <p class="mt-1 text-sm text-gray-500">Pilih mode slip gaji yang akan diupload</p>
                 @error('mode')

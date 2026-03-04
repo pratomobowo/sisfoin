@@ -46,7 +46,7 @@ class SlipGajiImport extends Component
             'fileUpload' => 'required|file|mimes:xlsx,xls|max:10240', // Max 10MB
             'periode' => 'required|string|max:20',
             'tahun' => 'required|integer|min:2020|max:'.(date('Y') + 1),
-            'mode' => 'required|in:standard,gaji_13', // New: mode validation
+            'mode' => 'required|in:standard,gaji_13,thr',
             'keterangan' => 'nullable|string|max:500',
         ];
     }

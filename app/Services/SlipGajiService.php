@@ -257,14 +257,22 @@ class SlipGajiService
 
         // For gaji_13 mode, use special templates
         if ($mode === 'gaji_13') {
-            // Karyawan Magang uses Karyawan Kontrak template for gaji 13
             if ($detail->status === 'KARYAWAN_MAGANG') {
                 $template = 'sdm.slip-gaji.pdf-templates.karyawan-kontrak-gaji13';
             } else {
                 $template = 'sdm.slip-gaji.pdf-templates.'.$status.'-gaji13';
             }
+        } elseif ($mode === 'thr') {
+            if ($detail->status === 'KARYAWAN_MAGANG') {
+                $template = 'sdm.slip-gaji.pdf-templates.karyawan-kontrak-thr';
+            } elseif ($detail->status === 'DOSEN_GURU_BESAR') {
+                $template = 'sdm.slip-gaji.pdf-templates.dosen-tetap-thr';
+            } elseif ($detail->status === 'DOSEN_PK') {
+                throw new \Exception('Dosen PK tidak mendapat slip THR');
+            } else {
+                $template = 'sdm.slip-gaji.pdf-templates.'.$status.'-thr';
+            }
         } else {
-            // Standard mode
             $template = 'sdm.slip-gaji.pdf-templates.'.$status;
         }
 
