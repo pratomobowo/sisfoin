@@ -7,6 +7,10 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Employee;
+use App\Models\Dosen;
+use App\Observers\EmployeeObserver;
+use App\Observers\DosenObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,5 +37,9 @@ class AppServiceProvider extends ServiceProvider
 
         Paginator::defaultView('components.pagination');
         Paginator::defaultSimpleView('components.pagination');
+
+        // Register core observers
+        Employee::observe(EmployeeObserver::class);
+        Dosen::observe(DosenObserver::class);
     }
 }

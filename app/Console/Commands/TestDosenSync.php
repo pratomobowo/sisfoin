@@ -52,9 +52,9 @@ class TestDosenSync extends Command
             $errors = [];
             
             DB::transaction(function () use ($dosenData, $sevimaService, &$inserted, &$errors) {
-                // Truncate table
-                $this->info('Truncating dosens table...');
-                Dosen::query()->delete();
+                // Truncate table but keep manual entries
+                $this->info('Soft-deleting synced dosens...');
+                Dosen::whereNotNull('id_pegawai')->delete();
                 
                 // Insert new data
                 foreach ($dosenData as $index => $dosen) {

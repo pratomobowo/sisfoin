@@ -128,9 +128,9 @@ class TestSevimaSync extends Command
             // Truncate existing data and insert new data
             $inserted = 0;
             DB::transaction(function () use ($batchResult, $sevimaService, &$inserted) {
-                // Truncate table
-                $this->info('Truncating employees table...');
-                Employee::query()->delete();
+                // Truncate table but keep manual entries
+                $this->info('Soft-deleting synced employees...');
+                Employee::whereNotNull('id_pegawai')->delete();
                 
                 // Insert new data
                 foreach ($batchResult['processed'] as $pegawai) {
@@ -191,9 +191,9 @@ class TestSevimaSync extends Command
             // Truncate existing data and insert new data
             $inserted = 0;
             DB::transaction(function () use ($batchResult, $sevimaService, &$inserted) {
-                // Truncate table
-                $this->info('Truncating dosens table...');
-                Dosen::query()->delete();
+                // Truncate table but keep manual entries
+                $this->info('Soft-deleting synced dosens...');
+                Dosen::whereNotNull('id_pegawai')->delete();
                 
                 // Insert new data
                 foreach ($batchResult['processed'] as $dosen) {
