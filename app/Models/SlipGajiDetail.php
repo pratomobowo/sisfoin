@@ -222,6 +222,7 @@ class SlipGajiDetail extends Model
                ($this->potongan_bpjs_kesehatan ?? 0) +
                ($this->potongan_bpjs_ketenagakerjaan ?? 0) +
                ($this->potongan_bkd ?? 0) +
+               ($this->pajak ?? 0) +
                ($this->pph21_kurang_dipotong ?? 0);
     }
 

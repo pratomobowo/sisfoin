@@ -37,7 +37,18 @@ class DosenSyncWriter
                     continue;
                 }
 
-                $existing = Dosen::query()->where('id_pegawai', $externalId)->first();
+                $existing = Dosen::withTrashed()
+                    ->where('id_pegawai', $externalId)
+                    ->first();
+
+                if ($existing && $existing->trashed()) {
+                    Log::info('Restored soft-deleted dosen during sync', [
+                        'id_pegawai' => $externalId,
+                        'nip' => $mapped['nip'] ?? null,
+                        'nama' => $mapped['nama'] ?? null,
+                    ]);
+                    $existing->restore();
+                }
 
                 Dosen::updateOrCreate(
                     ['id_pegawai' => $externalId],

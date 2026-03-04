@@ -77,13 +77,6 @@
                 <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input type="checkbox" wire:model="commandOptions.users_import_force"> force update existing users
                 </label>
-            @elseif($selectedCommand === 'sevima:sync-test')
-                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" wire:model="commandOptions.sevima_sync_confirm"> Saya paham ini sync penuh dan berisiko
-                </label>
-                @error('commandOptions.sevima_sync_confirm')
-                    <div class="text-xs text-red-600">{{ $message }}</div>
-                @enderror
             @endif
 
             <div class="border-t pt-4 space-y-2">

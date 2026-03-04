@@ -4,6 +4,7 @@ namespace App\Services\Sync\Writers;
 
 use App\Models\Employee;
 use App\Services\SevimaApiService;
+use Illuminate\Support\Facades\Log;
 
 class EmployeeSyncWriter
 {
@@ -37,7 +38,18 @@ class EmployeeSyncWriter
                     continue;
                 }
 
-                $existing = Employee::query()->where('id_pegawai', $externalId)->first();
+                $existing = Employee::withTrashed()
+                    ->where('id_pegawai', $externalId)
+                    ->first();
+
+                if ($existing && $existing->trashed()) {
+                    Log::info('Restored soft-deleted employee during sync', [
+                        'id_pegawai' => $externalId,
+                        'nip' => $mapped['nip'] ?? null,
+                        'nama' => $mapped['nama'] ?? null,
+                    ]);
+                    $existing->restore();
+                }
 
                 Employee::updateOrCreate(
                     ['id_pegawai' => $externalId],

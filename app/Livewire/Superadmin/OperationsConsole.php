@@ -24,7 +24,6 @@ class OperationsConsole extends Component
         'attendance_date_to' => '',
         'attendance_user_id' => '',
         'users_import_force' => false,
-        'sevima_sync_confirm' => false,
     ];
 
     public array $lastRun = [
@@ -38,19 +37,13 @@ class OperationsConsole extends Component
     public function runCommand(): void
     {
         $this->validate([
-            'selectedCommand' => 'required|in:users:relink-employee-links,attendance:process,optimize:clear,users:import,sevima:sync-test',
+            'selectedCommand' => 'required|in:users:relink-employee-links,attendance:process,optimize:clear,users:import',
             'confirmationText' => 'required|in:RUN',
             'commandOptions.relink_type' => 'required|in:all,employee,dosen',
             'commandOptions.attendance_date_from' => 'nullable|date',
             'commandOptions.attendance_date_to' => 'nullable|date',
             'commandOptions.attendance_user_id' => 'nullable|integer',
         ]);
-
-        if ($this->selectedCommand === 'sevima:sync-test' && ! $this->commandOptions['sevima_sync_confirm']) {
-            $this->addError('commandOptions.sevima_sync_confirm', 'Centang konfirmasi untuk menjalankan sync Sevima.');
-
-            return;
-        }
 
         [$command, $arguments] = $this->buildCommandAndArguments();
 
@@ -153,7 +146,6 @@ class OperationsConsole extends Component
                 'users:import',
                 ['--force' => (bool) $this->commandOptions['users_import_force']],
             ],
-            'sevima:sync-test' => ['sevima:sync-test', []],
             default => ['optimize:clear', []],
         };
     }
@@ -167,7 +159,6 @@ class OperationsConsole extends Component
             ],
             'SDM Sync' => [
                 'users:import',
-                'sevima:sync-test',
             ],
             'Sistem' => [
                 'optimize:clear',
