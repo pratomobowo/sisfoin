@@ -3,6 +3,7 @@
         <tr>
             <th style="font-weight: bold; text-align: left; vertical-align: middle; width: 300px; border: 1px solid #000000;">Karyawan</th>
             <th style="font-weight: bold; text-align: left; vertical-align: middle; width: 150px; border: 1px solid #000000;">NIP</th>
+            <th style="font-weight: bold; text-align: left; vertical-align: middle; width: 250px; border: 1px solid #000000;">Unit Kerja</th>
             @foreach($days as $day)
                 <th style="font-weight: bold; text-align: center; vertical-align: middle; width: 100px; border: 1px solid #000000; {{ $day['is_holiday'] ? 'background-color: #fee2e2; color: #dc2626;' : ($day['is_weekend'] ? 'background-color: #fef2f2; color: #f87171;' : 'background-color: #f9fafb; color: #9ca3af;') }}">
                     {{ $day['day'] }}<br>
@@ -32,6 +33,7 @@
             <tr>
                 <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->nama ?? $employee->name }}</td>
                 <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->nip ?? '-' }}</td>
+                <td style="vertical-align: middle; border: 1px solid #000000;">{{ $employee->satuan_kerja ?? '-' }}</td>
                 @foreach($days as $day)
                     @php
                         $data = $attendanceMatrix[$employee->id][$day['date']] ?? null;
