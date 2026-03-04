@@ -222,7 +222,7 @@
         <table class="salary-table">
             <tbody>
                 <tr><td colspan="7" style="font-weight: bold; padding-bottom: 5px;">I. PENERIMAAN</td></tr>
-                <tr><td class="label">1.</td><td class="item-name">Tunj. Dosen Bantuan Kopertis</td><td class="currency total-border">Rp</td><td class="amount total-border">{{ number_format($detail->tunjangan_kemahalan ?? 0, 0, ',', '.') }}</td><td class="symbol">+</td><td class="total"></td></tr>
+                <tr><td>Tunj. Dosen Bantuan Kopertis</td><td class="currency">Rp</td><td class="amount">{{ number_format($detail->tunjangan_pendidikan ?? 0, 0, ',', '.') }}</td><td class="icon-column"></td></tr>
                 <tr><td class="label"></td><td class="item-name" style="font-weight: bold;">Penerimaan Kotor</td><td class="amount"></td><td class="symbol"></td><td class="total"></td><td class="currency" style="font-weight: bold;">Rp</td><td class="total">{{ number_format($detail->penerimaan_kotor ?? 0, 0, ',', '.') }}</td></tr>
                 
                 <tr><td colspan="7" style="font-weight: bold; padding-top: 10px; padding-bottom: 5px;">II. POTONGAN</td></tr>
