@@ -24,6 +24,8 @@ class OperationsConsole extends Component
         'attendance_date_to' => '',
         'attendance_user_id' => '',
         'users_import_force' => false,
+        'cleanup_model' => 'all',
+        'cleanup_dry_run' => true,
     ];
 
     public array $lastRun = [
@@ -37,12 +39,13 @@ class OperationsConsole extends Component
     public function runCommand(): void
     {
         $this->validate([
-            'selectedCommand' => 'required|in:users:relink-employee-links,attendance:process,optimize:clear,users:import',
+            'selectedCommand' => 'required|in:users:relink-employee-links,attendance:process,optimize:clear,users:import,cleanup:duplicates',
             'confirmationText' => 'required|in:RUN',
             'commandOptions.relink_type' => 'required|in:all,employee,dosen',
             'commandOptions.attendance_date_from' => 'nullable|date',
             'commandOptions.attendance_date_to' => 'nullable|date',
             'commandOptions.attendance_user_id' => 'nullable|integer',
+            'commandOptions.cleanup_model' => 'required|in:all,employee,dosen',
         ]);
 
         [$command, $arguments] = $this->buildCommandAndArguments();
@@ -146,6 +149,13 @@ class OperationsConsole extends Component
                 'users:import',
                 ['--force' => (bool) $this->commandOptions['users_import_force']],
             ],
+            'cleanup:duplicates' => [
+                'cleanup:duplicates',
+                [
+                    '--model' => $this->commandOptions['cleanup_model'],
+                    '--dry-run' => (bool) $this->commandOptions['cleanup_dry_run'],
+                ],
+            ],
             default => ['optimize:clear', []],
         };
     }
@@ -159,6 +169,7 @@ class OperationsConsole extends Component
             ],
             'SDM Sync' => [
                 'users:import',
+                'cleanup:duplicates',
             ],
             'Sistem' => [
                 'optimize:clear',

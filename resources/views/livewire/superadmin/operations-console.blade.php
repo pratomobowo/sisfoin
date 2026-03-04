@@ -77,6 +77,25 @@
                 <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input type="checkbox" wire:model="commandOptions.users_import_force"> force update existing users
                 </label>
+            @elseif($selectedCommand === 'cleanup:duplicates')
+                <div class="space-y-3">
+                    <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+                        <strong>Peringatan:</strong> Command ini akan menggabungkan (merge) data duplikat dan menghapus record yang tidak diperlukan. Gunakan <strong>dry-run</strong> terlebih dahulu untuk preview.
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-gray-600">Model</label>
+                            <select wire:model="commandOptions.cleanup_model" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="all">Semua (Employee + Dosen)</option>
+                                <option value="employee">Employee saja</option>
+                                <option value="dosen">Dosen saja</option>
+                            </select>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 mt-6">
+                            <input type="checkbox" wire:model="commandOptions.cleanup_dry_run"> dry-run (preview saja)
+                        </label>
+                    </div>
+                </div>
             @endif
 
             <div class="border-t pt-4 space-y-2">
