@@ -120,6 +120,7 @@ class Attendance extends Model
     /**
      * Calculate overtime hours based on shift end time.
      * Returns positive value for overtime, negative for early departure.
+     * Handles cross-day checkouts (e.g., night shift ending after midnight).
      */
     public function calculateOvertimeHours(): float
     {
@@ -136,7 +137,19 @@ class Attendance extends Model
         $expectedCheckout = Carbon::parse($this->date->format('Y-m-d').' '.$shift->end_time);
         $actualCheckout = Carbon::parse($this->check_out_time);
 
-        // Calculate difference in minutes (positive = overtime, negative = early departure)
+        // Handle cross-day checkout (e.g., shift ends at 14:00 but checkout is at 01:42 next day)
+        // If actual checkout time is earlier in the day than expected, it's likely next day
+        if ($actualCheckout->format('H:i:s') < $expectedCheckout->format('H:i:s')) {
+            // Check if this is a night shift scenario
+            // If checkout is between 00:00 and 05:00, assume it's next day
+            $checkoutHour = (int) $actualCheckout->format('H');
+            if ($checkoutHour >= 0 && $checkoutHour < 5) {
+                // This is a cross-day checkout, adjust expected checkout to previous day
+                $expectedCheckout = $expectedCheckout->subDay();
+            }
+        }
+
+        // Calculate difference in minutes (positive = overtime, negative for early departure)
         $diffMinutes = $actualCheckout->diffInMinutes($expectedCheckout, false);
 
         // Convert to hours (positive for overtime, negative for early departure)
