@@ -69,7 +69,7 @@ class AttendanceController extends Controller
             $current->addDay();
         }
 
-        return collect($days)->reverse();
+        return collect($days);
     }
 
     private function getAttendanceData($year, $month, $statusFilter, $daysInMonth)
