@@ -141,6 +141,10 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
         Route::get('/{header}/download-bulk-pdf', [SlipGajiController::class, 'downloadBulkPdf'])->name('download-bulk-pdf');
         Route::delete('/{header}', [SlipGajiController::class, 'destroy'])->name('destroy');
 
+        // Publish/Unpublish routes
+        Route::post('/{id}/publish', [SlipGajiController::class, 'publish'])->name('publish');
+        Route::post('/{id}/unpublish', [SlipGajiController::class, 'unpublish'])->name('unpublish');
+
         // Bulk email routes
         Route::post('/{header}/send-bulk-email', [SlipGajiController::class, 'sendBulkEmail'])->name('send-bulk-email');
         Route::get('/{header}/email-logs', [SlipGajiController::class, 'showEmailLogs'])->name('email-logs');
