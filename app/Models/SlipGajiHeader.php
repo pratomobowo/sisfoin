@@ -26,6 +26,10 @@ class SlipGajiHeader extends Model
         'published_at' => 'datetime',
     ];
 
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_PUBLISHED = 'published';
+
     /**
      * Get the periode attribute as formatted string for display
      */
@@ -56,7 +60,7 @@ class SlipGajiHeader extends Model
      */
     public function isDraft(): bool
     {
-        return $this->status === 'draft';
+        return $this->status === self::STATUS_DRAFT;
     }
 
     /**
@@ -64,13 +68,13 @@ class SlipGajiHeader extends Model
      */
     public function isPublished(): bool
     {
-        return $this->status === 'published';
+        return $this->status === self::STATUS_PUBLISHED;
     }
 
     /**
-     * Check if slip can be edited
+     * Check if slip is editable
      */
-    public function canBeEdited(): bool
+    public function isEditable(): bool
     {
         return $this->isDraft();
     }
