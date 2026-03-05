@@ -16,10 +16,14 @@ class SlipGajiHeader extends Model
         'file_original',
         'uploaded_by',
         'uploaded_at',
+        'status',
+        'published_at',
+        'published_by',
     ];
 
     protected $casts = [
         'uploaded_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     /**
@@ -48,6 +52,30 @@ class SlipGajiHeader extends Model
     }
 
     /**
+     * Check if slip is in draft status
+     */
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    /**
+     * Check if slip is published
+     */
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
+
+    /**
+     * Check if slip can be edited
+     */
+    public function canBeEdited(): bool
+    {
+        return $this->isDraft();
+    }
+
+    /**
      * Relasi ke SlipGajiDetail
      */
     public function details(): HasMany
@@ -61,5 +89,13 @@ class SlipGajiHeader extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    /**
+     * Relasi ke User (yang mempublikasikan)
+     */
+    public function publisher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'published_by');
     }
 }
