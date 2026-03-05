@@ -199,7 +199,21 @@
                                         }
 
                                         if (!is_null($attendance['overtime_hours']) && !str_contains($normalizedNotes, 'lembur')) {
-                                            $performanceNotes[] = 'Lembur '.number_format($attendance['overtime_hours'], 2, ',', '.').' jam';
+                                            $overtimeHours = (float) $attendance['overtime_hours'];
+                                            if ($overtimeHours > 0) {
+                                                if ($overtimeHours < 1) {
+                                                    $minutes = (int) round($overtimeHours * 60);
+                                                    $performanceNotes[] = 'Kelebihan waktu '.$minutes.' menit';
+                                                } else {
+                                                    $hours = (int) floor($overtimeHours);
+                                                    $minutes = (int) round(($overtimeHours - $hours) * 60);
+                                                    if ($minutes > 0) {
+                                                        $performanceNotes[] = 'Kelebihan waktu '.$hours.' jam '.$minutes.' menit';
+                                                    } else {
+                                                        $performanceNotes[] = 'Kelebihan waktu '.$hours.' jam';
+                                                    }
+                                                }
+                                            }
                                         }
                                     @endphp
 
