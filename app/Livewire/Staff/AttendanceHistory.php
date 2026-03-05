@@ -70,7 +70,7 @@ class AttendanceHistory extends Component
             $current->addDay();
         }
 
-        return collect($days)->reverse();
+        return collect($days);
     }
 
     public function getAttendanceData()
