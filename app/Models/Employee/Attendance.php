@@ -138,29 +138,28 @@ class Attendance extends Model
         $actualCheckout = Carbon::parse($this->check_out_time);
 
         // Handle cross-day checkout scenarios
-        // Case 1: Checkout time is stored on the same date but is early morning (00:00 - 05:00)
-        // This means the checkout actually happened on the next day
-        if ($actualCheckout->format('Y-m-d') === $expectedCheckout->format('Y-m-d')) {
-            $checkoutHour = (int) $actualCheckout->format('H');
-            if ($checkoutHour >= 0 && $checkoutHour < 5) {
+        // Check if checkout time is early morning (00:00 - 05:00)
+        $checkoutHour = (int) $actualCheckout->format('H');
+        $isEarlyMorning = $checkoutHour >= 0 && $checkoutHour < 5;
+
+        if ($isEarlyMorning) {
+            // Case 1: Checkout stored on same date as check-in
+            if ($actualCheckout->format('Y-m-d') === $expectedCheckout->format('Y-m-d')) {
                 // This is a cross-day checkout stored with wrong date
                 // Adjust to next day
                 $actualCheckout = $actualCheckout->addDay();
             }
-        }
-
-        // Case 2: Checkout time is earlier in the day than expected
-        if ($actualCheckout->format('H:i:s') < $expectedCheckout->format('H:i:s')) {
-            // Check if this is a night shift scenario
-            $checkoutHour = (int) $actualCheckout->format('H');
-            if ($checkoutHour >= 0 && $checkoutHour < 5) {
-                // This is a cross-day checkout, adjust expected checkout to previous day
-                $expectedCheckout = $expectedCheckout->subDay();
+            // Case 2: Checkout stored on next date or adjusted to next day
+            // The shift end time should be compared to checkout on the same day as check-in
+            // But checkout happened on the next day, so expected is still the previous day
+            elseif ($actualCheckout->format('Y-m-d') > $expectedCheckout->format('Y-m-d')) {
+                // Checkout is already on next day, no adjustment needed
             }
         }
 
         // Calculate difference in minutes (positive = overtime, negative for early departure)
-        $diffMinutes = $actualCheckout->diffInMinutes($expectedCheckout, false);
+        // Use expected as base, so positive means checkout is later (overtime)
+        $diffMinutes = $expectedCheckout->diffInMinutes($actualCheckout, false);
 
         // Convert to hours (positive for overtime, negative for early departure)
         return round($diffMinutes / 60, 2);
