@@ -14,7 +14,7 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <!-- Search -->
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Pencarian</label>
@@ -50,6 +50,17 @@
                     @foreach($availableTahuns as $tahun)
                         <option value="{{ $tahun }}">{{ $tahun }}</option>
                     @endforeach
+                </select>
+            </div>
+
+            <!-- Filter Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select wire:model.live="filterStatus"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Semua Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
                 </select>
             </div>
         </div>
@@ -91,6 +102,9 @@
                             Periode
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tahun
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -111,6 +125,17 @@
                                 <div class="text-sm font-medium text-gray-900">{{ $header->periode }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
+                                @if($header->status === 'published')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                        Published
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                                        Draft
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
                                     @if($header->periode)
                                         {{ substr($header->periode, 0, 4) }}
@@ -127,6 +152,24 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-1">
+                                    <!-- Publish/Unpublish -->
+                                    @if($header->isDraft())
+                                        <button 
+                                            wire:click="publish({{ $header->id }})"
+                                            wire:confirm="Yakin ingin publish slip gaji ini? Staff akan dapat melihat slip gaji."
+                                            title="Publish" aria-label="Publish"
+                                            class="inline-flex p-2 rounded-lg hover:bg-green-50 text-green-600">
+                                            <x-lucide-send class="w-4 h-4" />
+                                        </button>
+                                    @else
+                                        <button 
+                                            wire:click="unpublish({{ $header->id }})"
+                                            wire:confirm="Yakin ingin unpublish? Staff tidak akan dapat melihat slip gaji ini lagi."
+                                            title="Unpublish" aria-label="Unpublish"
+                                            class="inline-flex p-2 rounded-lg hover:bg-yellow-50 text-yellow-600">
+                                            <x-lucide-arrow-left class="w-4 h-4" />
+                                        </button>
+                                    @endif
                                     <!-- View -->
                                     <a href="{{ route('sdm.slip-gaji.show', $header->id) }}" 
                                        title="Lihat Detail" aria-label="Lihat Detail"
@@ -139,12 +182,26 @@
                                             class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-green-600">
                                         <x-lucide-file-spreadsheet class="w-4 h-4" />
                                     </button>
-                                    <!-- Delete -->
-                                    <button wire:click="openDeleteModal({{ $header->id }})" 
-                                            title="Hapus" aria-label="Hapus"
-                                            class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-red-600">
-                                        <x-lucide-trash-2 class="w-4 h-4" />
-                                    </button>
+                                    <!-- Edit/Delete - conditional on isEditable -->
+                                    @if($header->isEditable())
+                                        <a href="{{ route('sdm.slip-gaji.edit', $header->id) }}" 
+                                           title="Edit" aria-label="Edit"
+                                           class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-blue-600">
+                                            <x-lucide-edit class="w-4 h-4" />
+                                        </a>
+                                        <button wire:click="openDeleteModal({{ $header->id }})" 
+                                                title="Hapus" aria-label="Hapus"
+                                                class="inline-flex p-2 rounded-lg hover:bg-gray-100 text-red-600">
+                                            <x-lucide-trash-2 class="w-4 h-4" />
+                                        </button>
+                                    @else
+                                        <span class="inline-flex p-2 rounded-lg text-gray-400 cursor-not-allowed" title="Unpublish terlebih dahulu untuk mengedit">
+                                            <x-lucide-edit class="w-4 h-4" />
+                                        </span>
+                                        <span class="inline-flex p-2 rounded-lg text-gray-400 cursor-not-allowed" title="Unpublish terlebih dahulu untuk menghapus">
+                                            <x-lucide-trash-2 class="w-4 h-4" />
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
