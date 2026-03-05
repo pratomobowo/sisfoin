@@ -31,6 +31,8 @@ class SlipGajiManagement extends Component
 
     public $filterTahun = '';
 
+    public $filterStatus = '';
+
     // Modal states
     public $showDeleteModal = false;
 
@@ -53,6 +55,11 @@ class SlipGajiManagement extends Component
     }
 
     public function updatingFilterTahun()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
     {
         $this->resetPage();
     }
@@ -175,6 +182,11 @@ class SlipGajiManagement extends Component
                 $query->where('periode', 'like', $this->filterTahun.'%');
             }
 
+            // Filter by status
+            if ($this->filterStatus) {
+                $query->where('status', $this->filterStatus);
+            }
+
             // Sorting
             $query->orderBy($this->sortField, $this->sortDirection);
 
@@ -265,7 +277,56 @@ class SlipGajiManagement extends Component
         $this->search = '';
         $this->filterPeriode = '';
         $this->filterTahun = '';
+        $this->filterStatus = '';
         $this->resetPage();
+    }
+
+    public function publish($headerId)
+    {
+        try {
+            $header = SlipGajiHeader::findOrFail($headerId);
+
+            if ($header->isPublished()) {
+                $this->toastWarning('Slip gaji sudah dipublikasikan');
+
+                return;
+            }
+
+            $header->update([
+                'status' => SlipGajiHeader::STATUS_PUBLISHED,
+                'published_at' => now(),
+                'published_by' => auth()->id(),
+            ]);
+
+            $this->toastSuccess('Slip gaji berhasil dipublikasikan');
+        } catch (\Exception $e) {
+            Log::error('Error publishing slip gaji: '.$e->getMessage());
+            $this->toastError('Gagal mempublikasikan slip gaji: '.$e->getMessage());
+        }
+    }
+
+    public function unpublish($headerId)
+    {
+        try {
+            $header = SlipGajiHeader::findOrFail($headerId);
+
+            if ($header->isDraft()) {
+                $this->toastWarning('Slip gaji masih dalam status draft');
+
+                return;
+            }
+
+            $header->update([
+                'status' => SlipGajiHeader::STATUS_DRAFT,
+                'published_at' => null,
+                'published_by' => null,
+            ]);
+
+            $this->toastSuccess('Publikasi slip gaji berhasil dibatalkan');
+        } catch (\Exception $e) {
+            Log::error('Error unpublishing slip gaji: '.$e->getMessage());
+            $this->toastError('Gagal membatalkan publikasi slip gaji: '.$e->getMessage());
+        }
     }
 
     /**
