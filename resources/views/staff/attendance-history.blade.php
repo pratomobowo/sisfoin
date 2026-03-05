@@ -198,9 +198,14 @@
                                             $performanceNotes[] = 'Terlambat '.$attendance['late_minutes'].' menit';
                                         }
 
-                                        if (!is_null($attendance['overtime_hours']) && !str_contains($normalizedNotes, 'lembur')) {
+                                        if (!is_null($attendance['overtime_hours'])) {
                                             $overtimeHours = (float) $attendance['overtime_hours'];
-                                            if ($overtimeHours > 0) {
+                                            
+                                            // Skip if zero or very small
+                                            if (abs($overtimeHours) < 0.01) {
+                                                // No significant overtime or early departure
+                                            } elseif ($overtimeHours > 0) {
+                                                // Overtime (positive value)
                                                 if ($overtimeHours < 1) {
                                                     $minutes = (int) round($overtimeHours * 60);
                                                     $performanceNotes[] = 'Kelebihan waktu '.$minutes.' menit';
@@ -211,6 +216,21 @@
                                                         $performanceNotes[] = 'Kelebihan waktu '.$hours.' jam '.$minutes.' menit';
                                                     } else {
                                                         $performanceNotes[] = 'Kelebihan waktu '.$hours.' jam';
+                                                    }
+                                                }
+                                            } else {
+                                                // Early departure (negative value)
+                                                $earlyHours = abs($overtimeHours);
+                                                if ($earlyHours < 1) {
+                                                    $minutes = (int) round($earlyHours * 60);
+                                                    $performanceNotes[] = 'Pulang lebih awal '.$minutes.' menit';
+                                                } else {
+                                                    $hours = (int) floor($earlyHours);
+                                                    $minutes = (int) round(($earlyHours - $hours) * 60);
+                                                    if ($minutes > 0) {
+                                                        $performanceNotes[] = 'Pulang lebih awal '.$hours.' jam '.$minutes.' menit';
+                                                    } else {
+                                                        $performanceNotes[] = 'Pulang lebih awal '.$hours.' jam';
                                                     }
                                                 }
                                             }

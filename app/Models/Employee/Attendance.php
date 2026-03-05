@@ -118,16 +118,29 @@ class Attendance extends Model
     }
 
     /**
-     * Calculate overtime hours.
+     * Calculate overtime hours based on shift end time.
+     * Returns positive value for overtime, negative for early departure.
      */
     public function calculateOvertimeHours(): float
     {
-        $totalHours = $this->calculateTotalHours();
+        if (! $this->check_out_time || ! $this->date) {
+            return 0;
+        }
 
         $shift = $this->effective_shift;
-        $standardHours = $shift ? (float) $shift->work_hours : 8.0;
+        if (! $shift || ! $shift->end_time) {
+            return 0;
+        }
 
-        return $totalHours > $standardHours ? $totalHours - $standardHours : 0;
+        // Get expected checkout time based on shift
+        $expectedCheckout = Carbon::parse($this->date->format('Y-m-d').' '.$shift->end_time);
+        $actualCheckout = Carbon::parse($this->check_out_time);
+
+        // Calculate difference in minutes (positive = overtime, negative = early departure)
+        $diffMinutes = $actualCheckout->diffInMinutes($expectedCheckout, false);
+
+        // Convert to hours (positive for overtime, negative for early departure)
+        return round($diffMinutes / 60, 2);
     }
 
     /**
