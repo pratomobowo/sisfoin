@@ -13,16 +13,25 @@ class Penggajian extends Component
     protected $paginationTheme = 'tailwind';
 
     public $search = '';
+
     public $perPage = 10;
+
     public $page = 1;
 
     // Summary data
     public $totalGajiBersih = 0;
+
     public $totalPotongan = 0;
+
     public $totalHonor = 0;
+
     public $totalPajakKurangPotong = 0;
+
     public $availableSlips = 0;
+
     public $totalSlips = 0;
+
+    protected $listeners = ['downloadPdf'];
 
     public function mount()
     {
@@ -34,7 +43,7 @@ class Penggajian extends Component
         $user = auth()->user();
         $nip = $user->nip;
 
-        if (!$nip) {
+        if (! $nip) {
             return view('livewire.staff.penggajian', [
                 'slipGaji' => collect(),
             ]);
@@ -49,7 +58,7 @@ class Penggajian extends Component
         if ($this->search) {
             $query->where(function ($q) {
                 $q->whereHas('header', function ($subQuery) {
-                    $subQuery->where('periode', 'like', '%' . $this->search . '%');
+                    $subQuery->where('periode', 'like', '%'.$this->search.'%');
                 });
             });
         }
@@ -83,7 +92,7 @@ class Penggajian extends Component
         $user = auth()->user();
         $nip = $user->nip;
 
-        if (!$nip) {
+        if (! $nip) {
             return;
         }
 
@@ -141,5 +150,49 @@ class Penggajian extends Component
     {
         $this->loadSummaryData();
         $this->resetPage();
+    }
+
+    public function downloadPdf($headerId)
+    {
+        $user = Auth::user();
+        $nip = $user->nip;
+
+        if (! $nip) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Data NIP tidak ditemukan',
+            ]);
+
+            return;
+        }
+
+        $detail = SlipGajiDetail::where('header_id', $headerId)
+            ->where('nip', $nip)
+            ->with(['header', 'employee', 'dosen'])
+            ->first();
+
+        if (! $detail) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Slip gaji tidak ditemukan',
+            ]);
+
+            return;
+        }
+
+        try {
+            $slipGajiService = app(SlipGajiService::class);
+            $pdfContent = $slipGajiService->generatePdfSlip($detail->id);
+            $filename = $slipGajiService->generatePdfFilename($detail);
+
+            return response()->streamDownload(function () use ($pdfContent) {
+                echo $pdfContent;
+            }, $filename, ['Content-Type' => 'application/pdf']);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Gagal mengunduh slip gaji: '.$e->getMessage(),
+            ]);
+        }
     }
 }

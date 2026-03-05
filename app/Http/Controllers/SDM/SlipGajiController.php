@@ -586,4 +586,68 @@ class SlipGajiController extends Controller
             return redirect()->back()->with('error', 'Gagal mengunduh slip gaji: '.$e->getMessage());
         }
     }
+
+    /**
+     * Publish slip gaji
+     */
+    public function publish($id)
+    {
+        try {
+            $header = SlipGajiHeader::findOrFail($id);
+
+            if ($header->isPublished()) {
+                return back()->with('error', 'Slip gaji sudah dipublikasikan');
+            }
+
+            $header->update([
+                'status' => SlipGajiHeader::STATUS_PUBLISHED,
+                'published_at' => now(),
+                'published_by' => Auth::id(),
+            ]);
+
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($header)
+                ->withProperties(['action' => 'publish', 'periode' => $header->periode])
+                ->log('Mempublikasikan slip gaji periode: '.$header->periode);
+
+            return back()->with('success', 'Slip gaji berhasil dipublikasikan');
+        } catch (\Exception $e) {
+            Log::error('Error publishing slip gaji: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal mempublikasikan slip gaji: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Unpublish slip gaji
+     */
+    public function unpublish($id)
+    {
+        try {
+            $header = SlipGajiHeader::findOrFail($id);
+
+            if ($header->isDraft()) {
+                return back()->with('error', 'Slip gaji masih dalam status draft');
+            }
+
+            $header->update([
+                'status' => SlipGajiHeader::STATUS_DRAFT,
+                'published_at' => null,
+                'published_by' => null,
+            ]);
+
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($header)
+                ->withProperties(['action' => 'unpublish', 'periode' => $header->periode])
+                ->log('Membatalkan publikasi slip gaji periode: '.$header->periode);
+
+            return back()->with('success', 'Publikasi slip gaji berhasil dibatalkan');
+        } catch (\Exception $e) {
+            Log::error('Error unpublishing slip gaji: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal membatalkan publikasi slip gaji: '.$e->getMessage());
+        }
+    }
 }
