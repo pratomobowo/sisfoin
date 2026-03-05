@@ -35,6 +35,9 @@ class PayrollController extends Controller
 
             $query = SlipGajiDetail::query()
                 ->where('nip', $nip)
+                ->whereHas('header', function ($headerQuery) {
+                    $headerQuery->where('status', 'published');
+                })
                 ->with(['header', 'employee', 'dosen'])
                 ->orderBy('created_at', 'desc');
 
