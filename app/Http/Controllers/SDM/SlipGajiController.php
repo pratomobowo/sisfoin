@@ -227,6 +227,10 @@ class SlipGajiController extends Controller
 
     public function update(Request $request, SlipGajiDetail $detail)
     {
+        if (! $detail->header->isEditable()) {
+            return back()->with('error', 'Tidak dapat mengubah slip gaji yang sudah dipublikasikan');
+        }
+
         $request->validate([
             'nip' => 'required|string|max:50',
             'status' => 'required|string|max:50',
@@ -522,6 +526,10 @@ class SlipGajiController extends Controller
     {
         try {
             $header = SlipGajiHeader::findOrFail($id);
+
+            if (! $header->isEditable()) {
+                return back()->with('error', 'Tidak dapat menghapus slip gaji yang sudah dipublikasikan');
+            }
 
             // Store header info for logging before deletion
             $periode = $header->periode;
