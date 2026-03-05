@@ -137,11 +137,21 @@ class Attendance extends Model
         $expectedCheckout = Carbon::parse($this->date->format('Y-m-d').' '.$shift->end_time);
         $actualCheckout = Carbon::parse($this->check_out_time);
 
-        // Handle cross-day checkout (e.g., shift ends at 14:00 but checkout is at 01:42 next day)
-        // If actual checkout time is earlier in the day than expected, it's likely next day
+        // Handle cross-day checkout scenarios
+        // Case 1: Checkout time is stored on the same date but is early morning (00:00 - 05:00)
+        // This means the checkout actually happened on the next day
+        if ($actualCheckout->format('Y-m-d') === $expectedCheckout->format('Y-m-d')) {
+            $checkoutHour = (int) $actualCheckout->format('H');
+            if ($checkoutHour >= 0 && $checkoutHour < 5) {
+                // This is a cross-day checkout stored with wrong date
+                // Adjust to next day
+                $actualCheckout = $actualCheckout->addDay();
+            }
+        }
+
+        // Case 2: Checkout time is earlier in the day than expected
         if ($actualCheckout->format('H:i:s') < $expectedCheckout->format('H:i:s')) {
             // Check if this is a night shift scenario
-            // If checkout is between 00:00 and 05:00, assume it's next day
             $checkoutHour = (int) $actualCheckout->format('H');
             if ($checkoutHour >= 0 && $checkoutHour < 5) {
                 // This is a cross-day checkout, adjust expected checkout to previous day
