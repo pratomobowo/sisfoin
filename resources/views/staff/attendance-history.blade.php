@@ -121,14 +121,14 @@
 
         <!-- Detail Kehadiran: 2 Kolom -->
         @php
-            $riwayat = collect($history ?? [])->sortByDesc('date')->values();
+            $riwayat = collect($history ?? [])->sortBy('date')->values();
         @endphp
         <div>
             <section>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-base lg:text-lg font-bold text-gray-800">Detail Kehadiran</h2>
-                        <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">Urutan: Terbaru</span>
+                        <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">Urutan: Terlama</span>
                     </div>
 
                     @if($riwayat->isNotEmpty())
