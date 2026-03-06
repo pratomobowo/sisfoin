@@ -68,6 +68,9 @@ class PayrollController extends Controller
 
             $allSlips = SlipGajiDetail::query()
                 ->where('nip', $nip)
+                ->whereHas('header', function ($q) {
+                    $q->where('status', 'published');
+                })
                 ->with(['header', 'employee', 'dosen'])
                 ->get();
 
