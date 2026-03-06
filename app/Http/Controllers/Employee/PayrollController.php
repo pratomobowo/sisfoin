@@ -82,10 +82,9 @@ class PayrollController extends Controller
 
             $latestSlip = $allSlips
                 ->sortByDesc(function ($detail) {
-                    $periode = $detail->header?->getRawPeriode() ?? '';
-                    $createdTimestamp = $detail->created_at?->timestamp ?? 0;
-
-                    return sprintf('%s-%010d', $periode, $createdTimestamp);
+                    // Sort by periode only (not created_at)
+                    // Latest slip = slip dengan periode terbaru yang sudah published
+                    return $detail->header?->getRawPeriode() ?? '';
                 })
                 ->first();
 

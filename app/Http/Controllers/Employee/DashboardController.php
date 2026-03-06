@@ -52,7 +52,15 @@ class DashboardController extends Controller
             $latestSlip = SlipGajiDetail::query()
                 ->with('header')
                 ->where('nip', $user->nip)
-                ->orderByDesc('created_at')
+                ->whereHas('header', function ($q) {
+                    $q->where('status', 'published');
+                })
+                ->orderByDesc(function ($query) {
+                    $query->select('periode')
+                        ->from('slip_gaji_header')
+                        ->whereColumn('id', 'slip_gaji_details.header_id')
+                        ->limit(1);
+                })
                 ->first();
 
             if ($latestSlip) {
@@ -81,7 +89,15 @@ class DashboardController extends Controller
                 $latestSlip = SlipGajiDetail::query()
                     ->with('header')
                     ->where('nip', $similarUser->nip)
-                    ->orderByDesc('created_at')
+                    ->whereHas('header', function ($q) {
+                        $q->where('status', 'published');
+                    })
+                    ->orderByDesc(function ($query) {
+                        $query->select('periode')
+                            ->from('slip_gaji_header')
+                            ->whereColumn('id', 'slip_gaji_details.header_id')
+                            ->limit(1);
+                    })
                     ->first();
 
                 if ($latestSlip) {
