@@ -58,7 +58,7 @@ class DashboardController extends Controller
                 ->orderByDesc(function ($query) {
                     $query->select('periode')
                         ->from('slip_gaji_header')
-                        ->whereColumn('id', 'slip_gaji_details.header_id')
+                        ->whereColumn('id', 'slip_gaji_detail.header_id')
                         ->limit(1);
                 })
                 ->first();
@@ -95,7 +95,7 @@ class DashboardController extends Controller
                     ->orderByDesc(function ($query) {
                         $query->select('periode')
                             ->from('slip_gaji_header')
-                            ->whereColumn('id', 'slip_gaji_details.header_id')
+                            ->whereColumn('id', 'slip_gaji_detail.header_id')
                             ->limit(1);
                     })
                     ->first();
