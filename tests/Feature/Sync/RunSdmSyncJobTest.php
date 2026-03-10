@@ -349,7 +349,7 @@ class RunSdmSyncJobTest extends TestCase
         $this->assertSame(0, $run->error_summary['reconcile']['conflict_count'] ?? null);
     }
 
-    public function test_job_persists_reconcile_conflict_summary_and_warning_items(): void
+    public function test_job_reports_sync_error_instead_of_reconcile_conflict_when_api_returns_duplicate_employee_nip(): void
     {
         User::create([
             'name' => 'Conflict Emp User',
@@ -395,14 +395,13 @@ class RunSdmSyncJobTest extends TestCase
         $run->refresh();
 
         $this->assertSame('completed_with_warning', $run->status);
-        $this->assertSame(0, $run->error_summary['reconcile']['linked_count'] ?? null);
-        $this->assertSame(1, $run->error_summary['reconcile']['conflict_count'] ?? null);
-        $this->assertSame(0, $run->error_summary['error_count'] ?? null);
+        $this->assertSame(1, $run->error_summary['reconcile']['linked_count'] ?? null);
+        $this->assertSame(0, $run->error_summary['reconcile']['conflict_count'] ?? null);
+        $this->assertSame(1, $run->error_summary['error_count'] ?? null);
         $this->assertDatabaseHas('sync_run_items', [
             'sync_run_id' => $run->id,
             'entity_type' => 'employee',
-            'level' => 'warning',
-            'message' => 'User link reconciliation conflict',
+            'level' => 'error',
         ]);
     }
 

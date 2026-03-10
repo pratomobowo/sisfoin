@@ -53,7 +53,8 @@ class OperationsConsole extends Component
         try {
             $exitCode = Artisan::call($command, $arguments);
             $output = trim((string) Artisan::output());
-            $status = $exitCode === 0 ? 'success' : 'error';
+            $isPreview = $this->isPreviewRun($arguments);
+            $status = $exitCode === 0 ? ($isPreview ? 'preview' : 'success') : 'error';
 
             $this->lastRun = [
                 'status' => $status,
@@ -77,12 +78,20 @@ class OperationsConsole extends Component
                 metadata: [
                     'module' => 'superadmin',
                     'risk_level' => 'high',
-                    'result' => $status === 'success' ? 'success' : 'failed',
+                    'result' => match ($status) {
+                        'success' => 'success',
+                        'preview' => 'preview',
+                        default => 'failed',
+                    },
                 ],
                 causer: Auth::user(),
             );
 
-            session()->flash($status, $status === 'success' ? 'Command berhasil dijalankan.' : 'Command selesai dengan error.');
+            if ($status === 'preview') {
+                session()->flash('warning', 'Command berjalan dalam mode dry-run/preview. Tidak ada data yang diubah.');
+            } else {
+                session()->flash($status, $status === 'success' ? 'Command berhasil dijalankan.' : 'Command selesai dengan error.');
+            }
         } catch (\Throwable $e) {
             $this->lastRun = [
                 'status' => 'error',
@@ -175,5 +184,10 @@ class OperationsConsole extends Component
                 'optimize:clear',
             ],
         ];
+    }
+
+    private function isPreviewRun(array $arguments): bool
+    {
+        return (bool) ($arguments['--dry-run'] ?? false);
     }
 }

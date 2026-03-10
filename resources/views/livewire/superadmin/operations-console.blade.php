@@ -8,6 +8,9 @@
     @if (session()->has('success'))
         <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
     @endif
+    @if (session()->has('warning'))
+        <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">{{ session('warning') }}</div>
+    @endif
     @if (session()->has('error'))
         <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
     @endif
@@ -115,7 +118,7 @@
         <div class="bg-white border border-gray-200 rounded-xl p-4">
             <div class="flex items-center justify-between">
                 <h4 class="font-semibold text-gray-800">Hasil Eksekusi Terakhir</h4>
-                <span class="text-xs {{ $lastRun['status'] === 'success' ? 'text-green-600' : 'text-red-600' }}">{{ strtoupper($lastRun['status']) }}</span>
+                <span class="text-xs {{ $lastRun['status'] === 'success' ? 'text-green-600' : ($lastRun['status'] === 'preview' ? 'text-yellow-700' : 'text-red-600') }}">{{ strtoupper($lastRun['status']) }}</span>
             </div>
             <div class="text-xs text-gray-500 mt-1">{{ $lastRun['command'] }} | {{ $lastRun['run_at'] }} | exit {{ $lastRun['exit_code'] }}</div>
             <pre class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 overflow-auto max-h-80">{{ $lastRun['output'] ?: '-' }}</pre>

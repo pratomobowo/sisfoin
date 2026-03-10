@@ -52,6 +52,6 @@ class EmployeeManagementSyncTriggerTest extends TestCase
             'status' => 'pending',
         ]);
 
-        Bus::assertDispatched(RunSdmSyncJob::class);
+        Bus::assertDispatchedAfterResponse(RunSdmSyncJob::class);
     }
 }

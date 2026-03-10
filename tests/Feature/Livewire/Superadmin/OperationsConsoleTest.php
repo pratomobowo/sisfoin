@@ -61,7 +61,7 @@ class OperationsConsoleTest extends TestCase
             ->assertSee('optimize:clear');
     }
 
-    public function test_superadmin_can_run_dry_run_relink_command(): void
+    public function test_superadmin_dry_run_relink_command_is_marked_as_preview(): void
     {
         $superadmin = User::factory()->create();
         $superadmin->assignRole('super-admin');
@@ -76,7 +76,7 @@ class OperationsConsoleTest extends TestCase
             ->set('commandOptions.relink_dry_run', true)
             ->set('confirmationText', 'RUN')
             ->call('runCommand')
-            ->assertSet('lastRun.status', 'success');
+            ->assertSet('lastRun.status', 'preview');
 
         $entry = ActivityLog::query()->latest('id')->first();
 
@@ -86,6 +86,23 @@ class OperationsConsoleTest extends TestCase
         $this->assertSame('system.command.run', $entry->action);
         $this->assertSame('superadmin', $entry->metadata['module'] ?? null);
         $this->assertSame('high', $entry->metadata['risk_level'] ?? null);
-        $this->assertSame('success', $entry->metadata['result'] ?? null);
+        $this->assertSame('preview', $entry->metadata['result'] ?? null);
+    }
+
+    public function test_cleanup_dry_run_is_marked_as_preview_not_successful_merge(): void
+    {
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('super-admin');
+
+        $this->actingAs($superadmin);
+        setActiveRole('super-admin');
+
+        Livewire::test(OperationsConsole::class)
+            ->set('selectedCommand', 'cleanup:duplicates')
+            ->set('commandOptions.cleanup_model', 'all')
+            ->set('commandOptions.cleanup_dry_run', true)
+            ->set('confirmationText', 'RUN')
+            ->call('runCommand')
+            ->assertSet('lastRun.status', 'preview');
     }
 }

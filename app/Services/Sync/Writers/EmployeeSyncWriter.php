@@ -38,27 +38,56 @@ class EmployeeSyncWriter
                     continue;
                 }
 
-                $existing = Employee::withTrashed()
+                $existing = Employee::query()
                     ->where('id_pegawai', $externalId)
                     ->first();
 
-                if ($existing && $existing->trashed()) {
+                $incomingNip = $mapped['nip'] ?? null;
+                $duplicateNipRecord = $this->findDuplicateActiveNipRecord($incomingNip, $externalId);
+
+                if ($duplicateNipRecord) {
+                    $failed++;
+                    $errors[] = [
+                        'external_id' => $externalId,
+                        'message' => sprintf(
+                            'Duplicate active employee nip [%s] already linked to id_pegawai [%s]',
+                            $incomingNip,
+                            $duplicateNipRecord->id_pegawai
+                        ),
+                        'payload' => $row,
+                    ];
+
+                    continue;
+                }
+
+                if ($existing) {
+                    $existing->fill($mapped);
+                    $existing->save();
+
+                    $updated++;
+                    $processed++;
+
+                    continue;
+                }
+
+                $trashed = Employee::onlyTrashed()
+                    ->where('id_pegawai', $externalId)
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($trashed) {
                     Log::info('Restored soft-deleted employee during sync', [
                         'id_pegawai' => $externalId,
                         'nip' => $mapped['nip'] ?? null,
                         'nama' => $mapped['nama'] ?? null,
                     ]);
-                    $existing->restore();
-                }
+                    $trashed->restore();
+                    $trashed->fill($mapped);
+                    $trashed->save();
 
-                Employee::updateOrCreate(
-                    ['id_pegawai' => $externalId],
-                    $mapped
-                );
-
-                if ($existing) {
                     $updated++;
                 } else {
+                    Employee::create($mapped);
                     $inserted++;
                 }
 
@@ -81,5 +110,21 @@ class EmployeeSyncWriter
             'failed_count' => $failed,
             'errors' => $errors,
         ];
+    }
+
+    private function findDuplicateActiveNipRecord(?string $nip, string $externalId): ?Employee
+    {
+        if ($nip === null || $nip === '') {
+            return null;
+        }
+
+        return Employee::query()
+            ->where('nip', $nip)
+            ->where(function ($query) use ($externalId) {
+                $query->whereNull('id_pegawai')
+                    ->orWhere('id_pegawai', '!=', $externalId);
+            })
+            ->orderByDesc('id')
+            ->first();
     }
 }

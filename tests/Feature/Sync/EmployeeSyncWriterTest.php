@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Sync;
 
+use App\Models\Employee;
 use App\Services\SevimaApiService;
 use App\Services\Sync\Writers\EmployeeSyncWriter;
 use Illuminate\Support\Facades\Artisan;
@@ -95,5 +96,38 @@ class EmployeeSyncWriterTest extends TestCase
         $this->assertSame(1, $result['failed_count']);
         $this->assertCount(1, $result['errors']);
         $this->assertDatabaseCount('employees', 0);
+    }
+
+    public function test_sync_skips_duplicate_active_employee_nip_for_different_id_pegawai(): void
+    {
+        Employee::create([
+            'id_pegawai' => 'E001',
+            'nip' => '111',
+            'nama' => 'Pegawai Pertama',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        $sevimaService = app(SevimaApiService::class);
+        $writer = new EmployeeSyncWriter($sevimaService);
+
+        $result = $writer->sync([
+            [
+                'id_pegawai' => 'E002',
+                'nama' => 'Pegawai Duplikat',
+                'nip' => '111',
+                'status_aktif' => 'Aktif',
+            ],
+        ]);
+
+        $this->assertSame(0, $result['processed_count']);
+        $this->assertSame(0, $result['inserted_count']);
+        $this->assertSame(0, $result['updated_count']);
+        $this->assertSame(1, $result['failed_count']);
+        $this->assertCount(1, $result['errors']);
+        $this->assertStringContainsString('Duplicate active employee nip', $result['errors'][0]['message']);
+        $this->assertDatabaseCount('employees', 1);
+        $this->assertDatabaseMissing('employees', [
+            'id_pegawai' => 'E002',
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services\Sync\Writers;
 
 use App\Models\Dosen;
 use App\Services\SevimaApiService;
+use Illuminate\Support\Facades\Log;
 
 class DosenSyncWriter
 {
@@ -37,27 +38,56 @@ class DosenSyncWriter
                     continue;
                 }
 
-                $existing = Dosen::withTrashed()
+                $existing = Dosen::query()
                     ->where('id_pegawai', $externalId)
                     ->first();
 
-                if ($existing && $existing->trashed()) {
+                $incomingNip = $mapped['nip'] ?? null;
+                $duplicateNipRecord = $this->findDuplicateActiveNipRecord($incomingNip, $externalId);
+
+                if ($duplicateNipRecord) {
+                    $failed++;
+                    $errors[] = [
+                        'external_id' => $externalId,
+                        'message' => sprintf(
+                            'Duplicate active dosen nip [%s] already linked to id_pegawai [%s]',
+                            $incomingNip,
+                            $duplicateNipRecord->id_pegawai
+                        ),
+                        'payload' => $row,
+                    ];
+
+                    continue;
+                }
+
+                if ($existing) {
+                    $existing->fill($mapped);
+                    $existing->save();
+
+                    $updated++;
+                    $processed++;
+
+                    continue;
+                }
+
+                $trashed = Dosen::onlyTrashed()
+                    ->where('id_pegawai', $externalId)
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($trashed) {
                     Log::info('Restored soft-deleted dosen during sync', [
                         'id_pegawai' => $externalId,
                         'nip' => $mapped['nip'] ?? null,
                         'nama' => $mapped['nama'] ?? null,
                     ]);
-                    $existing->restore();
-                }
+                    $trashed->restore();
+                    $trashed->fill($mapped);
+                    $trashed->save();
 
-                Dosen::updateOrCreate(
-                    ['id_pegawai' => $externalId],
-                    $mapped
-                );
-
-                if ($existing) {
                     $updated++;
                 } else {
+                    Dosen::create($mapped);
                     $inserted++;
                 }
 
@@ -80,5 +110,21 @@ class DosenSyncWriter
             'failed_count' => $failed,
             'errors' => $errors,
         ];
+    }
+
+    private function findDuplicateActiveNipRecord(?string $nip, string $externalId): ?Dosen
+    {
+        if ($nip === null || $nip === '') {
+            return null;
+        }
+
+        return Dosen::query()
+            ->where('nip', $nip)
+            ->where(function ($query) use ($externalId) {
+                $query->whereNull('id_pegawai')
+                    ->orWhere('id_pegawai', '!=', $externalId);
+            })
+            ->orderByDesc('id')
+            ->first();
     }
 }

@@ -7,6 +7,10 @@ use App\Models\SyncRun;
 
 class SyncOrchestratorService
 {
+    private const STALE_PENDING_MINUTES = 2;
+
+    private const STALE_RUNNING_MINUTES = 30;
+
     public function __construct(
         private readonly SyncLockService $lockService,
         private readonly SyncIdempotencyService $idempotencyService,
@@ -22,7 +26,17 @@ class SyncOrchestratorService
             ->first();
 
         if ($existing && in_array($existing->status, ['pending', 'running'], true)) {
+            if ($this->isStale($existing)) {
+                $existing->update([
+                    'status' => 'failed',
+                    'finished_at' => now(),
+                    'error_summary' => [
+                        'message' => 'Previous sync run expired before processing completed.',
+                    ],
+                ]);
+            } else {
             return $existing;
+            }
         }
 
         $effectiveIdempotencyKey = $idempotencyKey;
@@ -48,11 +62,28 @@ class SyncOrchestratorService
                 'idempotency_key' => $effectiveIdempotencyKey,
             ]);
 
-            RunSdmSyncJob::dispatch($run->id);
+            RunSdmSyncJob::dispatchAfterResponse($run->id);
 
             return $run;
         } finally {
             $this->lockService->release($normalizedMode);
         }
+    }
+
+    private function isStale(SyncRun $run): bool
+    {
+        if ($run->status === 'pending') {
+            return $run->created_at !== null
+                && $run->created_at->lte(now()->subMinutes(self::STALE_PENDING_MINUTES));
+        }
+
+        if ($run->status === 'running') {
+            $referenceTime = $run->started_at ?? $run->updated_at ?? $run->created_at;
+
+            return $referenceTime !== null
+                && $referenceTime->lte(now()->subMinutes(self::STALE_RUNNING_MINUTES));
+        }
+
+        return false;
     }
 }

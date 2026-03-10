@@ -7,6 +7,7 @@ use App\Models\Employee;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class CleanupDuplicates extends Command
 {
@@ -174,29 +175,58 @@ class CleanupDuplicates extends Command
             return;
         }
 
+        $duplicateNips = $modelClass::query()
+            ->whereIn('id', $deleteIds)
+            ->pluck('nip')
+            ->filter(fn ($nip) => $nip !== null && $nip !== '')
+            ->unique()
+            ->values()
+            ->all();
+
         // Update slip_gaji_detail
         if ($modelClass === Employee::class) {
-            DB::table('slip_gaji_detail')
-                ->whereIn('employee_id', $deleteIds)
-                ->update(['employee_id' => $keepRecord->id]);
+            $this->updateSlipGajiDetailReferences('employee_id', $keepRecord->id, $deleteIds, $keepRecord->nip, $duplicateNips);
 
             // Update users table if linked
-            DB::table('users')
-                ->whereIn('employee_id', $deleteIds)
-                ->where('employee_type', 'employee')
-                ->update(['employee_id' => $keepRecord->id]);
+            if (Schema::hasTable('users') && Schema::hasColumn('users', 'employee_id') && Schema::hasColumn('users', 'employee_type')) {
+                DB::table('users')
+                    ->whereIn('employee_id', $deleteIds)
+                    ->where('employee_type', 'employee')
+                    ->update(['employee_id' => $keepRecord->id]);
+            }
         }
 
         if ($modelClass === Dosen::class) {
-            DB::table('slip_gaji_detail')
-                ->whereIn('dosen_id', $deleteIds)
-                ->update(['dosen_id' => $keepRecord->id]);
+            $this->updateSlipGajiDetailReferences('dosen_id', $keepRecord->id, $deleteIds, $keepRecord->nip, $duplicateNips);
 
             // Update users table if linked
-            DB::table('users')
-                ->whereIn('employee_id', $deleteIds)
-                ->where('employee_type', 'dosen')
-                ->update(['employee_id' => $keepRecord->id]);
+            if (Schema::hasTable('users') && Schema::hasColumn('users', 'employee_id') && Schema::hasColumn('users', 'employee_type')) {
+                DB::table('users')
+                    ->whereIn('employee_id', $deleteIds)
+                    ->where('employee_type', 'dosen')
+                    ->update(['employee_id' => $keepRecord->id]);
+            }
+        }
+    }
+
+    private function updateSlipGajiDetailReferences(string $idColumn, int|string $keepId, array $deleteIds, ?string $keepNip, array $duplicateNips): void
+    {
+        if (! Schema::hasTable('slip_gaji_detail')) {
+            return;
+        }
+
+        if (Schema::hasColumn('slip_gaji_detail', $idColumn)) {
+            DB::table('slip_gaji_detail')
+                ->whereIn($idColumn, $deleteIds)
+                ->update([$idColumn => $keepId]);
+
+            return;
+        }
+
+        if (Schema::hasColumn('slip_gaji_detail', 'nip') && $keepNip !== null && $keepNip !== '' && ! empty($duplicateNips)) {
+            DB::table('slip_gaji_detail')
+                ->whereIn('nip', $duplicateNips)
+                ->update(['nip' => $keepNip]);
         }
     }
 }
