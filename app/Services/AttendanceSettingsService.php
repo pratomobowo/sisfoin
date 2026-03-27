@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AttendanceSetting;
+use App\Models\DailyWorkSchedule;
 use App\Models\Holiday;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 class AttendanceSettingsService
 {
     /**
-     * Get work start time
+     * Get work start time (global fallback)
      */
     public function getWorkStartTime(): string
     {
@@ -18,7 +19,7 @@ class AttendanceSettingsService
     }
 
     /**
-     * Get work end time
+     * Get work end time (global fallback)
      */
     public function getWorkEndTime(): string
     {
@@ -26,7 +27,7 @@ class AttendanceSettingsService
     }
 
     /**
-     * Get early arrival threshold
+     * Get early arrival threshold (global fallback)
      */
     public function getEarlyArrivalThreshold(): string
     {
@@ -34,7 +35,7 @@ class AttendanceSettingsService
     }
 
     /**
-     * Get late tolerance in minutes
+     * Get late tolerance in minutes (global fallback)
      */
     public function getLateTolerance(): int
     {
@@ -48,6 +49,75 @@ class AttendanceSettingsService
     {
         $workStart = Carbon::parse($this->getWorkStartTime());
         $tolerance = $this->getLateTolerance();
+        return $workStart->addMinutes($tolerance)->format('H:i');
+    }
+
+    /**
+     * Get the daily work schedule for a specific day of week.
+     * Returns the DailyWorkSchedule model or null.
+     */
+    public function getScheduleForDay(int $dayOfWeek): ?DailyWorkSchedule
+    {
+        return DailyWorkSchedule::getScheduleForDay($dayOfWeek);
+    }
+
+    /**
+     * Get work start time for a specific day.
+     * Uses DailyWorkSchedule if available, otherwise falls back to global setting.
+     */
+    public function getWorkStartTimeForDay(int $dayOfWeek): string
+    {
+        $schedule = $this->getScheduleForDay($dayOfWeek);
+        if ($schedule && $schedule->is_active) {
+            return substr($schedule->start_time, 0, 5);
+        }
+        return $this->getWorkStartTime();
+    }
+
+    /**
+     * Get work end time for a specific day.
+     * Uses DailyWorkSchedule if available, otherwise falls back to global setting.
+     */
+    public function getWorkEndTimeForDay(int $dayOfWeek): string
+    {
+        $schedule = $this->getScheduleForDay($dayOfWeek);
+        if ($schedule && $schedule->is_active) {
+            return substr($schedule->end_time, 0, 5);
+        }
+        return $this->getWorkEndTime();
+    }
+
+    /**
+     * Get early arrival threshold for a specific day.
+     */
+    public function getEarlyArrivalThresholdForDay(int $dayOfWeek): string
+    {
+        $schedule = $this->getScheduleForDay($dayOfWeek);
+        if ($schedule && $schedule->is_active) {
+            return substr($schedule->early_arrival_threshold, 0, 5);
+        }
+        return $this->getEarlyArrivalThreshold();
+    }
+
+    /**
+     * Get late tolerance for a specific day.
+     */
+    public function getLateToleranceForDay(int $dayOfWeek): int
+    {
+        $schedule = $this->getScheduleForDay($dayOfWeek);
+        if ($schedule && $schedule->is_active) {
+            return $schedule->late_tolerance_minutes;
+        }
+        return $this->getLateTolerance();
+    }
+
+    /**
+     * Calculate late threshold for a specific day.
+     */
+    public function getLateThresholdForDay(int $dayOfWeek): string
+    {
+        $workStart = Carbon::parse($this->getWorkStartTimeForDay($dayOfWeek));
+        $tolerance = $this->getLateToleranceForDay($dayOfWeek);
         return $workStart->addMinutes($tolerance)->format('H:i');
     }
 

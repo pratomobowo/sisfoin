@@ -80,6 +80,78 @@
             </div>
         </div>
 
+        <!-- Daily Work Schedules -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
+            <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center">
+                    <x-lucide-calendar-clock class="w-5 h-5 mr-2 text-teal-600" />
+                    Jadwal Jam Kerja Harian
+                </h3>
+                <p class="text-xs text-gray-500 mt-1">Aturan jam masuk & pulang per hari (global). Karyawan dengan jadwal shift tetap menggunakan shift masing-masing.</p>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Hari</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Aktif</th>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jam Masuk</th>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jam Pulang</th>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Early Arrival</th>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Toleransi (mnt)</th>
+                                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jam Kerja</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            @foreach($dailySchedules as $dayNum => $schedule)
+                                <tr class="hover:bg-teal-50/30 {{ !($schedule['is_active'] ?? true) ? 'opacity-50' : '' }}">
+                                    <td class="px-3 py-3">
+                                        <span class="text-sm font-semibold text-gray-900">{{ $schedule['day_name'] }}</span>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">
+                                        <input type="checkbox" 
+                                               wire:model.live="dailySchedules.{{ $dayNum }}.is_active"
+                                               class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <input type="time" 
+                                               wire:model="dailySchedules.{{ $dayNum }}.start_time"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors {{ !($schedule['is_active'] ?? true) ? 'bg-gray-100' : '' }}"
+                                               {{ !($schedule['is_active'] ?? true) ? 'disabled' : '' }}>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <input type="time" 
+                                               wire:model="dailySchedules.{{ $dayNum }}.end_time"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors {{ !($schedule['is_active'] ?? true) ? 'bg-gray-100' : '' }}"
+                                               {{ !($schedule['is_active'] ?? true) ? 'disabled' : '' }}>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <input type="time" 
+                                               wire:model="dailySchedules.{{ $dayNum }}.early_arrival_threshold"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors {{ !($schedule['is_active'] ?? true) ? 'bg-gray-100' : '' }}"
+                                               {{ !($schedule['is_active'] ?? true) ? 'disabled' : '' }}>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <input type="number" min="0"
+                                               wire:model="dailySchedules.{{ $dayNum }}.late_tolerance_minutes"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors {{ !($schedule['is_active'] ?? true) ? 'bg-gray-100' : '' }}"
+                                               {{ !($schedule['is_active'] ?? true) ? 'disabled' : '' }}>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <input type="number" min="0" step="0.5"
+                                               wire:model="dailySchedules.{{ $dayNum }}.work_hours"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors {{ !($schedule['is_active'] ?? true) ? 'bg-gray-100' : '' }}"
+                                               {{ !($schedule['is_active'] ?? true) ? 'disabled' : '' }}>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Working Days -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
             <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">

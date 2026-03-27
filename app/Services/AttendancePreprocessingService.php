@@ -243,8 +243,11 @@ class AttendancePreprocessingService
             $totalMinutes = $checkOutTime->diffInMinutes($checkInTime);
             $totalHours = round($totalMinutes / 60, 2);
             
-            // Calculate overtime (hours beyond 6 working hours: 08:00-14:00)
-            $overtimeHours = $totalHours > 6 ? $totalHours - 6 : 0;
+            // Calculate overtime using per-day standard work hours
+            $dayOfWeek = $checkInTime->dayOfWeekIso; // 1=Mon, 7=Sun
+            $schedule = $this->settingsService->getScheduleForDay($dayOfWeek);
+            $standardHours = $schedule ? (float) $schedule->work_hours : $this->settingsService->getStandardWorkHours();
+            $overtimeHours = $totalHours > $standardHours ? round($totalHours - $standardHours, 2) : 0;
         }
 
         // Determine attendance status
@@ -285,14 +288,21 @@ class AttendancePreprocessingService
             }
         }
 
-        // Fallback to global settings if no shift resolved
-        $earlyArrivalThreshold = $this->settingsService->getEarlyArrivalThreshold();
-        $lateThreshold = $this->settingsService->getLateThreshold();
+        // Fallback to per-day schedule, then global settings
+        $dayOfWeek = $checkInTime ? $checkInTime->dayOfWeekIso : null;
+        
+        if ($dayOfWeek) {
+            $earlyArrivalThreshold = $this->settingsService->getEarlyArrivalThresholdForDay($dayOfWeek);
+            $lateThreshold = $this->settingsService->getLateThresholdForDay($dayOfWeek);
+        } else {
+            $earlyArrivalThreshold = $this->settingsService->getEarlyArrivalThreshold();
+            $lateThreshold = $this->settingsService->getLateThreshold();
+        }
 
         if ($checkInTime && $checkOutTime) {
             $dateStr = $checkInTime->format('Y-m-d');
             
-            // Define time thresholds from settings
+            // Define time thresholds from per-day or global settings
             $earlyArrivalLimit = Carbon::parse($dateStr . ' ' . $earlyArrivalThreshold . ':00');
             $lateLimit = Carbon::parse($dateStr . ' ' . $lateThreshold . ':00');
 

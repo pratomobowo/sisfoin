@@ -4,6 +4,7 @@ namespace App\Livewire\Sdm;
 
 use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\AttendanceSetting;
+use App\Models\DailyWorkSchedule;
 use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -18,6 +19,8 @@ class AttendanceSettingsManager extends Component
     public $settings = [];
 
     public $workingDays = [];
+
+    public $dailySchedules = [];
 
     public $showSuccessMessage = false;
 
@@ -63,6 +66,21 @@ class AttendanceSettingsManager extends Component
                 $this->settings[$setting->key] = $setting->value;
             }
         }
+
+        // Load daily work schedules
+        $this->dailySchedules = DailyWorkSchedule::orderBy('day_of_week')
+            ->get()
+            ->keyBy('day_of_week')
+            ->map(fn ($s) => [
+                'start_time' => substr($s->start_time, 0, 5),
+                'end_time' => substr($s->end_time, 0, 5),
+                'early_arrival_threshold' => substr($s->early_arrival_threshold, 0, 5),
+                'late_tolerance_minutes' => $s->late_tolerance_minutes,
+                'work_hours' => $s->work_hours,
+                'is_active' => $s->is_active,
+                'day_name' => $s->day_name,
+            ])
+            ->toArray();
     }
 
     public function save()
@@ -78,8 +96,21 @@ class AttendanceSettingsManager extends Component
                 ->update(['value' => implode(',', $this->workingDays)]);
         }
 
+        // Save daily work schedules
+        foreach ($this->dailySchedules as $dayOfWeek => $schedule) {
+            DailyWorkSchedule::where('day_of_week', $dayOfWeek)->update([
+                'start_time' => $schedule['start_time'] . ':00',
+                'end_time' => $schedule['end_time'] . ':00',
+                'early_arrival_threshold' => $schedule['early_arrival_threshold'] . ':00',
+                'late_tolerance_minutes' => $schedule['late_tolerance_minutes'],
+                'work_hours' => $schedule['work_hours'],
+                'is_active' => $schedule['is_active'] ?? true,
+            ]);
+        }
+
         // Clear cache
         AttendanceSetting::clearCache();
+        DailyWorkSchedule::clearCache();
 
         $this->flashToast('success', 'Pengaturan absensi berhasil disimpan!');
 
