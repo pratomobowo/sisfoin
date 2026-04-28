@@ -129,6 +129,8 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
         Route::get('/upload', [SlipGajiController::class, 'upload'])->name('upload');
         Route::post('/upload', [SlipGajiController::class, 'processUpload'])->name('upload.process');
         Route::get('/download-template', [SlipGajiController::class, 'downloadTemplate'])->name('download-template');
+        Route::get('/{header}/update-upload', [SlipGajiController::class, 'showUpdateUpload'])->name('update-upload');
+        Route::post('/{header}/update-upload', [SlipGajiController::class, 'processUpdateUpload'])->name('update-upload.process');
 
         // Preview and confirm routes removed - direct import implemented
         Route::delete('/{header}/cancel', [SlipGajiController::class, 'cancel'])->name('cancel');

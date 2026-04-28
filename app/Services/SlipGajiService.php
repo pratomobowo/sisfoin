@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Imports\SlipGajiArrayImport;
 use App\Imports\SlipGajiImport;
 use App\Models\SlipGajiDetail;
 use App\Models\SlipGajiHeader;
@@ -128,6 +129,150 @@ class SlipGajiService
             return [
                 'success' => false,
                 'errors' => ['Terjadi kesalahan saat memproses file: '.$e->getMessage()],
+            ];
+        }
+    }
+
+    /**
+     * Process and update import for existing slip gaji header
+     * Upsert pattern: update existing NIP, insert new NIP, delete missing NIP
+     */
+    public function processAndUpdateImport(SlipGajiHeader $header, UploadedFile $file, int $userId): array
+    {
+        try {
+            DB::beginTransaction();
+
+            // Validate header is draft
+            if (! $header->isDraft()) {
+                return [
+                    'success' => false,
+                    'errors' => ['Slip gaji harus dalam status draft untuk dapat diupdate. Pindahkan ke draft terlebih dahulu.'],
+                ];
+            }
+
+            // Read Excel to array
+            $import = new SlipGajiArrayImport();
+            $rows = Excel::toArray($import, $file);
+            $data = $rows[0] ?? [];
+
+            if (empty($data)) {
+                return [
+                    'success' => false,
+                    'errors' => ['Tidak ada data valid yang berhasil dibaca dari file Excel. Pastikan format file sesuai template.'],
+                ];
+            }
+
+            // Get existing details indexed by NIP
+            $existingDetails = SlipGajiDetail::where('header_id', $header->id)
+                ->get()
+                ->keyBy('nip');
+
+            $excelNips = [];
+            $updatedCount = 0;
+            $insertedCount = 0;
+            $errors = [];
+
+            foreach ($data as $index => $row) {
+                $nip = $row['nip'] ?? null;
+                if (empty($nip)) {
+                    continue;
+                }
+
+                $excelNips[] = $nip;
+
+                $detailData = [
+                    'status' => $row['status'] ?? null,
+                    'gaji_pokok' => $row['gaji_pokok'] ?? 0,
+                    'honor_tetap' => $row['honor_tetap'] ?? 0,
+                    'tpp' => $row['tpp'] ?? 0,
+                    'insentif_golongan' => $row['insentif_golongan'] ?? 0,
+                    'tunjangan_keluarga' => $row['tunjangan_keluarga'] ?? 0,
+                    'tunjangan_kemahalan' => $row['tunjangan_kemahalan'] ?? 0,
+                    'tunjangan_pmb' => $row['tunjangan_pmb'] ?? 0,
+                    'tunjangan_golongan' => $row['tunjangan_golongan'] ?? 0,
+                    'tunjangan_masa_kerja' => $row['tunjangan_masa_kerja'] ?? 0,
+                    'transport' => $row['transport'] ?? 0,
+                    'tunjangan_kesehatan' => $row['tunjangan_kesehatan'] ?? 0,
+                    'tunjangan_rumah' => $row['tunjangan_rumah'] ?? 0,
+                    'tunjangan_pendidikan' => $row['tunjangan_pendidikan'] ?? 0,
+                    'tunjangan_struktural' => $row['tunjangan_struktural'] ?? 0,
+                    'tunjangan_fungsional' => $row['tunjangan_fungsional'] ?? 0,
+                    'beban_manajemen' => $row['beban_manajemen'] ?? 0,
+                    'honor_tunai' => $row['honor_tunai'] ?? 0,
+                    'penerimaan_kotor' => $row['penerimaan_kotor'] ?? 0,
+                    'potongan_arisan' => $row['potongan_arisan'] ?? 0,
+                    'potongan_koperasi' => $row['potongan_koperasi'] ?? 0,
+                    'potongan_lazmaal' => $row['potongan_lazmaal'] ?? 0,
+                    'potongan_bpjs_kesehatan' => $row['potongan_bpjs_kesehatan'] ?? 0,
+                    'potongan_bpjs_ketenagakerjaan' => $row['potongan_bpjs_ketenagakerjaan'] ?? 0,
+                    'potongan_bkd' => $row['potongan_bkd'] ?? 0,
+                    'pajak' => $row['pajak'] ?? 0,
+                    'pph21_terhutang' => $row['pph21_terhutang'] ?? 0,
+                    'pph21_sudah_dipotong' => $row['pph21_sudah_dipotong'] ?? 0,
+                    'pph21_kurang_dipotong' => $row['pph21_kurang_dipotong'] ?? 0,
+                    'penerimaan_bersih' => $row['penerimaan_bersih'] ?? 0,
+                ];
+
+                if ($existingDetails->has($nip)) {
+                    // Update existing
+                    $existingDetails->get($nip)->update($detailData);
+                    $updatedCount++;
+                } else {
+                    // Insert new
+                    $detailData['header_id'] = $header->id;
+                    $detailData['nip'] = $nip;
+                    SlipGajiDetail::create($detailData);
+                    $insertedCount++;
+                }
+            }
+
+            // Delete NIPs that are not in Excel
+            $deletedCount = SlipGajiDetail::where('header_id', $header->id)
+                ->whereNotIn('nip', $excelNips)
+                ->delete();
+
+            // Update header metadata
+            $header->update([
+                'file_original' => $file->getClientOriginalName(),
+                'uploaded_by' => $userId,
+                'uploaded_at' => now(),
+            ]);
+
+            DB::commit();
+
+            $warnings = [];
+            $importErrors = $import->getErrors();
+            if (! empty($importErrors)) {
+                $warnings[] = 'Terdapat ' . count($importErrors) . ' baris dengan kesalahan: ' . implode(', ', array_slice($importErrors, 0, 3));
+            }
+
+            $message = "Update berhasil: {$updatedCount} data diperbarui, {$insertedCount} data ditambahkan";
+            if ($deletedCount > 0) {
+                $message .= ", {$deletedCount} data dihapus";
+            }
+
+            $response = [
+                'success' => true,
+                'message' => $message,
+                'header_id' => $header->id,
+                'updated_count' => $updatedCount,
+                'inserted_count' => $insertedCount,
+                'deleted_count' => $deletedCount,
+            ];
+
+            if (! empty($warnings)) {
+                $response['warnings'] = $warnings;
+            }
+
+            return $response;
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error processing update import: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'errors' => ['Terjadi kesalahan saat memproses file: ' . $e->getMessage()],
             ];
         }
     }

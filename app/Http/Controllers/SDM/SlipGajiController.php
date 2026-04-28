@@ -45,6 +45,106 @@ class SlipGajiController extends Controller
         return view('sdm.slip-gaji.upload');
     }
 
+    public function showUpdateUpload(SlipGajiHeader $header)
+    {
+        // Validate header is draft
+        if (! $header->isDraft()) {
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('error', 'Slip gaji harus dalam status draft untuk dapat diupdate. Pindahkan ke draft terlebih dahulu.');
+        }
+
+        return view('sdm.slip-gaji.update', compact('header'));
+    }
+
+    public function processUpdateUpload(Request $request, SlipGajiHeader $header)
+    {
+        \Log::info('=== START processUpdateUpload ===');
+        \Log::info('Update upload request received', [
+            'header_id' => $header->id,
+            'has_file' => $request->hasFile('file'),
+            'file' => $request->hasFile('file') ? $request->file('file')->getClientOriginalName() : null,
+        ]);
+
+        // Validate header is draft
+        if (! $header->isDraft()) {
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('error', 'Slip gaji harus dalam status draft untuk dapat diupdate. Pindahkan ke draft terlebih dahulu.');
+        }
+
+        // Cek apakah request benar-benar POST
+        if (! $request->isMethod('post')) {
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('error', 'Invalid request method');
+        }
+
+        // Cek apakah ada file
+        if (! $request->hasFile('file')) {
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('error', 'Tidak ada file yang diupload');
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'file.max' => 'Ukuran file maksimal 10MB',
+        ]);
+
+        try {
+            $result = $this->slipGajiService->processAndUpdateImport(
+                $header,
+                $request->file('file'),
+                Auth::id()
+            );
+
+            if (! $result['success']) {
+                return redirect()
+                    ->route('sdm.slip-gaji.show', $header)
+                    ->withErrors($result['errors'])
+                    ->withInput();
+            }
+
+            if (! empty($result['warnings'])) {
+                session()->flash('warning', implode(' | ', $result['warnings']));
+            }
+
+            // Log activity
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($header)
+                ->withProperties([
+                    'periode' => $header->periode,
+                    'file_name' => $request->file('file')->getClientOriginalName(),
+                    'updated_count' => $result['updated_count'] ?? 0,
+                    'inserted_count' => $result['inserted_count'] ?? 0,
+                    'deleted_count' => $result['deleted_count'] ?? 0,
+                ])
+                ->log('Update slip gaji via Excel upload');
+
+            $message = $result['message'];
+
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error('Error processing update upload: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()
+                ->route('sdm.slip-gaji.show', $header)
+                ->with('error', 'Terjadi kesalahan saat memproses file: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
     public function downloadTemplate()
     {
         try {
