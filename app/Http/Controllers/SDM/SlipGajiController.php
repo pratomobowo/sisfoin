@@ -6,6 +6,7 @@ use App\Exports\SlipGajiTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Models\SlipGajiDetail;
 use App\Models\SlipGajiHeader;
+use App\Models\SlipGajiImportPreview;
 use App\Services\PayrollCalculationService;
 use App\Services\SlipGajiEmailService;
 use App\Services\SlipGajiService;
@@ -27,7 +28,7 @@ class SlipGajiController extends Controller
         $this->slipGajiEmailService = $slipGajiEmailService;
         $this->middleware('auth');
         $this->middleware('can:payroll.view')->only(['index', 'show', 'showEmailLogs']);
-        $this->middleware('can:payroll.create')->only(['create', 'upload', 'downloadTemplate', 'processUpload']);
+        $this->middleware('can:payroll.create')->only(['create', 'upload', 'downloadTemplate', 'processUpload', 'showUploadPreview', 'confirmUploadPreview', 'cancelUploadPreview']);
         $this->middleware('can:payroll.edit')->only(['showUpdateUpload', 'processUpdateUpload', 'edit', 'update', 'publish', 'unpublish', 'sendBulkEmail', 'retryFailedEmails']);
         $this->middleware('can:payroll.delete')->only(['destroy', 'cancel']);
         $this->middleware('can:payroll.download')->only(['previewPdfSlip', 'showPdfSlip', 'downloadPdfSlip', 'downloadBulkPdf']);
@@ -221,8 +222,7 @@ class SlipGajiController extends Controller
         \Log::info('Validation passed');
 
         try {
-            // Process and store import directly
-            $result = $this->slipGajiService->processAndStoreImport(
+            $result = $this->slipGajiService->previewImport(
                 $request->file('file'),
                 $periode,
                 Auth::id(),
@@ -250,15 +250,16 @@ class SlipGajiController extends Controller
                     'periode' => $periode,
                     'file_name' => $request->file('file')->getClientOriginalName(),
                 ])
-                ->log('Upload slip gaji berhasil');
+                ->log('Preview import slip gaji dibuat');
 
-            \Log::info('Redirecting to index after successful upload', ['header_id' => $result['header_id']]);
+            \Log::info('Redirecting to preview after upload', ['token' => $result['token']]);
 
-            $processedCount = $result['processed_count'] ?? 0;
-            $successMessage = 'Upload berhasil: '.$processedCount.' data diproses untuk periode '.$periode.'.';
+            $message = $result['error_count'] > 0
+                ? 'Preview berhasil dibuat, tetapi masih ada error yang harus diperbaiki.'
+                : 'Preview berhasil dibuat. Silakan cek data sebelum disimpan.';
 
-            return redirect()->route('sdm.slip-gaji.show', $result['header_id'])
-                ->with('success', $successMessage);
+            return redirect()->route('sdm.slip-gaji.upload.preview.show', $result['token'])
+                ->with($result['error_count'] > 0 ? 'warning' : 'success', $message);
 
         } catch (\Exception $e) {
             \Log::error('Error processing upload: '.$e->getMessage(), [
@@ -273,6 +274,52 @@ class SlipGajiController extends Controller
     }
 
     // Preview and confirm methods removed - direct import implemented
+
+    public function showUploadPreview(Request $request, string $token)
+    {
+        $preview = SlipGajiImportPreview::query()
+            ->where('token', $token)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $search = trim((string) $request->input('search', ''));
+        $rowsQuery = $preview->rows()->orderBy('row_number');
+        if ($search !== '') {
+            $rowsQuery->where(function ($query) use ($search) {
+                $query->where('nip', 'like', '%'.$search.'%')
+                    ->orWhere('nama', 'like', '%'.$search.'%');
+            });
+        }
+
+        return view('sdm.slip-gaji.preview-upload', [
+            'preview' => $preview,
+            'rows' => $rowsQuery->paginate(25)->withQueryString(),
+            'search' => $search,
+        ]);
+    }
+
+    public function confirmUploadPreview(string $token)
+    {
+        $result = $this->slipGajiService->commitPreview($token, Auth::id());
+
+        if (! $result['success']) {
+            return back()->withErrors($result['errors'] ?? ['Preview gagal disimpan.']);
+        }
+
+        return redirect()->route('sdm.slip-gaji.show', $result['header_id'])
+            ->with('success', 'Data slip gaji berhasil disimpan dari preview.');
+    }
+
+    public function cancelUploadPreview(string $token)
+    {
+        SlipGajiImportPreview::query()
+            ->where('token', $token)
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['pending', 'ready', 'blocked'])
+            ->update(['status' => 'cancelled']);
+
+        return redirect()->route('sdm.slip-gaji.upload')->with('success', 'Preview import dibatalkan.');
+    }
 
     public function cancel(SlipGajiHeader $header)
     {

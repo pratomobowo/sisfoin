@@ -17,7 +17,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900">Upload Slip Gaji</h2>
-                <p class="mt-1 text-sm text-gray-600">Upload data slip gaji dari file Excel</p>
+                <p class="mt-1 text-sm text-gray-600">Upload data slip gaji dari file Excel untuk dicek sebelum disimpan</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-2">
                 <a href="{{ route('sdm.slip-gaji.download-template') }}" 
@@ -194,7 +194,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                     </svg>
-                    <span>Upload Data</span>
+                    <span>Cek & Preview Data</span>
                 </button>
             </div>
         </form>

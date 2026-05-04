@@ -139,6 +139,9 @@ Route::prefix('sdm')->middleware(['auth'])->name('sdm.')->group(function () {
         Route::get('/create', [SlipGajiController::class, 'create'])->name('create');
         Route::get('/upload', [SlipGajiController::class, 'upload'])->name('upload');
         Route::post('/upload', [SlipGajiController::class, 'processUpload'])->name('upload.process');
+        Route::get('/upload/preview/{token}', [SlipGajiController::class, 'showUploadPreview'])->name('upload.preview.show');
+        Route::post('/upload/preview/{token}/confirm', [SlipGajiController::class, 'confirmUploadPreview'])->name('upload.preview.confirm');
+        Route::post('/upload/preview/{token}/cancel', [SlipGajiController::class, 'cancelUploadPreview'])->name('upload.preview.cancel');
         Route::get('/download-template', [SlipGajiController::class, 'downloadTemplate'])->name('download-template');
         Route::get('/{header}/update-upload', [SlipGajiController::class, 'showUpdateUpload'])->name('update-upload');
         Route::post('/{header}/update-upload', [SlipGajiController::class, 'processUpdateUpload'])->name('update-upload.process');

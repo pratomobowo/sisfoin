@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Imports\SlipGajiArrayImport;
 use App\Imports\SlipGajiImport;
+use App\Models\Dosen;
 use App\Models\EmailLog;
+use App\Models\Employee;
+use App\Models\SlipGajiImportPreview;
 use App\Models\SlipGajiDetail;
 use App\Models\SlipGajiHeader;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -12,7 +15,9 @@ use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Browsershot\Browsershot;
 
@@ -36,6 +41,211 @@ class SlipGajiService
             'errors' => [],
             'warnings' => [],
         ];
+    }
+
+    public function previewImport(UploadedFile $file, string $periode, int $userId, string $mode = 'standard'): array
+    {
+        try {
+            if (SlipGajiHeader::where('periode', $periode)->where('mode', $mode)->exists()) {
+                return [
+                    'success' => false,
+                    'errors' => ['Slip gaji '.$this->getModeLabel($mode).' untuk periode '.$periode.' sudah ada'],
+                ];
+            }
+
+            $import = new SlipGajiArrayImport();
+            $rows = Excel::toArray($import, $file)[0] ?? [];
+
+            if (empty($rows)) {
+                return [
+                    'success' => false,
+                    'errors' => ['Tidak ada data valid yang berhasil dibaca dari file Excel. Pastikan format file sesuai template.'],
+                ];
+            }
+
+            $nipCounts = [];
+            foreach ($rows as $row) {
+                $nip = trim((string) ($row['nip'] ?? ''));
+                if ($nip !== '') {
+                    $nipCounts[$nip] = ($nipCounts[$nip] ?? 0) + 1;
+                }
+            }
+
+            DB::beginTransaction();
+
+            $preview = SlipGajiImportPreview::create([
+                'token' => Str::random(48),
+                'user_id' => $userId,
+                'periode' => $periode,
+                'mode' => $mode,
+                'file_original' => $file->getClientOriginalName(),
+                'status' => 'pending',
+                'summary_json' => [],
+                'row_count' => 0,
+                'error_count' => 0,
+                'expires_at' => now()->addMinutes(30),
+            ]);
+
+            $errorCount = 0;
+            $totalNet = 0.0;
+            $totalGross = 0.0;
+            $totalDeduction = 0.0;
+
+            foreach ($rows as $index => $row) {
+                $nip = trim((string) ($row['nip'] ?? ''));
+                $errors = [];
+
+                if ($nip === '') {
+                    $errors[] = 'NIP wajib diisi';
+                } elseif (($nipCounts[$nip] ?? 0) > 1) {
+                    $errors[] = 'NIP duplikat dalam file';
+                } elseif (! $this->payrollNipExists($nip)) {
+                    $errors[] = 'NIP tidak ditemukan di master pegawai/dosen';
+                }
+
+                $netAmount = (float) ($row['penerimaan_bersih'] ?? $row['gaji_bersih'] ?? 0);
+                $grossAmount = (float) ($row['penerimaan_kotor'] ?? 0);
+                $deductionAmount = $this->calculatePreviewDeductions($row);
+                $totalNet += $netAmount;
+                $totalGross += $grossAmount;
+                $totalDeduction += $deductionAmount;
+
+                if (! empty($errors)) {
+                    $errorCount++;
+                }
+
+                $preview->rows()->create([
+                    'row_number' => $index + 2,
+                    'nip' => $nip ?: null,
+                    'nama' => $this->resolvePayrollName($nip),
+                    'net_amount' => $netAmount,
+                    'gross_amount' => $grossAmount,
+                    'deduction_amount' => $deductionAmount,
+                    'data_json' => $row,
+                    'validation_status' => empty($errors) ? 'valid' : 'error',
+                    'validation_errors_json' => $errors,
+                ]);
+            }
+
+            $rowCount = count($rows);
+            $preview->update([
+                'status' => $errorCount > 0 ? 'blocked' : 'ready',
+                'row_count' => $rowCount,
+                'error_count' => $errorCount,
+                'summary_json' => [
+                    'row_count' => $rowCount,
+                    'valid_count' => $rowCount - $errorCount,
+                    'error_count' => $errorCount,
+                    'total_net' => $totalNet,
+                    'total_gross' => $totalGross,
+                    'total_deduction' => $totalDeduction,
+                ],
+            ]);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'preview_id' => $preview->id,
+                'token' => $preview->token,
+                'status' => $preview->status,
+                'error_count' => $errorCount,
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating slip gaji preview: '.$e->getMessage(), ['exception' => $e]);
+
+            return [
+                'success' => false,
+                'errors' => ['Terjadi kesalahan saat membuat preview import: '.$e->getMessage()],
+            ];
+        }
+    }
+
+    public function commitPreview(string $token, int $userId): array
+    {
+        $transactionLevel = DB::transactionLevel();
+
+        try {
+            $preview = SlipGajiImportPreview::query()
+                ->where('token', $token)
+                ->where('user_id', $userId)
+                ->with('rows')
+                ->first();
+
+            if (! $preview) {
+                return [
+                    'success' => false,
+                    'errors' => ['Preview import tidak ditemukan atau bukan milik user ini.'],
+                ];
+            }
+
+            if ($preview->status !== 'ready' || $preview->error_count > 0) {
+                return [
+                    'success' => false,
+                    'errors' => ['Preview import masih memiliki error. Perbaiki file Excel lalu upload ulang.'],
+                ];
+            }
+
+            if ($preview->expires_at && $preview->expires_at->isPast()) {
+                $preview->update(['status' => 'expired']);
+
+                return [
+                    'success' => false,
+                    'errors' => ['Preview import sudah kedaluwarsa. Silakan upload ulang.'],
+                ];
+            }
+
+            if (SlipGajiHeader::where('periode', $preview->periode)->where('mode', $preview->mode)->exists()) {
+                return [
+                    'success' => false,
+                    'errors' => ['Slip gaji '.$this->getModeLabel($preview->mode).' untuk periode '.$preview->periode.' sudah ada'],
+                ];
+            }
+
+            DB::beginTransaction();
+
+            $header = SlipGajiHeader::create([
+                'periode' => $preview->periode,
+                'mode' => $preview->mode,
+                'file_original' => $preview->file_original,
+                'uploaded_by' => $userId,
+                'uploaded_at' => now(),
+                'status' => SlipGajiHeader::STATUS_DRAFT,
+            ]);
+
+            $tableColumns = array_flip(Schema::getColumnListing((new SlipGajiDetail())->getTable()));
+            $fillable = array_intersect_key(array_flip((new SlipGajiDetail())->getFillable()), $tableColumns);
+            foreach ($preview->rows as $row) {
+                $detailData = array_intersect_key($row->data_json ?? [], $fillable);
+                $detailData['header_id'] = $header->id;
+                $detailData['nip'] = $row->nip;
+                $detailData['nama'] = $row->nama ?? '-';
+                $detailData['status'] = $detailData['status'] ?: 'KARYAWAN_TETAP';
+                $detailData['gaji_bersih'] = $detailData['gaji_bersih'] ?? $row->net_amount ?? 0;
+                SlipGajiDetail::create($detailData);
+            }
+
+            $preview->update(['status' => 'committed']);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'header_id' => $header->id,
+                'processed_count' => $preview->rows->count(),
+            ];
+        } catch (Exception $e) {
+            while (DB::transactionLevel() > $transactionLevel) {
+                DB::rollBack();
+            }
+            Log::error('Error committing slip gaji preview: '.$e->getMessage(), ['exception' => $e]);
+
+            return [
+                'success' => false,
+                'errors' => ['Terjadi kesalahan saat menyimpan preview import: '.$e->getMessage()],
+            ];
+        }
     }
 
     /**
@@ -311,6 +521,59 @@ class SlipGajiService
             'thr' => 'THR',
             default => 'Standard',
         };
+    }
+
+    private function payrollNipExists(string $nip): bool
+    {
+        return Employee::query()
+            ->where('nip', $nip)
+            ->orWhere('nip_pns', $nip)
+            ->exists()
+            || Dosen::query()
+                ->where('nip', $nip)
+                ->orWhere('nip_pns', $nip)
+                ->exists();
+    }
+
+    private function resolvePayrollName(?string $nip): ?string
+    {
+        if (empty($nip)) {
+            return null;
+        }
+
+        $employee = Employee::query()
+            ->where('nip', $nip)
+            ->orWhere('nip_pns', $nip)
+            ->first();
+
+        if ($employee) {
+            return $employee->nama;
+        }
+
+        $dosen = Dosen::query()
+            ->where('nip', $nip)
+            ->orWhere('nip_pns', $nip)
+            ->first();
+
+        return $dosen?->nama;
+    }
+
+    private function calculatePreviewDeductions(array $row): float
+    {
+        $fields = [
+            'potongan_arisan',
+            'potongan_koperasi',
+            'potongan_lazmaal',
+            'potongan_bpjs_kesehatan',
+            'potongan_bpjs_ketenagakerjaan',
+            'potongan_bkd',
+            'pajak',
+            'pph21_terhutang',
+            'pph21_sudah_dipotong',
+            'pph21_kurang_dipotong',
+        ];
+
+        return array_reduce($fields, fn (float $total, string $field) => $total + (float) ($row[$field] ?? 0), 0.0);
     }
 
     private function getDuplicateNipsForHeader(int $headerId)
