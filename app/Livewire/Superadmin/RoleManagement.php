@@ -38,6 +38,8 @@ class RoleManagement extends Component
 
     public $bulkPermissionModule = '';
 
+    public $bulkSelectedPermissions = [];
+
     public $showCreateModal = false;
 
     public $showDeleteModal = false;
@@ -64,6 +66,11 @@ class RoleManagement extends Component
     public function updatedFilterModule()
     {
         $this->resetPage();
+    }
+
+    public function updatedBulkPermissionModule()
+    {
+        $this->bulkSelectedPermissions = $this->getModulePermissionNames($this->bulkPermissionModule);
     }
 
     // Pagination methods
@@ -108,8 +115,7 @@ class RoleManagement extends Component
             
             // Apply same filters as render method
             if ($this->search) {
-                $query->where('name', 'like', '%'.$this->search.'%')
-                      ->orWhere('display_name', 'like', '%'.$this->search.'%');
+                $query->where('name', 'like', '%'.$this->search.'%');
             }
 
             if ($this->filterUserCount) {
@@ -147,8 +153,7 @@ class RoleManagement extends Component
         
         // Apply same filters as render method
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%')
-                  ->orWhere('display_name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'like', '%'.$this->search.'%');
         }
 
         if ($this->filterUserCount) {
@@ -240,7 +245,13 @@ class RoleManagement extends Component
         $availableModules = config('modules', []);
 
         if (isset($availableModules[$this->bulkPermissionModule]['permissions'])) {
-            $permissions = array_keys($availableModules[$this->bulkPermissionModule]['permissions']);
+            $modulePermissions = array_keys($availableModules[$this->bulkPermissionModule]['permissions']);
+            $permissions = array_values(array_intersect($modulePermissions, $this->bulkSelectedPermissions));
+
+            if (empty($permissions)) {
+                session()->flash('error', 'Silakan pilih minimal satu hak akses.');
+                return;
+            }
             
             foreach ($roles as $role) {
                 $role->givePermissionTo($permissions);
@@ -258,7 +269,24 @@ class RoleManagement extends Component
 
         $this->showBulkPermissionModal = false;
         $this->bulkPermissionModule = '';
+        $this->bulkSelectedPermissions = [];
         $this->clearSelection();
+    }
+
+    public function getModulePermissionNames(string $moduleKey): array
+    {
+        return array_keys(config("modules.{$moduleKey}.permissions", []));
+    }
+
+    public function getRoleModuleCoverage(Role $role, string $moduleKey): array
+    {
+        $modulePermissions = $this->getModulePermissionNames($moduleKey);
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
+
+        return [
+            'selected' => count(array_intersect($modulePermissions, $rolePermissions)),
+            'total' => count($modulePermissions),
+        ];
     }
 
     public function create()
@@ -358,8 +386,7 @@ class RoleManagement extends Component
 
         // Search filter
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%')
-                  ->orWhere('display_name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'like', '%'.$this->search.'%');
         }
 
         // User count filter

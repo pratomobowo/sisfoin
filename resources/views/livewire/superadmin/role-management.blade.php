@@ -115,16 +115,21 @@
                                         foreach($availableModules as $moduleKey => $moduleData) {
                                             if (isset($moduleData['permissions'])) {
                                                 $modulePermissions = array_keys($moduleData['permissions']);
-                                                if (array_intersect($modulePermissions, $rolePermissions)) {
-                                                    $roleModules[] = $moduleData['label'];
+                                                $selectedCount = count(array_intersect($modulePermissions, $rolePermissions));
+                                                if ($selectedCount > 0) {
+                                                    $roleModules[] = [
+                                                        'label' => $moduleData['label'],
+                                                        'selected' => $selectedCount,
+                                                        'total' => count($modulePermissions),
+                                                    ];
                                                 }
                                             }
                                         }
                                     @endphp
                                     @if(count($roleModules) > 0)
                                         @foreach(array_slice($roleModules, 0, 3) as $module)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                                                {{ $module }}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium {{ $module['selected'] === $module['total'] ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800' }}">
+                                                {{ $module['label'] }} {{ $module['selected'] }}/{{ $module['total'] }}
                                             </span>
                                         @endforeach
                                         @if(count($roleModules) > 3)
@@ -254,14 +259,27 @@
 
                     @if($bulkPermissionModule)
                         <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                            <h4 class="text-sm font-medium text-blue-900 mb-2">Hak Akses yang akan diberikan:</h4>
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <h4 class="text-sm font-medium text-blue-900">Hak Akses yang akan diberikan:</h4>
+                                <button type="button"
+                                        wire:click="$set('bulkSelectedPermissions', {{ json_encode(array_keys($availableModules[$bulkPermissionModule]['permissions'] ?? [])) }})"
+                                        class="text-xs font-semibold text-blue-700 hover:text-blue-900">
+                                    Pilih semua
+                                </button>
+                            </div>
                             @if(isset($availableModules[$bulkPermissionModule]['permissions']))
-                                <div class="space-y-1">
-                                    @foreach($availableModules[$bulkPermissionModule]['permissions'] as $permKey => $permData)
-                                        <div class="flex items-center text-sm text-blue-800">
-                                            <x-lucide-check class="w-4 h-4 mr-2 text-blue-600" />
-                                            {{ $permData['label'] ?? $permKey }}
-                                        </div>
+                                <div class="space-y-2">
+                                    @foreach($availableModules[$bulkPermissionModule]['permissions'] as $permKey => $permLabel)
+                                        <label class="flex items-start gap-2 rounded-md bg-white/70 p-2 text-sm text-blue-900">
+                                            <input type="checkbox"
+                                                   wire:model.live="bulkSelectedPermissions"
+                                                   value="{{ $permKey }}"
+                                                   class="mt-0.5 h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                            <span>
+                                                <span class="block font-medium">{{ is_array($permLabel) ? ($permLabel['label'] ?? $permKey) : $permLabel }}</span>
+                                                <span class="block text-[11px] text-blue-500">{{ $permKey }}</span>
+                                            </span>
+                                        </label>
                                     @endforeach
                                 </div>
                             @endif

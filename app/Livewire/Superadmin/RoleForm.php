@@ -29,6 +29,7 @@ class RoleForm extends Component
         'display_name' => 'required|string|max:255',
         'description' => 'nullable|string|max:500',
         'selectedModules' => 'array',
+        'selectedPermissions' => 'array',
     ];
 
     protected $listeners = [
@@ -65,6 +66,7 @@ class RoleForm extends Component
         $this->description = $role->description ?? '';
 
         // Load current modules for this role
+        $this->selectedPermissions = $role->permissions->pluck('name')->values()->toArray();
         $this->selectedModules = $this->getRoleModules($role);
     }
 
@@ -96,6 +98,7 @@ class RoleForm extends Component
         $this->description = $role->description ?? '';
 
         // Load current modules for this role
+        $this->selectedPermissions = $role->permissions->pluck('name')->values()->toArray();
         $this->selectedModules = $this->getRoleModules($role);
 
         $this->dispatch('showModal');
@@ -176,20 +179,7 @@ class RoleForm extends Component
 
     private function syncRolePermissions($role)
     {
-        $permissions = [];
-
-        // If selectedPermissions is set (for testing), use it directly
-        if (! empty($this->selectedPermissions)) {
-            $permissions = $this->selectedPermissions;
-        } else {
-            // Collect permissions from selected modules
-            foreach ($this->selectedModules as $moduleKey) {
-                if (isset($this->availableModules[$moduleKey]['permissions'])) {
-                    $modulePermissions = array_keys($this->availableModules[$moduleKey]['permissions']);
-                    $permissions = array_merge($permissions, $modulePermissions);
-                }
-            }
-        }
+        $permissions = $this->selectedPermissions;
 
         // Special handling for staff role - only view permissions + profile.edit
         if ($role->name === 'staff') {
@@ -202,6 +192,8 @@ class RoleForm extends Component
 
         // Sync permissions
         $role->syncPermissions($permissions);
+        $this->selectedPermissions = array_values(array_unique($permissions));
+        $this->selectedModules = $this->getModulesFromPermissions($this->selectedPermissions);
 
         // Log the actual permissions being synced for debugging
         Log::info('Syncing permissions for role: '.$role->name, [
@@ -209,6 +201,56 @@ class RoleForm extends Component
             'selected_permissions' => $this->selectedPermissions,
             'permissions_to_sync' => $permissions,
         ]);
+    }
+
+    public function getModulePermissionNames(string $moduleKey): array
+    {
+        return array_keys($this->availableModules[$moduleKey]['permissions'] ?? []);
+    }
+
+    public function getModuleSelectionCount(string $moduleKey): array
+    {
+        $modulePermissions = $this->getModulePermissionNames($moduleKey);
+
+        return [
+            'selected' => count(array_intersect($modulePermissions, $this->selectedPermissions)),
+            'total' => count($modulePermissions),
+        ];
+    }
+
+    public function isModuleFullySelected(string $moduleKey): bool
+    {
+        $counts = $this->getModuleSelectionCount($moduleKey);
+
+        return $counts['total'] > 0 && $counts['selected'] === $counts['total'];
+    }
+
+    public function toggleModulePermissions(string $moduleKey): void
+    {
+        $modulePermissions = $this->getModulePermissionNames($moduleKey);
+
+        if ($this->isModuleFullySelected($moduleKey)) {
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, $modulePermissions));
+        } else {
+            $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $modulePermissions)));
+        }
+
+        $this->selectedModules = $this->getModulesFromPermissions($this->selectedPermissions);
+    }
+
+    private function getModulesFromPermissions(array $permissions): array
+    {
+        $selectedModules = [];
+
+        foreach ($this->availableModules as $moduleKey => $moduleData) {
+            $modulePermissions = array_keys($moduleData['permissions'] ?? []);
+
+            if (array_intersect($modulePermissions, $permissions)) {
+                $selectedModules[] = $moduleKey;
+            }
+        }
+
+        return $selectedModules;
     }
 
     public function resetForm()
