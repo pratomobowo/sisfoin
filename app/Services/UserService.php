@@ -109,7 +109,7 @@ class UserService
             DB::rollBack();
             Log::error('Failed to create user', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'fields' => array_keys($data),
             ]);
             throw $e;
         }
@@ -169,7 +169,7 @@ class UserService
             Log::error('Failed to update user', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
-                'data' => $data
+                'fields' => array_keys($data),
             ]);
             throw $e;
         }

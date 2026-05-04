@@ -32,37 +32,14 @@ class CheckActiveRole
         $user = auth()->user();
         $requiredRoles = explode('|', $role);
 
-        // Get active role with fallback
         $activeRole = getActiveRole();
 
-        // 1. Automatic Role Switching
-        // If the current active role doesn't match the required role(s), 
-        // but the user HAS one of the required roles, switch to it automatically.
-        if (!in_array($activeRole, $requiredRoles)) {
-            $matchedRole = null;
-            foreach ($requiredRoles as $r) {
-                if ($user->hasRole($r)) {
-                    $matchedRole = $r;
-                    break;
-                }
-            }
-
-            if ($matchedRole) {
-                setActiveRole($matchedRole);
-                $activeRole = $matchedRole;
-                \Log::info('Automatically switched active role to match required role', [
-                    'switched_to' => $matchedRole,
-                ]);
-            }
-        }
-
-        // 2. Permission Check
-        // User passes if:
-        // - Their active role is one of the required roles
-        // - They are a super-admin (bypass)
-        if (in_array($activeRole, $requiredRoles) || $user->hasRole('super-admin')) {
+        // Authorization is based on assigned roles only. Active role is UI context and
+        // must not be mutated by middleware as a side effect of visiting a route.
+        if ($user->hasAnyRole($requiredRoles) || $user->hasRole('super-admin')) {
             \Log::info('Role check passed', [
                 'active_role' => $activeRole,
+                'required_roles' => $requiredRoles,
                 'is_super_admin' => $user->hasRole('super-admin'),
             ]);
             return $next($request);
@@ -75,7 +52,7 @@ class CheckActiveRole
             'user_roles' => $user->roles->pluck('name')->toArray(),
         ]);
         
-        abort(403, 'Access denied. Please switch to the correct role.');
+        abort(403, 'Access denied.');
 
         return $next($request);
     }

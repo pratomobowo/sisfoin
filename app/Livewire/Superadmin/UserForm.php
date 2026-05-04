@@ -123,7 +123,7 @@ class UserForm extends Component
             \Log::info('Attempting to save user data', [
                 'user_id' => $this->userId,
                 'is_editing' => $this->isEditing,
-                'data' => $userData
+                'fields' => array_keys($userData),
             ]);
 
             if ($this->isEditing) {
@@ -141,7 +141,7 @@ class UserForm extends Component
             \Log::error('Error saving user', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'data' => $userData
+                'fields' => array_keys($userData),
             ]);
             session()->flash('error', 'Gagal menyimpan pengguna: ' . $e->getMessage());
         }

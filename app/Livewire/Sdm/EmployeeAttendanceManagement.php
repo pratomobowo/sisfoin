@@ -559,8 +559,11 @@ class EmployeeAttendanceManagement extends Component
                     \Carbon\Carbon::parse($this->date.' '.$this->check_in_time) : null;
                 $checkOutDateTime = $this->check_out_time ?
                     \Carbon\Carbon::parse($this->date.' '.$this->check_out_time) : null;
+                if ($checkInDateTime && $checkOutDateTime && $checkOutDateTime->lte($checkInDateTime)) {
+                    $checkOutDateTime->addDay();
+                }
 
-                $attendance->update([
+                $attendance->fill([
                     'user_id' => $this->user_id,
                     'date' => $this->date,
                     'check_in_time' => $checkInDateTime,
@@ -568,6 +571,9 @@ class EmployeeAttendanceManagement extends Component
                     'status' => $this->status_form,
                     'notes' => $this->notes,
                 ]);
+                $attendance->total_hours = $attendance->calculateTotalHours();
+                $attendance->overtime_hours = $attendance->calculateOvertimeHours();
+                $attendance->save();
 
                 $this->toastSuccess('Data absensi berhasil diperbarui.');
             } else {
@@ -576,8 +582,11 @@ class EmployeeAttendanceManagement extends Component
                     \Carbon\Carbon::parse($this->date.' '.$this->check_in_time) : null;
                 $checkOutDateTime = $this->check_out_time ?
                     \Carbon\Carbon::parse($this->date.' '.$this->check_out_time) : null;
+                if ($checkInDateTime && $checkOutDateTime && $checkOutDateTime->lte($checkInDateTime)) {
+                    $checkOutDateTime->addDay();
+                }
 
-                $attendance = EmployeeAttendance::create([
+                $attendance = new EmployeeAttendance([
                     'user_id' => $this->user_id,
                     'date' => $this->date,
                     'check_in_time' => $checkInDateTime,
@@ -586,6 +595,9 @@ class EmployeeAttendanceManagement extends Component
                     'notes' => $this->notes,
                     'created_by' => Auth::id(),
                 ]);
+                $attendance->total_hours = $attendance->calculateTotalHours();
+                $attendance->overtime_hours = $attendance->calculateOvertimeHours();
+                $attendance->save();
 
                 $this->toastSuccess('Data absensi berhasil ditambahkan.');
             }
@@ -979,6 +991,8 @@ class EmployeeAttendanceManagement extends Component
      */
     public function clearAllEmployeeAttendance()
     {
+        abort_unless(auth()->user()?->hasAnyRole(['super-admin', 'admin-sdm']), 403);
+
         try {
             if (trim((string) $this->clearConfirmation) !== 'HAPUS ABSENSI') {
                 $this->toastError('Konfirmasi tidak valid. Ketik tepat: HAPUS ABSENSI');

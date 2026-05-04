@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Imports\SlipGajiArrayImport;
 use App\Imports\SlipGajiImport;
+use App\Models\EmailLog;
 use App\Models\SlipGajiDetail;
 use App\Models\SlipGajiHeader;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -42,18 +43,20 @@ class SlipGajiService
      */
     public function processAndStoreImport(UploadedFile $file, string $periode, int $userId, string $mode = 'standard'): array
     {
-        try {
-            DB::beginTransaction();
+        $transactionLevel = DB::transactionLevel();
 
+        try {
             // Check if periode and mode combination already exists
             if (SlipGajiHeader::where('periode', $periode)->where('mode', $mode)->exists()) {
-                $modeLabel = $mode === 'gaji_13' ? 'Gaji 13' : 'Standard';
+                $modeLabel = $this->getModeLabel($mode);
 
                 return [
                     'success' => false,
                     'errors' => ['Slip gaji '.$modeLabel.' untuk periode '.$periode.' sudah ada'],
                 ];
             }
+
+            DB::beginTransaction();
 
             // Create header
             $header = SlipGajiHeader::create([
@@ -82,6 +85,16 @@ class SlipGajiService
                 return [
                     'success' => false,
                     'errors' => $errors,
+                ];
+            }
+
+            $duplicateNips = $this->getDuplicateNipsForHeader($header->id);
+            if ($duplicateNips->isNotEmpty()) {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'errors' => ['Terdapat NIP duplikat pada file import: '.$duplicateNips->take(10)->implode(', ')],
                 ];
             }
 
@@ -123,7 +136,9 @@ class SlipGajiService
             return $response;
 
         } catch (\Exception $e) {
-            DB::rollback();
+            while (DB::transactionLevel() > $transactionLevel) {
+                DB::rollBack();
+            }
             Log::error('Error processing and storing import: '.$e->getMessage());
 
             return [
@@ -139,9 +154,9 @@ class SlipGajiService
      */
     public function processAndUpdateImport(SlipGajiHeader $header, UploadedFile $file, int $userId): array
     {
-        try {
-            DB::beginTransaction();
+        $transactionLevel = DB::transactionLevel();
 
+        try {
             // Validate header is draft
             if (! $header->isDraft()) {
                 return [
@@ -161,6 +176,16 @@ class SlipGajiService
                     'errors' => ['Tidak ada data valid yang berhasil dibaca dari file Excel. Pastikan format file sesuai template.'],
                 ];
             }
+
+            $duplicateNips = $this->getDuplicateNipsFromRows($data);
+            if (! empty($duplicateNips)) {
+                return [
+                    'success' => false,
+                    'errors' => ['Terdapat NIP duplikat pada file update: '.implode(', ', array_slice($duplicateNips, 0, 10))],
+                ];
+            }
+
+            DB::beginTransaction();
 
             // Get existing details indexed by NIP
             $existingDetails = SlipGajiDetail::where('header_id', $header->id)
@@ -267,7 +292,9 @@ class SlipGajiService
             return $response;
 
         } catch (\Exception $e) {
-            DB::rollback();
+            while (DB::transactionLevel() > $transactionLevel) {
+                DB::rollBack();
+            }
             Log::error('Error processing update import: ' . $e->getMessage());
 
             return [
@@ -275,6 +302,43 @@ class SlipGajiService
                 'errors' => ['Terjadi kesalahan saat memproses file: ' . $e->getMessage()],
             ];
         }
+    }
+
+    private function getModeLabel(string $mode): string
+    {
+        return match ($mode) {
+            'gaji_13' => 'Gaji 13',
+            'thr' => 'THR',
+            default => 'Standard',
+        };
+    }
+
+    private function getDuplicateNipsForHeader(int $headerId)
+    {
+        return SlipGajiDetail::query()
+            ->where('header_id', $headerId)
+            ->select('nip', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('nip')
+            ->groupBy('nip')
+            ->having('total', '>', 1)
+            ->pluck('nip')
+            ->values();
+    }
+
+    private function getDuplicateNipsFromRows(array $rows): array
+    {
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $nip = trim((string) ($row['nip'] ?? ''));
+            if ($nip === '') {
+                continue;
+            }
+
+            $counts[$nip] = ($counts[$nip] ?? 0) + 1;
+        }
+
+        return array_keys(array_filter($counts, fn (int $count) => $count > 1));
     }
 
     public function processImport(UploadedFile $file, string $periode, int $uploadedBy, string $mode = 'standard'): array
@@ -365,6 +429,19 @@ class SlipGajiService
 
         try {
             $header = SlipGajiHeader::findOrFail($headerId);
+
+            $activeEmailJobs = EmailLog::whereHas('slipGajiDetail', function ($query) use ($headerId) {
+                $query->where('header_id', $headerId);
+            })->whereIn('status', ['pending', 'processing'])->count();
+
+            if ($activeEmailJobs > 0) {
+                DB::rollBack();
+
+                return [
+                    'success' => false,
+                    'errors' => ['Tidak dapat menghapus slip gaji karena masih ada email pending/processing.'],
+                ];
+            }
 
             // Delete all details
             SlipGajiDetail::where('header_id', $headerId)->delete();

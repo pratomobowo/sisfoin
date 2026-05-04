@@ -149,6 +149,7 @@ class UnitShiftCalendar extends Component
                             ->orWhere('end_date', '>=', $startDate);
                     });
             })
+            ->orderBy('start_date', 'desc')
             ->get();
     }
 
@@ -250,16 +251,7 @@ class UnitShiftCalendar extends Component
         $createdBy = Auth::id();
 
         DB::transaction(function () use ($userId, $startDate, $endDate, $validatedShiftId, $createdBy) {
-            // Delete existing assignments that overlap with this range for this user
-            EmployeeShiftAssignment::where('user_id', $userId)
-                ->where(function ($q) use ($startDate, $endDate) {
-                    $q->whereDate('start_date', '<=', $endDate)
-                        ->where(function ($q2) use ($startDate) {
-                            $q2->whereNull('end_date')
-                                ->orWhereDate('end_date', '>=', $startDate);
-                        });
-                })
-                ->delete();
+            $this->removeOverlappingAssignments($userId, Carbon::parse($startDate), Carbon::parse($endDate));
 
             if ($validatedShiftId !== null) {
                 EmployeeShiftAssignment::create([
@@ -275,6 +267,40 @@ class UnitShiftCalendar extends Component
 
         $this->closeQuickEdit();
         $this->toastSuccess('Shift berhasil di-update!');
+    }
+
+    private function removeOverlappingAssignments(int $userId, Carbon $startDate, Carbon $endDate): void
+    {
+        $assignments = EmployeeShiftAssignment::where('user_id', $userId)
+            ->whereDate('start_date', '<=', $endDate->toDateString())
+            ->where(function ($query) use ($startDate) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $startDate->toDateString());
+            })
+            ->get();
+
+        foreach ($assignments as $assignment) {
+            $assignmentStart = $assignment->start_date->copy();
+            $assignmentEnd = $assignment->end_date?->copy();
+            $originalEnd = $assignmentEnd?->copy();
+
+            if ($assignmentStart->lt($startDate)) {
+                $assignment->update(['end_date' => $startDate->copy()->subDay()->toDateString()]);
+            } else {
+                $assignment->delete();
+            }
+
+            if ($originalEnd === null || $originalEnd->gt($endDate)) {
+                EmployeeShiftAssignment::create([
+                    'user_id' => $assignment->user_id,
+                    'work_shift_id' => $assignment->work_shift_id,
+                    'start_date' => $endDate->copy()->addDay()->toDateString(),
+                    'end_date' => $originalEnd?->toDateString(),
+                    'notes' => $assignment->notes,
+                    'created_by' => $assignment->created_by,
+                ]);
+            }
+        }
     }
 
     private function isUserInCurrentUnit(int $userId): bool

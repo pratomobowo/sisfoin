@@ -41,11 +41,25 @@ class UserEmployeeLinkReconciler
 
             if ($matchCount === 1) {
                 $targetId = (string) $matches->first();
-                if ((string) ($user->employee_id ?? '') !== $targetId) {
-                    $user->update(['employee_id' => $targetId]);
+                $currentId = (string) ($user->employee_id ?? '');
+
+                if ($currentId !== '' && $currentId !== $targetId) {
+                    $conflicts[] = [
+                        'user_id' => $user->id,
+                        'employee_type' => 'employee',
+                        'nip' => $user->nip,
+                        'current_employee_id' => $currentId,
+                        'candidate_ids' => [$targetId],
+                        'message' => 'Existing employee link points to a different employee; skipped reassignment.',
+                    ];
+
+                    continue;
                 }
 
-                $linkedCount++;
+                if ($currentId !== $targetId) {
+                    $user->update(['employee_id' => $targetId]);
+                    $linkedCount++;
+                }
 
                 continue;
             }
@@ -86,11 +100,25 @@ class UserEmployeeLinkReconciler
 
             if ($matchCount === 1) {
                 $targetId = (string) $matches->first();
-                if ((string) ($user->employee_id ?? '') !== $targetId) {
-                    $user->update(['employee_id' => $targetId]);
+                $currentId = (string) ($user->employee_id ?? '');
+
+                if ($currentId !== '' && $currentId !== $targetId) {
+                    $conflicts[] = [
+                        'user_id' => $user->id,
+                        'employee_type' => 'dosen',
+                        'nip' => $user->nip,
+                        'current_employee_id' => $currentId,
+                        'candidate_ids' => [$targetId],
+                        'message' => 'Existing dosen link points to a different dosen; skipped reassignment.',
+                    ];
+
+                    continue;
                 }
 
-                $linkedCount++;
+                if ($currentId !== $targetId) {
+                    $user->update(['employee_id' => $targetId]);
+                    $linkedCount++;
+                }
 
                 continue;
             }

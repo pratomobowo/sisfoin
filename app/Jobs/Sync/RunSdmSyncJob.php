@@ -6,6 +6,7 @@ use App\Models\SyncRun;
 use App\Models\SyncRunItem;
 use App\Services\SevimaApiService;
 use App\Services\Sync\Reconciler\UserEmployeeLinkReconciler;
+use App\Services\Sync\SyncLockService;
 use App\Services\Sync\Writers\DosenSyncWriter;
 use App\Services\Sync\Writers\EmployeeSyncWriter;
 use Illuminate\Bus\Queueable;
@@ -14,6 +15,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class RunSdmSyncJob implements ShouldQueue
 {
@@ -29,10 +31,33 @@ class RunSdmSyncJob implements ShouldQueue
             return;
         }
 
-        $run->update([
-            'status' => 'running',
-            'started_at' => \now(),
-        ]);
+        $lockService = app(SyncLockService::class);
+        if (! $lockService->acquire($run->mode, 1800)) {
+            $run->update([
+                'status' => 'failed',
+                'finished_at' => \now(),
+                'error_summary' => ['message' => 'Sync already running for this mode'],
+            ]);
+
+            return;
+        }
+
+        $claimed = DB::table('sync_runs')
+            ->where('id', $run->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'running',
+                'started_at' => \now(),
+                'updated_at' => \now(),
+            ]);
+
+        if ($claimed !== 1) {
+            $lockService->release($run->mode);
+
+            return;
+        }
+
+        $run->refresh();
 
         try {
             if ($run->mode === 'dosen') {
@@ -74,6 +99,8 @@ class RunSdmSyncJob implements ShouldQueue
                 'error_summary' => ['message' => $e->getMessage()],
                 'finished_at' => \now(),
             ]);
+        } finally {
+            $lockService->release($run->mode);
         }
     }
 

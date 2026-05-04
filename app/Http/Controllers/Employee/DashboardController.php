@@ -46,8 +46,7 @@ class DashboardController extends Controller
         $latestSalaryPeriod = null;
         $salaryErrorMessage = null;
 
-        // Try to find salary by NIP first, then by name variations
-        // Note: Status can be 'Tersedia' or 'KARYAWAN_TETAP' or other values
+        // Salary data must only be resolved from the authenticated user's own NIP.
         if (! empty($user->nip)) {
             $latestSlip = SlipGajiDetail::query()
                 ->with('header')
@@ -66,44 +65,6 @@ class DashboardController extends Controller
             if ($latestSlip) {
                 $latestNetSalary = $latestSlip->penerimaan_bersih;
                 $latestSalaryPeriod = $latestSlip->header?->periode;
-            }
-        }
-
-        // If no salary found by NIP, try to find by name (for duplicate user accounts)
-        if (is_null($latestNetSalary) && $user->name) {
-            $nameParts = explode(' ', $user->name);
-            $firstName = $nameParts[0] ?? '';
-            $lastName = end($nameParts) ?? '';
-
-            // Try to find any user with similar name that has NIP
-            $similarUser = \App\Models\User::query()
-                ->where('id', '!=', $user->id)
-                ->whereNotNull('nip')
-                ->where(function ($query) use ($firstName, $lastName) {
-                    $query->where('name', 'like', "%{$firstName}%")
-                        ->orWhere('name', 'like', "%{$lastName}%");
-                })
-                ->first();
-
-            if ($similarUser) {
-                $latestSlip = SlipGajiDetail::query()
-                    ->with('header')
-                    ->where('nip', $similarUser->nip)
-                    ->whereHas('header', function ($q) {
-                        $q->where('status', 'published');
-                    })
-                    ->orderByDesc(function ($query) {
-                        $query->select('periode')
-                            ->from('slip_gaji_header')
-                            ->whereColumn('id', 'slip_gaji_detail.header_id')
-                            ->limit(1);
-                    })
-                    ->first();
-
-                if ($latestSlip) {
-                    $latestNetSalary = $latestSlip->penerimaan_bersih;
-                    $latestSalaryPeriod = $latestSlip->header?->periode;
-                }
             }
         }
 

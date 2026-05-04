@@ -51,6 +51,9 @@ class Penggajian extends Component
 
         // Get slip gaji data for this NIP
         $query = SlipGajiDetail::where('nip', $nip)
+            ->whereHas('header', function ($query) {
+                $query->where('status', 'published');
+            })
             ->with(['header', 'employee', 'dosen'])
             ->orderBy('created_at', 'desc');
 
@@ -98,6 +101,9 @@ class Penggajian extends Component
 
         // Get all slip gaji for this NIP
         $slipGajiDetails = SlipGajiDetail::where('nip', $nip)
+            ->whereHas('header', function ($query) {
+                $query->where('status', 'published');
+            })
             ->with(['header', 'employee', 'dosen'])
             ->get();
 

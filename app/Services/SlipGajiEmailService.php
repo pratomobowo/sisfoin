@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 
 class SlipGajiEmailService
 {
+    public function __construct(private PayrollRecipientResolver $recipientResolver) {}
+
     /**
      * Send bulk email for slip gaji details
      */
@@ -49,9 +51,9 @@ class SlipGajiEmailService
 
             // Process each detail to validate recipients
             foreach ($details as $detail) {
-                $recipientEmail = $this->getRecipientEmail($detail);
+                $recipient = $this->recipientResolver->resolve($detail);
 
-                if ($recipientEmail) {
+                if ($recipient['valid']) {
                     if (isset($activeQueuedLogByDetail[$detail->id])) {
                         $alreadyQueuedRecipients[] = [
                             'detail' => $detail,
@@ -63,13 +65,13 @@ class SlipGajiEmailService
 
                     $validRecipients[] = [
                         'detail' => $detail,
-                        'email' => $recipientEmail,
-                        'name' => $this->getEmployeeName($detail),
+                        'email' => $recipient['email'],
+                        'name' => $recipient['name'],
                     ];
                 } else {
                     $invalidRecipients[] = [
                         'detail' => $detail,
-                        'reason' => 'No valid email found',
+                        'reason' => $recipient['reason'],
                     ];
                 }
             }
@@ -143,13 +145,13 @@ class SlipGajiEmailService
             $detail = SlipGajiDetail::with(['employee', 'dosen', 'header'])
                 ->findOrFail($detailId);
 
-            $recipientEmail = $this->getRecipientEmail($detail);
+            $recipient = $this->recipientResolver->resolve($detail);
 
-            if (! $recipientEmail) {
-                throw new \Exception('No valid email found for recipient');
+            if (! $recipient['valid']) {
+                throw new \Exception($recipient['reason'] ?: 'No valid email found for recipient');
             }
 
-            $employeeName = $this->getEmployeeName($detail);
+            $employeeName = $recipient['name'];
 
             $existingQueueLog = EmailLog::query()
                 ->where('slip_gaji_detail_id', $detail->id)
@@ -170,7 +172,7 @@ class SlipGajiEmailService
             // Create email log
             $emailLog = EmailLog::create([
                 'from_email' => config('mail.from.address'),
-                'to_email' => $recipientEmail,
+                'to_email' => $recipient['email'],
                 'subject' => 'Slip Gaji '.$employeeName.' - Periode '.$detail->header->periode,
                 'message' => 'Slip gaji untuk periode '.$detail->header->periode,
                 'status' => 'pending',
@@ -188,7 +190,7 @@ class SlipGajiEmailService
 
             Log::info('Single slip gaji email queued', [
                 'detail_id' => $detailId,
-                'recipient_email' => $recipientEmail,
+                'recipient_email' => $recipient['email'],
                 'user_id' => Auth::id(),
             ]);
 
@@ -430,40 +432,4 @@ class SlipGajiEmailService
         }
     }
 
-    /**
-     * Get the recipient email address for a detail
-     */
-    private function getRecipientEmail(SlipGajiDetail $detail): ?string
-    {
-        // Priority: email kampus > email pribadi
-        if ($detail->employee) {
-            return $detail->employee->email_kampus ?: $detail->employee->email;
-        }
-
-        if ($detail->dosen) {
-            return $detail->dosen->email_kampus ?: $detail->dosen->email;
-        }
-
-        return null;
-    }
-
-    /**
-     * Get the employee name for a detail
-     */
-    private function getEmployeeName(SlipGajiDetail $detail): string
-    {
-        if ($detail->employee) {
-            return trim(($detail->employee->gelar_depan ? $detail->employee->gelar_depan.' ' : '').
-                   $detail->employee->nama_lengkap.
-                   ($detail->employee->gelar_belakang ? ', '.$detail->employee->gelar_belakang : ''));
-        }
-
-        if ($detail->dosen) {
-            return trim(($detail->dosen->gelar_depan ? $detail->dosen->gelar_depan.' ' : '').
-                   $detail->dosen->nama.
-                   ($detail->dosen->gelar_belakang ? ', '.$detail->dosen->gelar_belakang : ''));
-        }
-
-        return 'Karyawan';
-    }
 }

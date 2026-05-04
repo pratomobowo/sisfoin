@@ -140,4 +140,39 @@ class UserEmployeeLinkReconcilerTest extends TestCase
             'employee_id' => null,
         ]);
     }
+
+    public function test_reconcile_does_not_reassign_existing_different_employee_link(): void
+    {
+        $currentEmployee = Employee::create([
+            'id_pegawai' => 'E001',
+            'nip' => '11111',
+            'nama' => 'Current Employee',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        Employee::create([
+            'id_pegawai' => 'E002',
+            'nip' => '22222',
+            'nama' => 'NIP Match Employee',
+            'status_aktif' => 'Aktif',
+        ]);
+
+        $user = User::create([
+            'name' => 'Linked User',
+            'email' => 'linked-user@example.com',
+            'password' => 'password',
+            'nip' => '22222',
+            'employee_type' => 'employee',
+            'employee_id' => (string) $currentEmployee->id,
+        ]);
+
+        $result = app(UserEmployeeLinkReconciler::class)->reconcile('employee');
+
+        $this->assertSame(0, $result['linked_count']);
+        $this->assertSame(1, $result['conflict_count']);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'employee_id' => (string) $currentEmployee->id,
+        ]);
+    }
 }

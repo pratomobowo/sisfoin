@@ -17,7 +17,8 @@ class PullFingerprintData extends Command
     protected $signature = 'fingerprint:pull-data 
                             {--date-from= : Tanggal mulai (YYYY-MM-DD)} 
                             {--date-to= : Tanggal akhir (YYYY-MM-DD)} 
-                            {--employee-id= : Filter berdasarkan ID karyawan}
+                            {--adms-employee-id= : Filter berdasarkan employee_id dari ADMS}
+                            {--employee-id= : Deprecated alias untuk --adms-employee-id}
                             {--process : Otomatis proses ke employee_attendances}';
 
     /**
@@ -34,13 +35,13 @@ class PullFingerprintData extends Command
     {
         $dateFrom = $this->option('date-from') ?: now()->format('Y-m-d');
         $dateTo = $this->option('date-to') ?: now()->format('Y-m-d');
-        $employeeId = $this->option('employee-id');
+        $employeeId = $this->option('adms-employee-id') ?: $this->option('employee-id');
         $autoProcess = $this->option('process');
 
         $this->info('=== TARIK DATA ADMS API ===');
         $this->info("Periode: {$dateFrom} s/d {$dateTo}");
         if ($employeeId) {
-            $this->info("Employee ID: {$employeeId}");
+            $this->info("ADMS Employee ID: {$employeeId}");
         }
         $this->info('===========================');
 

@@ -137,9 +137,11 @@ class FingerprintService
             $mappedCount = 0;
             $unmappedCount = 0;
             $processedCount = 0;
+            $affectedDates = collect();
 
             // Get all MesinFinger records to map device_sn to mesin_finger_id
             $machines = MesinFinger::all()->pluck('id', 'serial_number')->toArray();
+            $unknownMachineId = null;
 
             foreach ($attendanceData as $data) {
                 // Find user by PIN from users table
@@ -147,17 +149,15 @@ class FingerprintService
                     ->where('fingerprint_enabled', true)
                     ->first();
 
-                // Map device_sn to mesin_finger_id
-                // Since we are removing MesinFinger module, we will check if table exists or use a default
-                // For now, to maintain compatibility with existing table schema which requires mesin_finger_id
-                $mesinFingerId = 1; // Default ID
-                
-                // If we need to maintain MesinFinger table for now:
+                // Map device_sn to mesin_finger_id without silently assigning unknown devices to ID 1.
+                $deviceSn = $data['device_sn'] ?? null;
+                $mesinFingerId = null;
+
                 if (isset($machines[$data['device_sn'] ?? ''])) {
-                    $mesinFingerId = $machines[$data['device_sn']];
+                    $mesinFingerId = $machines[$deviceSn];
                 } else if (!empty($data['device_sn'])) {
-                     try {
-                         // Try to create if not exists
+                      try {
+                          // Try to create if not exists
                          $newMachine = MesinFinger::firstOrCreate(
                              ['serial_number' => $data['device_sn']],
                              [
@@ -168,12 +168,13 @@ class FingerprintService
                                  'lokasi' => 'ADMS Auto-Registered',
                              ]
                          );
-                         $machines[$data['device_sn']] = $newMachine->id;
-                         $mesinFingerId = $newMachine->id;
-                     } catch (\Exception $e) {
-                         // Fallback if creation fails
-                         $mesinFingerId = 1;
-                     }
+                          $machines[$data['device_sn']] = $newMachine->id;
+                          $mesinFingerId = $newMachine->id;
+                      } catch (\Exception $e) {
+                          $mesinFingerId = $unknownMachineId ??= $this->getUnknownMachineId();
+                      }
+                } else {
+                    $mesinFingerId = $unknownMachineId ??= $this->getUnknownMachineId();
                 }
 
                 // Prepare log data
@@ -213,14 +214,22 @@ class FingerprintService
                 }
 
                 if ($existingLog) {
+                    $changed = $this->attendanceLogChanged($existingLog, $logData);
+                    if ($changed) {
+                        $logData['processed_at'] = null;
+                        $affectedDates->push($existingLog->datetime->format('Y-m-d'));
+                    }
+
                     // Update existing record
                     $existingLog->update($logData);
+                    $affectedDates->push($existingLog->fresh()->datetime->format('Y-m-d'));
                     $updatedCount++;
                 } else {
                     // Create new record
                     $logData['created_at'] = now();
                     $logData['updated_at'] = now();
                     AttendanceLog::create($logData);
+                    $affectedDates->push(\Carbon\Carbon::parse($logData['datetime'])->format('Y-m-d'));
                     $savedCount++;
                 }
             }
@@ -235,7 +244,7 @@ class FingerprintService
 
             // Auto-process to employee_attendances if requested and we have mapped data
             if ($autoProcessEmployeeAttendances && $mappedCount > 0) {
-                $processResult = $this->processToEmployeeAttendances($attendanceData);
+                $processResult = $this->processToEmployeeAttendances($attendanceData, $affectedDates->unique()->values()->all());
                 if ($processResult['success']) {
                     $processedCount = $processResult['processed_count'];
                 }
@@ -269,14 +278,40 @@ class FingerprintService
         }
     }
 
-    private function processToEmployeeAttendances($attendanceData)
+    private function getUnknownMachineId(): int
+    {
+        return MesinFinger::firstOrCreate(
+            ['serial_number' => 'UNKNOWN_ADMS_DEVICE'],
+            [
+                'nama_mesin' => 'Unknown ADMS Device',
+                'status' => MesinFinger::STATUS_INACTIVE,
+                'ip_address' => '0.0.0.0',
+                'port' => 0,
+                'lokasi' => 'ADMS Unknown Device',
+                'keterangan' => 'Auto-created for ADMS logs without a known device serial number.',
+            ]
+        )->id;
+    }
+
+    private function attendanceLogChanged(AttendanceLog $existingLog, array $logData): bool
+    {
+        foreach (['pin', 'user_id', 'datetime', 'status', 'verify', 'workcode', 'mesin_finger_id'] as $field) {
+            if ((string) ($existingLog->{$field} ?? '') !== (string) ($logData[$field] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function processToEmployeeAttendances($attendanceData, array $affectedDates = [])
     {
         try {
             $processedCount = 0;
             $attendanceService = new AttendanceService();
             
             // Get unique dates from the attendance data
-            $dates = collect($attendanceData)
+            $dates = collect($affectedDates)->merge(collect($attendanceData)
                 ->map(function($item) {
                     try {
                         return isset($item['datetime']) ? 
@@ -285,7 +320,7 @@ class FingerprintService
                         return null;
                     }
                 })
-                ->filter()
+                ->filter())
                 ->unique()
                 ->values()
                 ->toArray();

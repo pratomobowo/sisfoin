@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Services\PayrollCalculationService;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -32,7 +33,7 @@ class SlipGajiArrayImport implements ToArray, WithHeadingRow
                     continue;
                 }
 
-                $data[] = [
+                $detailData = [
                     'status' => $this->getValueFromRow($row, 'status'),
                     'nip' => $this->formatNip($nipValue),
 
@@ -73,6 +74,8 @@ class SlipGajiArrayImport implements ToArray, WithHeadingRow
                     // TOTAL
                     'penerimaan_bersih' => $this->parseNumeric($this->getValueFromRow($row, 'penerimaan_bersih') ?? 0),
                 ];
+
+                $data[] = (new PayrollCalculationService())->reconcile($detailData);
             } catch (\Exception $e) {
                 $this->errors[] = "Baris {$rowNumber}: " . $e->getMessage();
                 Log::error("Import error at row {$rowNumber}: " . $e->getMessage(), ['row' => $row]);
@@ -136,6 +139,10 @@ class SlipGajiArrayImport implements ToArray, WithHeadingRow
         }
 
         $stringValue = preg_replace('/[^\d.,\-]/', '', $stringValue);
+
+        if (preg_match('/^-?\d{1,3}(\.\d{3})+$/', $stringValue)) {
+            $stringValue = str_replace('.', '', $stringValue);
+        }
 
         if (strpos($stringValue, ',') !== false && strpos($stringValue, '.') !== false) {
             if (strrpos($stringValue, ',') > strrpos($stringValue, '.')) {

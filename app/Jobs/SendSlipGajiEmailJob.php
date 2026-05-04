@@ -53,8 +53,8 @@ class SendSlipGajiEmailJob implements ShouldQueue
             $gmailSmtpService = app(GmailSmtpService::class);
             $gmailSmtpService->applyConfig();
 
-            // Get recipient email
-            $recipientEmail = $this->getRecipientEmail();
+            // Use the validated recipient snapshot captured when this email log was queued.
+            $recipientEmail = $this->emailLog->to_email;
             
             if (!$recipientEmail) {
                 throw new \Exception('No valid email found for recipient');
@@ -161,23 +161,6 @@ class SendSlipGajiEmailJob implements ShouldQueue
             'slip_gaji_detail_id' => $this->slipGajiDetail->id,
             'error' => $exception->getMessage(),
         ]);
-    }
-
-    /**
-     * Get the recipient email address
-     */
-    private function getRecipientEmail(): ?string
-    {
-        // Priority: email kampus > email pribadi
-        if ($this->slipGajiDetail->employee) {
-            return $this->slipGajiDetail->employee->email_kampus ?: $this->slipGajiDetail->employee->email;
-        }
-
-        if ($this->slipGajiDetail->dosen) {
-            return $this->slipGajiDetail->dosen->email_kampus ?: $this->slipGajiDetail->dosen->email;
-        }
-
-        return null;
     }
 
     /**

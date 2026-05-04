@@ -123,7 +123,7 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
     Route::get('/dosens/{id}/edit', [DosenController::class, 'edit'])->name('dosens.edit');
 
     // Slip Gaji routes
-    Route::prefix('slip-gaji')->name('slip-gaji.')->group(function () {
+    Route::prefix('slip-gaji')->middleware(['role:super-admin|admin-sdm'])->name('slip-gaji.')->group(function () {
         Route::get('/', [SlipGajiController::class, 'index'])->name('index');
         Route::get('/create', [SlipGajiController::class, 'create'])->name('create');
         Route::get('/upload', [SlipGajiController::class, 'upload'])->name('upload');
@@ -190,7 +190,7 @@ Route::prefix('sekretariat')->middleware(['auth'])->name('sekretariat.')->group(
     // Surat Keputusan routes
     Route::get('/surat-keputusan', function () {
         return view('sekretariat.surat-keputusan.index');
-    })->name('surat-keputusan.index');
+    })->middleware(['role:sekretariat|admin-sekretariat|super-admin'])->name('surat-keputusan.index');
 
     // Kegiatan Pejabat routes
     Route::get('/kegiatan-pejabat', function () {

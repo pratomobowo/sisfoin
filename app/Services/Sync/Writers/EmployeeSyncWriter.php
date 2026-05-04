@@ -4,6 +4,7 @@ namespace App\Services\Sync\Writers;
 
 use App\Models\Employee;
 use App\Services\SevimaApiService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EmployeeSyncWriter
@@ -24,74 +25,73 @@ class EmployeeSyncWriter
 
         foreach ($rawEmployees as $row) {
             try {
-                $mapped = $this->sevimaApiService->mapPegawaiToEmployee($row);
-                $externalId = $mapped['id_pegawai'] ?? $row['id_pegawai'] ?? null;
+                $result = DB::transaction(function () use ($row) {
+                    $mapped = $this->sevimaApiService->mapPegawaiToEmployee($row);
+                    $externalId = $mapped['id_pegawai'] ?? $row['id_pegawai'] ?? null;
 
-                if (! $externalId) {
+                    if (! $externalId) {
+                        return ['status' => 'failed', 'external_id' => null, 'message' => 'Missing id_pegawai, row skipped'];
+                    }
+
+                    $existing = Employee::query()
+                        ->where('id_pegawai', $externalId)
+                        ->first();
+
+                    $incomingNip = $mapped['nip'] ?? null;
+                    $duplicateNipRecord = $this->findDuplicateActiveNipRecord($incomingNip, $externalId);
+
+                    if ($duplicateNipRecord) {
+                        return [
+                            'status' => 'failed',
+                            'external_id' => $externalId,
+                            'message' => sprintf('Duplicate active employee nip [%s] already linked to id_pegawai [%s]', $incomingNip, $duplicateNipRecord->id_pegawai),
+                        ];
+                    }
+
+                    if ($existing) {
+                        $existing->fill($mapped);
+                        $existing->save();
+
+                        return ['status' => 'updated'];
+                    }
+
+                    $trashed = Employee::onlyTrashed()
+                        ->where('id_pegawai', $externalId)
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($trashed) {
+                        Log::info('Restored soft-deleted employee during sync', [
+                            'id_pegawai' => $externalId,
+                            'nip' => $mapped['nip'] ?? null,
+                            'nama' => $mapped['nama'] ?? null,
+                        ]);
+                        $trashed->restore();
+                        $trashed->fill($mapped);
+                        $trashed->save();
+
+                        return ['status' => 'updated'];
+                    }
+
+                    Employee::create($mapped);
+
+                    return ['status' => 'inserted'];
+                });
+
+                if ($result['status'] === 'failed') {
                     $failed++;
                     $errors[] = [
-                        'external_id' => null,
-                        'message' => 'Missing id_pegawai, row skipped',
+                        'external_id' => $result['external_id'] ?? null,
+                        'message' => $result['message'],
                         'payload' => $row,
                     ];
-
-                    continue;
-                }
-
-                $existing = Employee::query()
-                    ->where('id_pegawai', $externalId)
-                    ->first();
-
-                $incomingNip = $mapped['nip'] ?? null;
-                $duplicateNipRecord = $this->findDuplicateActiveNipRecord($incomingNip, $externalId);
-
-                if ($duplicateNipRecord) {
-                    $failed++;
-                    $errors[] = [
-                        'external_id' => $externalId,
-                        'message' => sprintf(
-                            'Duplicate active employee nip [%s] already linked to id_pegawai [%s]',
-                            $incomingNip,
-                            $duplicateNipRecord->id_pegawai
-                        ),
-                        'payload' => $row,
-                    ];
-
-                    continue;
-                }
-
-                if ($existing) {
-                    $existing->fill($mapped);
-                    $existing->save();
-
+                } elseif ($result['status'] === 'updated') {
                     $updated++;
                     $processed++;
-
-                    continue;
-                }
-
-                $trashed = Employee::onlyTrashed()
-                    ->where('id_pegawai', $externalId)
-                    ->orderByDesc('id')
-                    ->first();
-
-                if ($trashed) {
-                    Log::info('Restored soft-deleted employee during sync', [
-                        'id_pegawai' => $externalId,
-                        'nip' => $mapped['nip'] ?? null,
-                        'nama' => $mapped['nama'] ?? null,
-                    ]);
-                    $trashed->restore();
-                    $trashed->fill($mapped);
-                    $trashed->save();
-
-                    $updated++;
                 } else {
-                    Employee::create($mapped);
                     $inserted++;
+                    $processed++;
                 }
-
-                $processed++;
             } catch (\Throwable $e) {
                 $failed++;
                 $errors[] = [

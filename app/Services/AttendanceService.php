@@ -53,7 +53,7 @@ class AttendanceService
         }
 
         $groupedLogs = $logs->groupBy(function($log) {
-            return $log->user_id . '_' . $log->datetime->format('Y-m-d');
+            return $log->user_id . '_' . $this->getAttendanceDateForLog($log)->format('Y-m-d');
         });
 
         $processedCount = 0;
@@ -64,7 +64,7 @@ class AttendanceService
 
             try {
                 $firstLog = $userLogs->first();
-                $date = $firstLog->datetime->format('Y-m-d');
+                $date = $this->getAttendanceDateForLog($firstLog)->format('Y-m-d');
                 $uid = $firstLog->user_id;
 
                 // 1. Get or create attendance record
@@ -73,12 +73,20 @@ class AttendanceService
                     'date' => $date,
                 ]);
 
+                if ($attendance->exists && $this->isManualStatusProtected($attendance)) {
+                    $userLogs->each(function($log) {
+                        $log->update(['processed_at' => now()]);
+                    });
+                    $processedCount += $userLogs->count();
+
+                    continue;
+                }
+
                 // 2. Determine Check-In and Check-Out
                 // We fetch ALL logs for this user/date (including previously processed) 
                 // to ensure we identify the correct first/last tap.
                 // We use whereBetween with start/end of day to handle timezone crossings (UTC vs Local)
-                $startOfDay = Carbon::parse($date)->startOfDay();
-                $endOfDay = Carbon::parse($date)->endOfDay();
+                [$startOfDay, $endOfDay] = $this->getLogWindowForAttendanceDate($attendance);
                 
                 $allLogsForDay = AttendanceLog::where('user_id', $uid)
                     ->whereBetween('datetime', [$startOfDay, $endOfDay])
@@ -124,6 +132,63 @@ class AttendanceService
             'execution_time' => $executionTime,
             'message' => "Berhasil memproses {$processedCount} data absensi ({$executionTime} detik)."
         ];
+    }
+
+    private function getAttendanceDateForLog(AttendanceLog $log): Carbon
+    {
+        $date = $log->datetime->copy()->startOfDay();
+
+        if (! $log->user_id) {
+            return $date;
+        }
+
+        $previousDate = $date->copy()->subDay();
+        $previousAttendance = new EmployeeAttendance([
+            'user_id' => $log->user_id,
+            'date' => $previousDate,
+        ]);
+
+        $previousShift = $previousAttendance->effective_shift;
+        if (! $previousShift || ! $previousShift->start_time || ! $previousShift->end_time) {
+            return $date;
+        }
+
+        $previousStart = Carbon::parse($previousDate->format('Y-m-d') . ' ' . $previousShift->start_time);
+        $previousEnd = Carbon::parse($previousDate->format('Y-m-d') . ' ' . $previousShift->end_time);
+
+        if ($previousEnd->lte($previousStart)) {
+            $previousEnd->addDay();
+        }
+
+        if ($previousEnd->gt($previousStart) && $log->datetime->betweenIncluded($previousStart, $previousEnd->copy()->addHours(6))) {
+            return $previousDate;
+        }
+
+        return $date;
+    }
+
+    private function getLogWindowForAttendanceDate(EmployeeAttendance $attendance): array
+    {
+        $date = $attendance->date->copy();
+        $shift = $attendance->effective_shift;
+
+        if (! $shift || ! $shift->start_time || ! $shift->end_time) {
+            return [$date->copy()->startOfDay(), $date->copy()->endOfDay()];
+        }
+
+        $shiftStart = Carbon::parse($date->format('Y-m-d') . ' ' . $shift->start_time);
+        $shiftEnd = Carbon::parse($date->format('Y-m-d') . ' ' . $shift->end_time);
+
+        if ($shiftEnd->lte($shiftStart)) {
+            $shiftEnd->addDay();
+
+            return [
+                $date->copy()->startOfDay(),
+                $shiftEnd->copy()->addHours(6),
+            ];
+        }
+
+        return [$date->copy()->startOfDay(), $date->copy()->endOfDay()];
     }
 
     private function calculateAttendanceTimes(EmployeeAttendance $attendance, $logs)
@@ -193,13 +258,22 @@ class AttendanceService
         
         $attendance->check_in_time = $firstTap;
         
-        // Rule: Check-out must be at least 30 minutes after check-in
+        // Rule: Check-out must be at least the configured duration after check-in
         // This prevents accidental double-taps from being recorded as premature check-outs
-        if (abs($lastTap->diffInMinutes($firstTap)) >= 30) {
+        if (abs($lastTap->diffInMinutes($firstTap)) >= app(AttendanceSettingsService::class)->getMinCheckoutDuration()) {
             $attendance->check_out_time = $lastTap;
         } else {
             $attendance->check_out_time = null;
         }
+    }
+
+    private function isManualStatusProtected(EmployeeAttendance $attendance): bool
+    {
+        if (! in_array($attendance->status, ['sick', 'leave', 'permission'], true)) {
+            return false;
+        }
+
+        return ! $attendance->check_in_time && ! $attendance->check_out_time;
     }
 
     private function determineStatus(EmployeeAttendance $attendance)
@@ -232,18 +306,21 @@ class AttendanceService
         // Get shift times or use global defaults
         if ($shift) {
             $workStartTime = Carbon::parse($date . ' ' . $shift->start_time);
+            $earlyThreshold = $shift->early_arrival_threshold
+                ? Carbon::parse($date . ' ' . $shift->early_arrival_threshold)
+                : $workStartTime->copy()->subMinutes(20);
             $lateToleranceMinutes = $shift->late_tolerance_minutes ?? 5;
         } else {
             // Use global settings
             $workStartTime = Carbon::parse($date . ' ' . \App\Models\AttendanceSetting::getValue('work_start_time', '08:00'));
+            $earlyThreshold = $workStartTime->copy()->subMinutes(20);
             $lateToleranceMinutes = \App\Models\AttendanceSetting::getValue('late_tolerance_minutes', 5);
         }
 
         $checkInTime = $attendance->check_in_time;
         
         // Final Status check based on Check-In time (since we have one)
-        // Rule 1: Early arrival - 20 minutes or more before work start time
-        $earlyThreshold = $workStartTime->copy()->subMinutes(20);
+        // Rule 1: Early arrival - based on shift threshold or global fallback
         if ($checkInTime->lte($earlyThreshold)) {
             return 'early_arrival';
         }

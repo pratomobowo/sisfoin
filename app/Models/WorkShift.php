@@ -45,6 +45,11 @@ class WorkShift extends Model
         return $this->hasMany(UserShiftOverride::class);
     }
 
+    public function employeeAssignments(): HasMany
+    {
+        return $this->hasMany(EmployeeShiftAssignment::class);
+    }
+
     /**
      * Scope for active shifts
      */

@@ -104,6 +104,8 @@ class AttendanceLogs extends Component
 
     public function deleteAttendanceLog()
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         if ($this->selectedAttendanceLog) {
             $this->selectedAttendanceLog->delete();
             $this->showDeleteModal = false;
@@ -120,6 +122,8 @@ class AttendanceLogs extends Component
 
     public function clearAllAttendanceLogs()
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         AttendanceLog::truncate();
         $this->showClearAllModal = false;
 

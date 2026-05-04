@@ -4,6 +4,7 @@ namespace App\Livewire\Sdm;
 
 use App\Livewire\Concerns\InteractsWithToast;
 use App\Models\WorkShift;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -50,17 +51,25 @@ class WorkShiftManager extends Component
         'gray' => 'Abu-abu',
     ];
 
-    protected $rules = [
-        'name' => 'required|string|max:255',
-        'code' => 'required|string|max:20',
-        'start_time' => 'required',
-        'end_time' => 'required',
-        'early_arrival_threshold' => 'required',
-        'late_tolerance_minutes' => 'required|integer|min:0',
-        'work_hours' => 'required|numeric|min:0',
-        'color' => 'required',
-        'is_active' => 'boolean',
-    ];
+    protected function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'code' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('work_shifts', 'code')->ignore($this->editingId),
+            ],
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'early_arrival_threshold' => 'required',
+            'late_tolerance_minutes' => 'required|integer|min:0',
+            'work_hours' => 'required|numeric|min:0',
+            'color' => 'required',
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function openModal($id = null)
     {
@@ -103,7 +112,14 @@ class WorkShiftManager extends Component
 
     public function save()
     {
+        $this->code = strtoupper(trim((string) $this->code));
         $this->validate();
+
+        if ($this->editingId && ! $this->isEditAllowed()) {
+            $this->toastError('Shift sudah dipakai pada jadwal karyawan. Buat shift baru untuk mengubah jam/kode agar histori absensi tetap aman.');
+
+            return;
+        }
 
         // If setting as default, unset other defaults
         if ($this->is_default) {
@@ -136,13 +152,66 @@ class WorkShiftManager extends Component
 
     public function delete($id)
     {
-        $shift = WorkShift::find($id);
-        if ($shift && ! $shift->is_default) {
-            $shift->delete();
-            $this->toastSuccess('Shift berhasil dihapus!');
-        } else {
-            $this->toastError('Shift default tidak dapat dihapus!');
+        $shift = WorkShift::withCount('employeeAssignments')->find($id);
+
+        if (! $shift) {
+            $this->toastError('Shift tidak ditemukan!');
+
+            return;
         }
+
+        if ($shift->is_default) {
+            $this->toastError('Shift default tidak dapat dihapus!');
+
+            return;
+        }
+
+        if ($shift->employee_assignments_count > 0) {
+            $this->toastError('Shift sudah dipakai pada jadwal karyawan. Nonaktifkan shift jika tidak ingin dipakai lagi.');
+
+            return;
+        }
+
+        $shift->delete();
+        $this->toastSuccess('Shift berhasil dihapus!');
+    }
+
+    private function isEditAllowed(): bool
+    {
+        $shift = WorkShift::withCount('employeeAssignments')->find($this->editingId);
+
+        if (! $shift) {
+            return false;
+        }
+
+        if ($shift->employee_assignments_count === 0) {
+            return true;
+        }
+
+        $immutableFields = [
+            'code' => $this->code,
+            'start_time' => $this->start_time.':00',
+            'end_time' => $this->end_time.':00',
+            'early_arrival_threshold' => $this->early_arrival_threshold.':00',
+            'late_tolerance_minutes' => (int) $this->late_tolerance_minutes,
+            'work_hours' => (float) $this->work_hours,
+        ];
+
+        foreach ($immutableFields as $field => $value) {
+            if ($field === 'work_hours') {
+                if ((float) $shift->{$field} !== $value) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ($shift->{$field} != $value) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function setAsDefault($id)

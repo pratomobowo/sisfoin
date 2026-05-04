@@ -54,6 +54,7 @@ class SlipGajiDetail extends Model
 
         // TOTAL
         'penerimaan_bersih',
+        'gaji_bersih',
     ];
 
     protected $casts = [
@@ -94,6 +95,7 @@ class SlipGajiDetail extends Model
 
         // TOTAL
         'penerimaan_bersih' => 'decimal:2',
+        'gaji_bersih' => 'decimal:2',
     ];
 
     /**

@@ -14,8 +14,8 @@ class AdmsApiService
 
     public function __construct()
     {
-        $this->baseUrl = config('adms.api_url', env('ADMS_API_URL'));
-        $this->token = config('adms.api_token', env('ADMS_API_TOKEN'));
+        $this->baseUrl = (string) (config('adms.api_url', env('ADMS_API_URL')) ?? '');
+        $this->token = (string) (config('adms.api_token', env('ADMS_API_TOKEN')) ?? '');
 
         if (empty($this->baseUrl) || empty($this->token)) {
             Log::warning('AdmsApiService: ADMS API URL or Token not configured');
@@ -125,14 +125,24 @@ class AdmsApiService
                 $totalFetched += count($result['data']);
                 $offset += $limit;
 
-                $total = $result['meta']['total'] ?? 0;
+                $pageCount = count($result['data']);
+                $total = $result['meta']['total'] ?? null;
 
                 Log::info('AdmsApiService::getAllAttendanceLogs - Progress', [
                     'fetched' => $totalFetched,
                     'total' => $total,
+                    'page_count' => $pageCount,
                 ]);
 
-            } while ($totalFetched < $total && !empty($result['data']));
+                if ($pageCount === 0 || $pageCount < $limit) {
+                    break;
+                }
+
+                if ($total !== null && $total > 0 && $totalFetched >= $total) {
+                    break;
+                }
+
+            } while (true);
 
             return [
                 'success' => true,
@@ -226,9 +236,21 @@ class AdmsApiService
      */
     private function transformAttendanceData(array $data): array
     {
-        return array_map(function ($item) {
-            return $this->transformSingleAttendance($item);
-        }, $data);
+        $transformed = [];
+
+        foreach ($data as $index => $item) {
+            try {
+                $transformed[] = $this->transformSingleAttendance($item);
+            } catch (\Throwable $e) {
+                Log::warning('AdmsApiService::transformAttendanceData - Bad row skipped', [
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                    'row' => $item,
+                ]);
+            }
+        }
+
+        return $transformed;
     }
 
     /**
@@ -244,6 +266,12 @@ class AdmsApiService
      */
     private function transformSingleAttendance(array $item): array
     {
+        foreach (['id', 'employee_id', 'timestamp'] as $field) {
+            if (! array_key_exists($field, $item) || $item[$field] === null || $item[$field] === '') {
+                throw new \InvalidArgumentException("Missing required ADMS attendance field: {$field}");
+            }
+        }
+
         // Parse timestamp
         $datetime = Carbon::parse($item['timestamp']);
 

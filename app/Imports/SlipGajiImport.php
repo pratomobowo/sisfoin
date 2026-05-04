@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\SlipGajiDetail;
+use App\Services\PayrollCalculationService;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
@@ -90,7 +91,7 @@ class SlipGajiImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
                 return null;
             }
 
-            $detail = new SlipGajiDetail([
+            $detailData = [
                 'header_id' => $this->headerId,
                 'status' => $this->getValueFromRow($row, 'status'),
                 'nip' => $this->formatNip($this->getValueFromRow($row, 'nip')),
@@ -131,7 +132,9 @@ class SlipGajiImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
 
                 // TOTAL
                 'penerimaan_bersih' => $this->parseNumeric($this->getValueFromRow($row, 'penerimaan_bersih') ?? 0),
-            ]);
+            ];
+
+            $detail = new SlipGajiDetail((new PayrollCalculationService())->reconcile($detailData));
 
             return $detail;
 
@@ -218,6 +221,10 @@ class SlipGajiImport implements ToModel, WithBatchInserts, WithChunkReading, Wit
 
         // Remove currency symbols, commas, and spaces
         $stringValue = preg_replace('/[^\d.,\-]/', '', $stringValue);
+
+        if (preg_match('/^-?\d{1,3}(\.\d{3})+$/', $stringValue)) {
+            $stringValue = str_replace('.', '', $stringValue);
+        }
 
         // Handle different decimal separators
         // If there's a comma and it appears after any dot, it's likely a thousands separator

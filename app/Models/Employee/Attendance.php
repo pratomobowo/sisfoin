@@ -135,6 +135,11 @@ class Attendance extends Model
 
         // Get expected checkout time based on shift
         $expectedCheckout = Carbon::parse($this->date->format('Y-m-d').' '.$shift->end_time);
+        $shiftStart = Carbon::parse($this->date->format('Y-m-d').' '.$shift->start_time);
+        if ($expectedCheckout->lte($shiftStart)) {
+            $expectedCheckout->addDay();
+        }
+
         $actualCheckout = Carbon::parse($this->check_out_time);
 
         // Handle cross-day checkout scenarios

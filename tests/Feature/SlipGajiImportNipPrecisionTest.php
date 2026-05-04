@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Imports\SlipGajiImport;
+use App\Imports\SlipGajiArrayImport;
 use ReflectionClass;
 use Tests\TestCase;
 
@@ -30,5 +31,27 @@ class SlipGajiImportNipPrecisionTest extends TestCase
         $result = $method->invoke($import, "'197107212005011002");
 
         $this->assertSame('197107212005011002', $result);
+    }
+
+    public function test_parse_numeric_handles_indonesian_dot_thousands(): void
+    {
+        $import = new SlipGajiImport(1);
+        $ref = new ReflectionClass($import);
+        $method = $ref->getMethod('parseNumeric');
+        $method->setAccessible(true);
+
+        $this->assertSame(1234567.0, $method->invoke($import, '1.234.567'));
+        $this->assertSame(1234.56, $method->invoke($import, '1.234,56'));
+    }
+
+    public function test_array_import_parse_numeric_handles_indonesian_dot_thousands(): void
+    {
+        $import = new SlipGajiArrayImport();
+        $ref = new ReflectionClass($import);
+        $method = $ref->getMethod('parseNumeric');
+        $method->setAccessible(true);
+
+        $this->assertSame(1234567.0, $method->invoke($import, '1.234.567'));
+        $this->assertSame(1234.56, $method->invoke($import, '1.234,56'));
     }
 }

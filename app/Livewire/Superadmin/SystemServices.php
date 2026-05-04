@@ -26,6 +26,8 @@ class SystemServices extends Component
 
     public function toggleService($serviceId)
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         $service = SystemService::findOrFail($serviceId);
         $service->is_active = ! $service->is_active;
         $service->status = $service->is_active ? 'running' : 'stopped';
@@ -37,6 +39,8 @@ class SystemServices extends Component
 
     public function runService($serviceId)
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         $service = SystemService::findOrFail($serviceId);
 
         $result = app(SystemServiceRunner::class)->run($service, 'manual', Auth::id());
@@ -50,6 +54,8 @@ class SystemServices extends Component
 
     public function updateSchedulePreset($serviceId, $preset)
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         $service = SystemService::findOrFail($serviceId);
 
         if (! array_key_exists($preset, SystemService::SCHEDULE_PRESETS)) {

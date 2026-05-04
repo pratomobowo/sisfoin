@@ -44,30 +44,16 @@ class SyncOrchestratorService
             $effectiveIdempotencyKey = $idempotencyKey.'-retry-'.\now()->format('YmdHisv');
         }
 
-        if (! $this->lockService->acquire($normalizedMode, 30)) {
-            return SyncRun::create([
-                'mode' => $normalizedMode,
-                'status' => 'failed',
-                'triggered_by' => $triggeredBy,
-                'idempotency_key' => $effectiveIdempotencyKey,
-                'error_summary' => ['message' => 'Sync already running for this mode'],
-            ]);
-        }
+        $run = SyncRun::create([
+            'mode' => $normalizedMode,
+            'status' => 'pending',
+            'triggered_by' => $triggeredBy,
+            'idempotency_key' => $effectiveIdempotencyKey,
+        ]);
 
-        try {
-            $run = SyncRun::create([
-                'mode' => $normalizedMode,
-                'status' => 'pending',
-                'triggered_by' => $triggeredBy,
-                'idempotency_key' => $effectiveIdempotencyKey,
-            ]);
+        RunSdmSyncJob::dispatchAfterResponse($run->id);
 
-            RunSdmSyncJob::dispatchAfterResponse($run->id);
-
-            return $run;
-        } finally {
-            $this->lockService->release($normalizedMode);
-        }
+        return $run;
     }
 
     private function isStale(SyncRun $run): bool

@@ -38,6 +38,8 @@ class OperationsConsole extends Component
 
     public function runCommand(): void
     {
+        abort_unless(auth()->user()?->hasRole('super-admin'), 403);
+
         $this->validate([
             'selectedCommand' => 'required|in:users:relink-employee-links,attendance:process,optimize:clear,users:import,cleanup:duplicates',
             'confirmationText' => 'required|in:RUN',

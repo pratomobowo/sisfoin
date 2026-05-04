@@ -48,6 +48,12 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($user->hasAnyRole(['super-admin', 'admin-sdm', 'admin-sekretariat'])) {
+            return Redirect::route('profile.edit')->withErrors([
+                'password' => 'Akun dengan role admin tidak dapat menghapus akun sendiri.',
+            ], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();

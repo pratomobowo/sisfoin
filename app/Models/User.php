@@ -83,27 +83,18 @@ class User extends Authenticatable
      */
     public function getEmployeeDataAttribute()
     {
-        // 1. Try standard relationship first
         $data = ($this->employee_type === 'dosen') ? $this->dosen : $this->employee;
         if ($data) return $data;
 
-        // 2. Auto-healing logic:
-        // If relationship is null (e.g. linked to a trashed record), 
-        // try to find an active record by NIP or Name.
-        $nip = $this->nip;
-        $name = $this->name;
-
-        if ($this->employee_type === 'dosen') {
-            return Dosen::where('nip', $nip)
-                ->orWhere('nama', 'like', '%' . $name . '%')
-                ->first();
+        if (! $this->nip) {
+            return null;
         }
 
-        // Default: search in Employee table
-        return Employee::where(function($query) use ($nip, $name) {
-            if ($nip) $query->where('nip', $nip);
-            if ($name) $query->orWhere('nama', 'like', '%' . $name . '%');
-        })->first();
+        if ($this->employee_type === 'dosen') {
+            return Dosen::where('nip', $this->nip)->first();
+        }
+
+        return Employee::where('nip', $this->nip)->first();
     }
 
     /**

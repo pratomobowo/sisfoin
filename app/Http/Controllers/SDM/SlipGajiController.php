@@ -6,6 +6,7 @@ use App\Exports\SlipGajiTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Models\SlipGajiDetail;
 use App\Models\SlipGajiHeader;
+use App\Services\PayrollCalculationService;
 use App\Services\SlipGajiEmailService;
 use App\Services\SlipGajiService;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class SlipGajiController extends Controller
         $this->slipGajiService = $slipGajiService;
         $this->slipGajiEmailService = $slipGajiEmailService;
         $this->middleware('auth');
-        $this->middleware('role:super-admin|admin-sdm|sekretariat')->except(['staffIndex', 'staffShow', 'staffDownloadPdf']);
+        $this->middleware('role:super-admin|admin-sdm')->except(['staffIndex', 'staffShow', 'staffDownloadPdf']);
         $this->middleware('role:staff')->only(['staffIndex', 'staffShow', 'staffDownloadPdf']);
     }
 
@@ -381,8 +382,7 @@ class SlipGajiController extends Controller
             // Store original data for logging
             $originalData = $detail->toArray();
 
-            // Update detail data
-            $detail->update([
+            $detailData = [
                 'nip' => $request->nip,
                 'status' => $request->status,
                 // PENDAPATAN
@@ -421,7 +421,10 @@ class SlipGajiController extends Controller
 
                 // TOTAL
                 'penerimaan_bersih' => $request->penerimaan_bersih ?? 0,
-            ]);
+            ];
+
+            // Update detail data with server-side reconciled totals.
+            $detail->update(app(PayrollCalculationService::class)->reconcile($detailData));
 
             // Log activity
             activity()
@@ -669,9 +672,12 @@ class SlipGajiController extends Controller
             abort(403, 'Data NIP tidak ditemukan');
         }
 
-        // Find slip gaji detail by header_id and nip
+        // Find only published slip gaji detail by header_id and authenticated user's NIP.
         $detail = SlipGajiDetail::where('header_id', $header_id)
             ->where('nip', $nip)
+            ->whereHas('header', function ($query) {
+                $query->where('status', SlipGajiHeader::STATUS_PUBLISHED);
+            })
             ->with(['header', 'employee', 'dosen'])
             ->firstOrFail();
 
