@@ -120,6 +120,8 @@ class KegiatanPejabatManagement extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()?->can('sekretariat.create'), 403);
+
         $this->validate();
 
         DB::beginTransaction();
@@ -200,6 +202,8 @@ class KegiatanPejabatManagement extends Component
 
     public function update()
     {
+        abort_unless(auth()->user()?->can('sekretariat.edit'), 403);
+
         $rules = $this->rules;
         $rules['file'] = 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240'; // File is optional when updating
 
@@ -261,6 +265,8 @@ class KegiatanPejabatManagement extends Component
 
     public function delete($id)
     {
+        abort_unless(auth()->user()?->can('sekretariat.delete'), 403);
+
         $kegiatan = KegiatanPejabat::findOrFail($id);
         $kegiatan->delete();
 

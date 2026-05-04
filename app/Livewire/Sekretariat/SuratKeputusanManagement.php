@@ -116,6 +116,8 @@ class SuratKeputusanManagement extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()?->can('surat_keputusan.create'), 403);
+
         $this->validate();
 
         DB::beginTransaction();
@@ -213,6 +215,8 @@ class SuratKeputusanManagement extends Component
 
     public function update()
     {
+        abort_unless(auth()->user()?->can('surat_keputusan.edit'), 403);
+
         $rules = $this->rules;
         $rules['nomorSurat'] = 'required|string|max:50|unique:surat_keputusan,nomor_surat,'.$this->suratKeputusanId;
         $rules['file'] = 'nullable|file|mimes:pdf|max:20480'; // File is optional when updating
@@ -280,6 +284,8 @@ class SuratKeputusanManagement extends Component
 
     public function delete($id)
     {
+        abort_unless(auth()->user()?->can('surat_keputusan.delete'), 403);
+
         $suratKeputusan = SuratKeputusan::findOrFail($id);
 
         // Delete file from storage
@@ -294,6 +300,8 @@ class SuratKeputusanManagement extends Component
 
     public function download($id)
     {
+        abort_unless(auth()->user()?->can('surat_keputusan.download'), 403);
+
         $suratKeputusan = SuratKeputusan::findOrFail($id);
 
         if (! Storage::disk('public')->exists($suratKeputusan->file_path)) {

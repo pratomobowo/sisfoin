@@ -224,6 +224,8 @@ class UnitShiftDetail extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
         $this->validate();
 
         if (! $this->isUserInCurrentUnit((int) $this->user_id)) {
@@ -271,6 +273,8 @@ class UnitShiftDetail extends Component
 
     public function delete($id)
     {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
         $assignment = EmployeeShiftAssignment::find($id);
 
         if (! $assignment || ! $this->isUserInCurrentUnit((int) $assignment->user_id)) {

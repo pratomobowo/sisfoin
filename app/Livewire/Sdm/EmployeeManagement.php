@@ -572,6 +572,8 @@ class EmployeeManagement extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()?->can($this->employee_id ? 'employees.edit' : 'employees.create'), 403);
+
         $rules = [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -666,6 +668,8 @@ class EmployeeManagement extends Component
 
     public function delete($id)
     {
+        abort_unless(auth()->user()?->can('employees.delete'), 403);
+
         try {
             $employee = Employee::findOrFail($id);
             $employee->delete();

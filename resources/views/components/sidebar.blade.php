@@ -40,7 +40,7 @@
         </div>
 
         <!-- Admin Section -->
-        @if(isActiveRole('super-admin'))
+        @if(auth()->user()?->hasRole('super-admin'))
         <div>
             <p class="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Administrasi</p>
             <div class="space-y-1">
@@ -110,7 +110,7 @@
         <div>
             <p class="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Modul Sistem</p>
             <div class="space-y-2">
-                @if(isActiveRole('super-admin|admin-sdm'))
+                @canany(['employees.view', 'dosen.view', 'payroll.view', 'employee.attendance.view', 'employee.attendance.edit', 'employee.attendance.report'])
                 <div x-data="{ open: {{ request()->routeIs('sdm.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-blue-50/50 transition-all duration-200">
@@ -123,24 +123,38 @@
                         <x-lucide-chevron-down class="w-4 h-4 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
                     </button>
                     <div x-show="open" x-cloak class="mt-2 ml-10 space-y-1 border-l border-gray-100 pl-4">
-                        <a href="{{ route('sdm.employees.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.employees.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Data Karyawan</a>
-                        <a href="{{ route('sdm.dosens.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.dosens.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Data Dosen</a>
-                        <a href="{{ route('sdm.slip-gaji.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.slip-gaji.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Slip Gaji</a>
+                        @can('employees.view')
+                            <a href="{{ route('sdm.employees.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.employees.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Data Karyawan</a>
+                        @endcan
+                        @can('dosen.view')
+                            <a href="{{ route('sdm.dosens.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.dosens.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Data Dosen</a>
+                        @endcan
+                        @can('payroll.view')
+                            <a href="{{ route('sdm.slip-gaji.index') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.slip-gaji.*') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Slip Gaji</a>
+                        @endcan
                         
                         <div class="pt-4 pb-2">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Absensi</p>
                         </div>
-                        <a href="{{ route('sdm.absensi.monitor') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.monitor') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Monitor Absensi SDM</a>
-                        <a href="{{ route('sdm.absensi.management') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.management') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Manajemen Absensi</a>
-                        <a href="{{ route('sdm.absensi.recap') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.recap') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Rekap Bulanan</a>
-                        <a href="{{ route('sdm.absensi.shifts') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.shifts') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Definisi Shift</a>
-                        <a href="{{ route('sdm.absensi.kelola-shift') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.kelola-shift') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Kelola Shift Unit</a>
-                        <a href="{{ route('sdm.absensi.settings') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.settings') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Pengaturan</a>
+                        @can('employee.attendance.view')
+                            <a href="{{ route('sdm.absensi.monitor') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.monitor') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Monitor Absensi SDM</a>
+                        @endcan
+                        @can('employee.attendance.edit')
+                            <a href="{{ route('sdm.absensi.management') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.management') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Manajemen Absensi</a>
+                        @endcan
+                        @can('employee.attendance.report')
+                            <a href="{{ route('sdm.absensi.recap') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.recap') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Rekap Bulanan</a>
+                        @endcan
+                        @can('employee.attendance.edit')
+                            <a href="{{ route('sdm.absensi.shifts') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.shifts') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Definisi Shift</a>
+                            <a href="{{ route('sdm.absensi.kelola-shift') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.kelola-shift') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Kelola Shift Unit</a>
+                            <a href="{{ route('sdm.absensi.settings') }}" class="block py-2 text-sm {{ request()->routeIs('sdm.absensi.settings') ? 'text-blue-600 font-semibold' : 'text-gray-500 hover:text-blue-600 transition-colors' }}">Pengaturan</a>
+                        @endcan
                     </div>
                 </div>
-                @endif
+                @endcanany
 
-                @if(isActiveRole('super-admin|admin-sekretariat'))
+                @canany(['sekretariat.view', 'surat_keputusan.view'])
                 <div x-data="{ open: {{ request()->routeIs('sekretariat.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-sky-50/50 transition-all duration-200">
@@ -153,12 +167,17 @@
                         <x-lucide-chevron-down class="w-4 h-4 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
                     </button>
                     <div x-show="open" x-cloak class="mt-2 ml-10 space-y-1 border-l border-sky-100 pl-4">
-                        <a href="{{ route('sekretariat.pengumuman.index') }}" class="block py-2 text-sm {{ request()->routeIs('sekretariat.pengumuman.*') ? 'text-sky-600 font-semibold' : 'text-gray-500 hover:text-sky-600 transition-colors' }}">Manajemen Pengumuman</a>
+                        @can('sekretariat.view')
+                            <a href="{{ route('sekretariat.pengumuman.index') }}" class="block py-2 text-sm {{ request()->routeIs('sekretariat.pengumuman.*') ? 'text-sky-600 font-semibold' : 'text-gray-500 hover:text-sky-600 transition-colors' }}">Manajemen Pengumuman</a>
+                        @endcan
+                        @can('surat_keputusan.view')
+                            <a href="{{ route('sekretariat.surat-keputusan.index') }}" class="block py-2 text-sm {{ request()->routeIs('sekretariat.surat-keputusan.*') ? 'text-sky-600 font-semibold' : 'text-gray-500 hover:text-sky-600 transition-colors' }}">Surat Keputusan</a>
+                        @endcan
                     </div>
                 </div>
-                @endif
+                @endcanany
 
-                @if(isActiveRole('employee|staff'))
+                @if(auth()->user()?->hasAnyRole(['employee', 'staff']))
                 <div x-data="{ open: {{ request()->routeIs('staff.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 rounded-xl hover:bg-emerald-50/50 transition-all duration-200">

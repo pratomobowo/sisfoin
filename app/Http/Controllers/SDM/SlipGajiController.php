@@ -26,7 +26,11 @@ class SlipGajiController extends Controller
         $this->slipGajiService = $slipGajiService;
         $this->slipGajiEmailService = $slipGajiEmailService;
         $this->middleware('auth');
-        $this->middleware('role:super-admin|admin-sdm')->except(['staffIndex', 'staffShow', 'staffDownloadPdf']);
+        $this->middleware('can:payroll.view')->only(['index', 'show', 'showEmailLogs']);
+        $this->middleware('can:payroll.create')->only(['create', 'upload', 'downloadTemplate', 'processUpload']);
+        $this->middleware('can:payroll.edit')->only(['showUpdateUpload', 'processUpdateUpload', 'edit', 'update', 'publish', 'unpublish', 'sendBulkEmail', 'retryFailedEmails']);
+        $this->middleware('can:payroll.delete')->only(['destroy', 'cancel']);
+        $this->middleware('can:payroll.download')->only(['previewPdfSlip', 'showPdfSlip', 'downloadPdfSlip', 'downloadBulkPdf']);
         $this->middleware('role:staff')->only(['staffIndex', 'staffShow', 'staffDownloadPdf']);
     }
 

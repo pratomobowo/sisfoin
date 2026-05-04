@@ -32,7 +32,18 @@ Route::get('/dashboard', function () {
         return redirect()->route('staff.dashboard');
     }
 
-    if (! isActiveRole('super-admin|admin-sdm|admin-sekretariat')) {
+    if (! $user?->canAny([
+        'users.view',
+        'roles.view',
+        'employees.view',
+        'dosen.view',
+        'payroll.view',
+        'employee.attendance.view',
+        'employee.attendance.edit',
+        'employee.attendance.report',
+        'sekretariat.view',
+        'surat_keputusan.view',
+    ])) {
         abort(403);
     }
 
@@ -104,26 +115,26 @@ Route::prefix('superadmin')->middleware(['auth', 'role:super-admin'])->name('sup
 });
 
 // SDM routes
-Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretariat'])->name('sdm.')->group(function () {
+Route::prefix('sdm')->middleware(['auth'])->name('sdm.')->group(function () {
     // SDM Dashboard
     Route::get('/', function () {
         return view('sdm.dashboard');
-    })->name('dashboard');
+    })->middleware('can:employees.view')->name('dashboard');
 
     // Employee management routes
-    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
-    Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
-    Route::get('/employees/{id}', [EmployeeController::class, 'show'])->name('employees.show');
-    Route::get('/employees/{id}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::get('/employees', [EmployeeController::class, 'index'])->middleware('can:employees.view')->name('employees.index');
+    Route::get('/employees/create', [EmployeeController::class, 'create'])->middleware('can:employees.create')->name('employees.create');
+    Route::get('/employees/{id}', [EmployeeController::class, 'show'])->middleware('can:employees.view')->name('employees.show');
+    Route::get('/employees/{id}/edit', [EmployeeController::class, 'edit'])->middleware('can:employees.edit')->name('employees.edit');
 
     // Dosen management routes
-    Route::get('/dosens', [DosenController::class, 'index'])->name('dosens.index');
-    Route::get('/dosens/create', [DosenController::class, 'create'])->name('dosens.create');
-    Route::get('/dosens/{id}', [DosenController::class, 'show'])->name('dosens.show');
-    Route::get('/dosens/{id}/edit', [DosenController::class, 'edit'])->name('dosens.edit');
+    Route::get('/dosens', [DosenController::class, 'index'])->middleware('can:dosen.view')->name('dosens.index');
+    Route::get('/dosens/create', [DosenController::class, 'create'])->middleware('can:dosen.create')->name('dosens.create');
+    Route::get('/dosens/{id}', [DosenController::class, 'show'])->middleware('can:dosen.view')->name('dosens.show');
+    Route::get('/dosens/{id}/edit', [DosenController::class, 'edit'])->middleware('can:dosen.edit')->name('dosens.edit');
 
     // Slip Gaji routes
-    Route::prefix('slip-gaji')->middleware(['role:super-admin|admin-sdm'])->name('slip-gaji.')->group(function () {
+    Route::prefix('slip-gaji')->middleware(['can:payroll.view'])->name('slip-gaji.')->group(function () {
         Route::get('/', [SlipGajiController::class, 'index'])->name('index');
         Route::get('/create', [SlipGajiController::class, 'create'])->name('create');
         Route::get('/upload', [SlipGajiController::class, 'upload'])->name('upload');
@@ -157,26 +168,26 @@ Route::prefix('sdm')->middleware(['auth', 'role:super-admin|admin-sdm|sekretaria
     Route::prefix('employee-attendance')->name('employee-attendance.')->group(function () {
         Route::get('/', function () {
             return view('sdm.employee-attendance.index');
-        })->name('index');
+        })->middleware('can:employee.attendance.view')->name('index');
     });
 
     // Absensi Routes (New)
-    Route::get('/absensi', App\Livewire\Sdm\EmployeeAttendanceManagement::class)->name('absensi.management');
-    Route::get('/absensi/monitor', App\Livewire\Sdm\AttendanceMonitor::class)->name('absensi.monitor');
-    Route::get('/absensi/recap', App\Livewire\Sdm\AttendanceRecap::class)->name('absensi.recap');
-    Route::get('/absensi/logs', App\Livewire\Superadmin\AttendanceLogs::class)->name('absensi.logs');
-    Route::get('/absensi/settings', App\Livewire\Sdm\AttendanceSettingsManager::class)->name('absensi.settings');
-    Route::get('/absensi/holidays', App\Livewire\Sdm\HolidayManager::class)->name('absensi.holidays');
-    Route::get('/absensi/shifts', App\Livewire\Sdm\WorkShiftManager::class)->name('absensi.shifts');
-    Route::get('/absensi/kelola-shift', App\Livewire\Sdm\UnitShiftManagement::class)->name('absensi.kelola-shift');
-    Route::get('/absensi/kelola-shift/{unit}', App\Livewire\Sdm\UnitShiftCalendar::class)->name('absensi.unit-detail');
-    Route::get('/absensi/kelola-shift/{unit}/list', App\Livewire\Sdm\UnitShiftDetail::class)->name('absensi.unit-list');
+    Route::get('/absensi', App\Livewire\Sdm\EmployeeAttendanceManagement::class)->middleware('can:employee.attendance.edit')->name('absensi.management');
+    Route::get('/absensi/monitor', App\Livewire\Sdm\AttendanceMonitor::class)->middleware('can:employee.attendance.view')->name('absensi.monitor');
+    Route::get('/absensi/recap', App\Livewire\Sdm\AttendanceRecap::class)->middleware('can:employee.attendance.report')->name('absensi.recap');
+    Route::get('/absensi/logs', App\Livewire\Superadmin\AttendanceLogs::class)->middleware('can:employee.attendance.edit')->name('absensi.logs');
+    Route::get('/absensi/settings', App\Livewire\Sdm\AttendanceSettingsManager::class)->middleware('can:employee.attendance.edit')->name('absensi.settings');
+    Route::get('/absensi/holidays', App\Livewire\Sdm\HolidayManager::class)->middleware('can:employee.attendance.edit')->name('absensi.holidays');
+    Route::get('/absensi/shifts', App\Livewire\Sdm\WorkShiftManager::class)->middleware('can:employee.attendance.edit')->name('absensi.shifts');
+    Route::get('/absensi/kelola-shift', App\Livewire\Sdm\UnitShiftManagement::class)->middleware('can:employee.attendance.edit')->name('absensi.kelola-shift');
+    Route::get('/absensi/kelola-shift/{unit}', App\Livewire\Sdm\UnitShiftCalendar::class)->middleware('can:employee.attendance.edit')->name('absensi.unit-detail');
+    Route::get('/absensi/kelola-shift/{unit}/list', App\Livewire\Sdm\UnitShiftDetail::class)->middleware('can:employee.attendance.edit')->name('absensi.unit-list');
 
     // Fingerprint management routes under sdm
     Route::prefix('fingerprint')->name('fingerprint.')->group(function () {
         Route::get('/', function () {
             return view('superadmin.fingerprint.attendance-logs');
-        })->name('index');
+        })->middleware('can:employee.attendance.edit')->name('index');
     });
 });
 
@@ -190,21 +201,21 @@ Route::prefix('sekretariat')->middleware(['auth'])->name('sekretariat.')->group(
     // Surat Keputusan routes
     Route::get('/surat-keputusan', function () {
         return view('sekretariat.surat-keputusan.index');
-    })->middleware(['role:sekretariat|admin-sekretariat|super-admin'])->name('surat-keputusan.index');
+    })->middleware(['can:surat_keputusan.view'])->name('surat-keputusan.index');
 
     // Kegiatan Pejabat routes
     Route::get('/kegiatan-pejabat', function () {
         return view('sekretariat.kegiatan-pejabat.index');
-    })->middleware(['role:sekretariat|admin-sekretariat|super-admin'])->name('kegiatan-pejabat.index');
+    })->middleware(['can:sekretariat.view'])->name('kegiatan-pejabat.index');
 
     // Sekretariat announcement management (admin dashboard)
-    Route::prefix('pengumuman')->middleware(['role:admin-sekretariat|super-admin'])->name('pengumuman.')->group(function () {
+    Route::prefix('pengumuman')->middleware(['can:sekretariat.view'])->name('pengumuman.')->group(function () {
         Route::get('/', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'index'])->name('index');
-        Route::post('/', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'store'])->name('store');
-        Route::put('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'update'])->name('update');
-        Route::delete('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'destroy'])->name('destroy');
-        Route::patch('/{id}/pin', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'togglePin'])->name('toggle-pin');
-        Route::patch('/{id}/status', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'store'])->middleware('can:sekretariat.create')->name('store');
+        Route::put('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'update'])->middleware('can:sekretariat.edit')->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'destroy'])->middleware('can:sekretariat.delete')->name('destroy');
+        Route::patch('/{id}/pin', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'togglePin'])->middleware('can:sekretariat.edit')->name('toggle-pin');
+        Route::patch('/{id}/status', [App\Http\Controllers\Sekretariat\AnnouncementController::class, 'toggleStatus'])->middleware('can:sekretariat.edit')->name('toggle-status');
     });
 });
 

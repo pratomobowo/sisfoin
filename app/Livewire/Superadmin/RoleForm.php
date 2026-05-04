@@ -70,22 +70,7 @@ class RoleForm extends Component
 
     private function loadModulesConfig()
     {
-        $configPath = storage_path('app/modules_config.json');
-        if (file_exists($configPath)) {
-            $this->availableModules = json_decode(file_get_contents($configPath), true);
-        } else {
-            // Fallback if config file doesn't exist
-            $this->availableModules = [
-                'user_management' => ['label' => 'Manajemen Pengguna'],
-                'role_management' => ['label' => 'Manajemen Peran'],
-                'employee_management' => ['label' => 'Manajemen Karyawan'],
-                'dosen_management' => ['label' => 'Manajemen Dosen'],
-                'payroll_management' => ['label' => 'Manajemen Slip Gaji'],
-                'profile_management' => ['label' => 'Manajemen Profil'],
-                'sarpras_management' => ['label' => 'Manajemen Sarana Prasarana'],
-                'sekretariat_management' => ['label' => 'Manajemen Sekretariat'],
-            ];
-        }
+        $this->availableModules = config('modules', []);
     }
 
     public function edit($roleId)

@@ -237,22 +237,7 @@ class RoleManagement extends Component
         }
 
         $roles = Role::whereIn('id', $this->selectedRoles)->get();
-        $configPath = storage_path('app/modules_config.json');
-        
-        if (file_exists($configPath)) {
-            $availableModules = json_decode(file_get_contents($configPath), true);
-        } else {
-            $availableModules = [
-                'user_management' => ['label' => 'Manajemen Pengguna'],
-                'role_management' => ['label' => 'Manajemen Peran'],
-                'employee_management' => ['label' => 'Manajemen Karyawan'],
-                'dosen_management' => ['label' => 'Manajemen Dosen'],
-                'payroll_management' => ['label' => 'Manajemen Slip Gaji'],
-                'profile_management' => ['label' => 'Manajemen Profil'],
-                'sarpras_management' => ['label' => 'Manajemen Sarana Prasarana'],
-                'sekretariat_management' => ['label' => 'Manajemen Sekretariat'],
-            ];
-        }
+        $availableModules = config('modules', []);
 
         if (isset($availableModules[$this->bulkPermissionModule]['permissions'])) {
             $permissions = array_keys($availableModules[$this->bulkPermissionModule]['permissions']);
@@ -398,22 +383,7 @@ class RoleManagement extends Component
 
         $roles = $query->paginate($this->perPage);
 
-        // Load available modules for filter dropdown
-        $configPath = storage_path('app/modules_config.json');
-        if (file_exists($configPath)) {
-            $availableModules = json_decode(file_get_contents($configPath), true);
-        } else {
-            $availableModules = [
-                'user_management' => ['label' => 'Manajemen Pengguna'],
-                'role_management' => ['label' => 'Manajemen Peran'],
-                'employee_management' => ['label' => 'Manajemen Karyawan'],
-                'dosen_management' => ['label' => 'Manajemen Dosen'],
-                'payroll_management' => ['label' => 'Manajemen Slip Gaji'],
-                'profile_management' => ['label' => 'Manajemen Profil'],
-                'sarpras_management' => ['label' => 'Manajemen Sarana Prasarana'],
-                'sekretariat_management' => ['label' => 'Manajemen Sekretariat'],
-            ];
-        }
+        $availableModules = config('modules', []);
 
         // Group permissions by category for the test
         $permissions = Permission::all()->groupBy(function ($permission) {

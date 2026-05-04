@@ -112,6 +112,8 @@ class WorkShiftManager extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
         $this->code = strtoupper(trim((string) $this->code));
         $this->validate();
 
@@ -152,6 +154,8 @@ class WorkShiftManager extends Component
 
     public function delete($id)
     {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
         $shift = WorkShift::withCount('employeeAssignments')->find($id);
 
         if (! $shift) {

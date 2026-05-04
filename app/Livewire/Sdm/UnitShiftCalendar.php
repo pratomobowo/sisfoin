@@ -210,6 +210,8 @@ class UnitShiftCalendar extends Component
 
     public function saveQuickEdit()
     {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
         if (! $this->selectedCell) {
             return;
         }
