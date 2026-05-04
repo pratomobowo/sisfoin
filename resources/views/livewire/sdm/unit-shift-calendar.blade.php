@@ -194,7 +194,7 @@
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" wire:click="closeQuickEdit"></div>
                 
-                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-10">
+                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 z-10">
                     @php
                         [$userId, $dateStr] = explode('_', $selectedCell);
                         $employee = $this->employees->firstWhere('id', $userId);
@@ -241,8 +241,8 @@
                         </button>
                     </div>
                     
-                    <div class="space-y-2 mb-6">
-                        <label class="block">
+                    <div class="grid gap-2 mb-6 sm:grid-cols-2">
+                        <label class="block sm:col-span-2 rounded-lg border-2 border-gray-200 p-3 hover:bg-gray-50 cursor-pointer transition-colors">
                             <input type="radio" wire:model="quickEditShiftId" value="" class="mr-2">
                             <span class="text-sm font-medium text-gray-700">Default (Tidak ada shift khusus)</span>
                         </label>
