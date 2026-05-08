@@ -18,7 +18,7 @@
                     List View
                 </x-button>
                 
-                <x-button variant="primary" onclick="window.location='{{ route('sdm.absensi.unit-detail', ['unit' => $unitSlug]) }}'">
+                <x-button variant="primary" onclick="window.location='{{ route('sdm.absensi.unit-list', ['unit' => $unitSlug]) }}'">
                     <x-slot name="icon">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </x-slot>
