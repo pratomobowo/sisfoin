@@ -18,7 +18,7 @@
                     List View
                 </x-button>
                 
-                <x-button variant="primary" onclick="window.location='{{ route('sdm.absensi.unit-list', ['unit' => $unitSlug]) }}'">
+                <x-button variant="primary" wire:click="openModal()">
                     <x-slot name="icon">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </x-slot>
@@ -266,6 +266,65 @@
                         </button>
                     </div>
                     @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Assignment Modal --}}
+    @if($showModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" wire:click="closeModal"></div>
+                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 z-10">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $editingId ? 'Edit' : 'Tambah' }} Assignment Shift</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pegawai</label>
+                            <select wire:model="user_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="">Pilih Pegawai</option>
+                                @foreach($this->employeesQuery as $employee)
+                                    <option value="{{ $employee->id }}">{{ $employee->name }} ({{ $employee->nip }})</option>
+                                @endforeach
+                            </select>
+                            @error('user_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Shift</label>
+                                <select wire:model="work_shift_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">Pilih Shift</option>
+                                    @foreach($this->shifts as $shift)
+                                        <option value="{{ $shift->id }}">{{ $shift->name }} ({{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }})</option>
+                                    @endforeach
+                                </select>
+                                @error('work_shift_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
+                                <input type="date" wire:model="start_date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                                @error('start_date') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tanggal Selesai (opsional)</label>
+                            <input type="date" wire:model="end_date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+                            @error('end_date') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Catatan</label>
+                            <textarea wire:model="notes" rows="2" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button wire:click="closeModal" class="px-5 py-2.5 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+                        <button wire:click="saveAssignment" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl">Simpan</button>
+                    </div>
                 </div>
             </div>
         </div>

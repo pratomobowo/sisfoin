@@ -37,6 +37,28 @@ class UnitShiftCalendar extends Component
 
     public $quickEditEndDate = null;
 
+    // Assignment modal state
+    public $showModal = false;
+
+    public $editingId = null;
+
+    public $user_id = '';
+
+    public $work_shift_id = '';
+
+    public $start_date;
+
+    public $end_date = '';
+
+    public $notes = '';
+
+    protected $rules = [
+        'user_id' => 'required|exists:users,id',
+        'work_shift_id' => 'required|exists:work_shifts,id',
+        'start_date' => 'required|date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
+    ];
+
     public function mount($unit)
     {
         $this->unitSlug = $unit;
@@ -206,6 +228,78 @@ class UnitShiftCalendar extends Component
         $this->selectedCell = null;
         $this->quickEditShiftId = null;
         $this->quickEditEndDate = null;
+    }
+
+    public function openModal($userId = null)
+    {
+        $this->resetValidation();
+
+        $this->reset(['editingId', 'work_shift_id', 'notes', 'end_date']);
+        $this->user_id = $userId ?? '';
+        $this->start_date = date('Y-m-d');
+        $this->showModal = true;
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->editingId = null;
+    }
+
+    public function saveAssignment()
+    {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
+        $this->validate();
+
+        if (! $this->isUserInCurrentUnit((int) $this->user_id)) {
+            $this->addError('user_id', 'User tidak termasuk unit ini.');
+
+            return;
+        }
+
+        $start = Carbon::parse($this->start_date);
+        $end = $this->end_date ? Carbon::parse($this->end_date) : null;
+
+        if (EmployeeShiftAssignment::hasOverlap((int) $this->user_id, $start, $end, $this->editingId ? (int) $this->editingId : null)) {
+            $this->addError('start_date', 'Rentang tanggal overlap dengan assignment shift lain untuk user ini.');
+
+            return;
+        }
+
+        $data = [
+            'user_id' => $this->user_id,
+            'work_shift_id' => $this->work_shift_id,
+            'start_date' => $this->start_date,
+            'end_date' => $this->end_date ?: null,
+            'notes' => $this->notes,
+            'created_by' => Auth::id(),
+        ];
+
+        if ($this->editingId) {
+            EmployeeShiftAssignment::find($this->editingId)?->update($data);
+        } else {
+            EmployeeShiftAssignment::create($data);
+        }
+
+        $this->closeModal();
+        $this->toastSuccess('Assignment shift berhasil disimpan!');
+    }
+
+    public function deleteAssignment($id)
+    {
+        abort_unless(auth()->user()?->can('employee.attendance.edit'), 403);
+
+        $assignment = EmployeeShiftAssignment::find($id);
+
+        if (! $assignment || ! $this->isUserInCurrentUnit((int) $assignment->user_id)) {
+            $this->toastError('Akses ditolak: assignment bukan milik unit ini.');
+
+            return;
+        }
+
+        $assignment->delete();
+        $this->toastSuccess('Assignment shift berhasil dihapus!');
     }
 
     public function saveQuickEdit()
