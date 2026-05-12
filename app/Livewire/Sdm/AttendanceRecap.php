@@ -337,7 +337,7 @@ class AttendanceRecap extends Component
         try {
             $data = $this->getRecapData(false);
 
-            $fileName = 'Rekap_Absensi_'.Carbon::create()->month($this->month)->year($this->year)->format('F_Y').'.xlsx';
+            $fileName = 'Rekap_Absensi_'.Carbon::create()->month((int) $this->month)->year((int) $this->year)->format('F_Y').'.xlsx';
             if ($this->useCustomRange) {
                 $fileName = 'Rekap_Absensi_Custom_'.date('Ymd').'.xlsx';
             }
