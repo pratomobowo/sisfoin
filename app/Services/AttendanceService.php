@@ -79,6 +79,7 @@ class AttendanceService
                     });
                     $processedCount += $userLogs->count();
 
+                    DB::commit();
                     continue;
                 }
 
