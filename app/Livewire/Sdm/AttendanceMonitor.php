@@ -383,15 +383,13 @@ class AttendanceMonitor extends Component
 
                 if (! $employeeIds->isEmpty()) {
                     $query->orWhere(function ($q) use ($employeeIds) {
-                        $q->where('employee_type', 'employee')
-                            ->whereIn('employee_id', $employeeIds);
+                        $q->whereIn('employee_id', $employeeIds);
                     });
                 }
 
                 if (! $relatedEmployeeIds->isEmpty()) {
                     $query->orWhere(function ($q) use ($relatedEmployeeIds) {
-                        $q->where('employee_type', 'employee')
-                            ->whereIn('employee_id', $relatedEmployeeIds);
+                        $q->whereIn('employee_id', $relatedEmployeeIds);
                     });
                 }
             })
@@ -406,11 +404,11 @@ class AttendanceMonitor extends Component
             ->filter();
 
         $usersByEmployeeId = $users
-            ->filter(fn (User $user) => $user->employee_type === 'employee' && ! empty($user->employee_id))
+            ->filter(fn (User $user) => ! empty($user->employee_id))
             ->mapWithKeys(fn (User $user) => [(int) $user->employee_id => $user->id]);
 
         $usersByEmployeeMasterId = $users
-            ->filter(fn (User $user) => $user->employee_type === 'employee' && ! empty($user->employee_id))
+            ->filter(fn (User $user) => ! empty($user->employee_id))
             ->mapWithKeys(function (User $user) use ($relatedEmployeesById) {
                 $employeeRow = $relatedEmployeesById->get((int) $user->employee_id);
 
@@ -420,14 +418,31 @@ class AttendanceMonitor extends Component
             });
 
         $employeeToUserId = [];
+        $unmappedCount = 0;
         foreach ($employees as $employee) {
             $normNip = $this->normalizeNip($employee->nip);
-            $employeeToUserId[$employee->id] = $usersByEmployeeId->get((int) $employee->id)
+            $mappedUserId = $usersByEmployeeId->get((int) $employee->id)
                 ?? ($normNip ? $usersByNormalizedNip->get($normNip) : null)
                 ?? (! empty($employee->id_pegawai) ? $usersByEmployeeMasterId->get((string) $employee->id_pegawai) : null);
+            
+            $employeeToUserId[$employee->id] = $mappedUserId;
+            
+            if ($mappedUserId === null) {
+                $unmappedCount++;
+            }
         }
 
         $userIds = collect($employeeToUserId)->filter()->unique()->values()->all();
+
+        // Log untuk diagnosis jika ada banyak karyawan yang tidak ter-mapping
+        if ($unmappedCount > 0 && $employees->count() > 0) {
+            Log::warning('AttendanceMonitor: Employee-User mapping incomplete', [
+                'total_employees' => $employees->count(),
+                'unmapped_count' => $unmappedCount,
+                'mapped_count' => count($userIds),
+                'sample_unmapped_employees' => $employees->filter(fn ($e) => empty($employeeToUserId[$e->id]))->take(5)->pluck('nip')->all(),
+            ]);
+        }
 
         return [$employeeToUserId, $userIds];
     }

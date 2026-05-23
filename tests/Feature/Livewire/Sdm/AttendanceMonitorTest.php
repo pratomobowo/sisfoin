@@ -153,4 +153,82 @@ class AttendanceMonitorTest extends TestCase
 
         $this->assertSame('Finance', $employee->satuan_kerja);
     }
+
+    public function test_daily_mode_shows_attendance_for_employee_with_non_standard_employee_type(): void
+    {
+        $this->seedWorkingDaysSetting();
+
+        $monday = Carbon::parse('2026-02-16');
+
+        $employee = Employee::create([
+            'nip' => '198800004',
+            'nama' => 'Andi Staff',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'IT',
+        ]);
+
+        $user = User::factory()->create([
+            'nip' => '198800004',
+            'employee_type' => 'staff', // Non-standard employee_type
+            'employee_id' => $employee->id,
+        ]);
+
+        EmployeeAttendance::create([
+            'user_id' => $user->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'on_time',
+        ]);
+
+        $sdm = User::factory()->create();
+        $sdm->assignRole('admin-sdm');
+
+        $this->actingAs($sdm);
+        setActiveRole('admin-sdm');
+
+        Livewire::test(AttendanceMonitor::class)
+            ->set('mode', 'daily')
+            ->set('selectedDate', $monday->format('Y-m-d'))
+            ->assertSee('Andi Staff')
+            ->assertSee('Hadir')
+            ->assertDontSee('Tidak Hadir');
+    }
+
+    public function test_daily_mode_shows_attendance_mapped_by_nip_only(): void
+    {
+        $this->seedWorkingDaysSetting();
+
+        $monday = Carbon::parse('2026-02-16');
+
+        Employee::create([
+            'nip' => '198800005',
+            'nama' => 'Budi NIP Only',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'HR',
+        ]);
+
+        $user = User::factory()->create([
+            'nip' => '198800005',
+            'employee_type' => null, // No employee_type
+            'employee_id' => null,   // No employee_id
+        ]);
+
+        EmployeeAttendance::create([
+            'user_id' => $user->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'late',
+        ]);
+
+        $sdm = User::factory()->create();
+        $sdm->assignRole('admin-sdm');
+
+        $this->actingAs($sdm);
+        setActiveRole('admin-sdm');
+
+        Livewire::test(AttendanceMonitor::class)
+            ->set('mode', 'daily')
+            ->set('selectedDate', $monday->format('Y-m-d'))
+            ->assertSee('Budi NIP Only')
+            ->assertSee('Terlambat')
+            ->assertDontSee('Tidak Hadir');
+    }
 }
