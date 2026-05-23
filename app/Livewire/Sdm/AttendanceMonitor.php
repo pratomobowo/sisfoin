@@ -277,7 +277,11 @@ class AttendanceMonitor extends Component
         });
 
         if ($this->statusFilter !== '') {
-            $rows = $rows->where('status', $this->statusFilter)->values();
+            if ($this->statusFilter === 'on_time') {
+                $rows = $rows->whereIn('status', ['on_time', 'present', 'early_arrival'])->values();
+            } else {
+                $rows = $rows->where('status', $this->statusFilter)->values();
+            }
         }
 
         return $rows;
@@ -528,7 +532,7 @@ class AttendanceMonitor extends Component
 
     private function paginateCollection(Collection $items): LengthAwarePaginator
     {
-        $page = LengthAwarePaginator::resolveCurrentPage();
+        $page = $this->getPage();
         $slice = $items->forPage($page, $this->perPage)->values();
 
         return new LengthAwarePaginator(

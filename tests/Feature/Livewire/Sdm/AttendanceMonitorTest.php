@@ -190,7 +190,9 @@ class AttendanceMonitorTest extends TestCase
             ->set('selectedDate', $monday->format('Y-m-d'))
             ->assertSee('Andi Staff')
             ->assertSee('Hadir')
-            ->assertDontSee('Tidak Hadir');
+            ->assertViewHas('rows', function ($rows) {
+                return collect($rows->items())->where('status', 'absent')->isEmpty();
+            });
     }
 
     public function test_daily_mode_shows_attendance_mapped_by_nip_only(): void
@@ -229,6 +231,102 @@ class AttendanceMonitorTest extends TestCase
             ->set('selectedDate', $monday->format('Y-m-d'))
             ->assertSee('Budi NIP Only')
             ->assertSee('Terlambat')
-            ->assertDontSee('Tidak Hadir');
+            ->assertViewHas('rows', function ($rows) {
+                return collect($rows->items())->where('status', 'absent')->isEmpty();
+            });
+    }
+
+    public function test_daily_mode_status_filter_on_time_includes_on_time_present_and_early_arrival(): void
+    {
+        $this->seedWorkingDaysSetting();
+
+        $monday = Carbon::parse('2026-02-16');
+
+        $emp1 = Employee::create([
+            'nip' => '198800011',
+            'nama' => 'User OnTime',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'HR',
+        ]);
+        $u1 = User::factory()->create([
+            'nip' => '198800011',
+            'employee_id' => $emp1->id,
+        ]);
+        EmployeeAttendance::create([
+            'user_id' => $u1->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'on_time',
+        ]);
+
+        $emp2 = Employee::create([
+            'nip' => '198800012',
+            'nama' => 'User Present',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'HR',
+        ]);
+        $u2 = User::factory()->create([
+            'nip' => '198800012',
+            'employee_id' => $emp2->id,
+        ]);
+        EmployeeAttendance::create([
+            'user_id' => $u2->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'present',
+        ]);
+
+        $emp3 = Employee::create([
+            'nip' => '198800013',
+            'nama' => 'User Early',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'HR',
+        ]);
+        $u3 = User::factory()->create([
+            'nip' => '198800013',
+            'employee_id' => $emp3->id,
+        ]);
+        EmployeeAttendance::create([
+            'user_id' => $u3->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'early_arrival',
+        ]);
+
+        $emp4 = Employee::create([
+            'nip' => '198800014',
+            'nama' => 'User Late',
+            'status_aktif' => 'Aktif',
+            'satuan_kerja' => 'HR',
+        ]);
+        $u4 = User::factory()->create([
+            'nip' => '198800014',
+            'employee_id' => $emp4->id,
+        ]);
+        EmployeeAttendance::create([
+            'user_id' => $u4->id,
+            'date' => $monday->format('Y-m-d'),
+            'status' => 'late',
+        ]);
+
+        $sdm = User::factory()->create();
+        $sdm->assignRole('admin-sdm');
+
+        $this->actingAs($sdm);
+        setActiveRole('admin-sdm');
+
+        Livewire::test(AttendanceMonitor::class)
+            ->set('mode', 'daily')
+            ->set('selectedDate', $monday->format('Y-m-d'))
+            ->set('statusFilter', 'on_time')
+            ->assertSee('User OnTime')
+            ->assertSee('User Present')
+            ->assertSee('User Early')
+            ->assertDontSee('User Late')
+            ->assertViewHas('rows', function ($rows) {
+                $items = collect($rows->items());
+                return $items->count() === 3
+                    && $items->where('status', 'on_time')->isNotEmpty()
+                    && $items->where('status', 'present')->isNotEmpty()
+                    && $items->where('status', 'early_arrival')->isNotEmpty()
+                    && $items->where('status', 'late')->isEmpty();
+            });
     }
 }

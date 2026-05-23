@@ -52,7 +52,7 @@ class RoleSeeder extends Seeder
             'admin-sdm' => [
                 'display_name' => 'Admin SDM',
                 'description' => 'Akses ke modul SDM dan karyawan',
-                'modules' => ['employee_management', 'dosen_management', 'payroll_management', 'profile_management'],
+                'modules' => ['employee_management', 'dosen_management', 'payroll_management', 'profile_management', 'employee_attendance'],
                 'special_permissions' => [],
             ],
             'sekretariat' => [
