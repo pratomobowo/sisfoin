@@ -186,29 +186,46 @@ class AttendanceMonitor extends Component
 
         [$employeeToUserId, $userIds] = $this->buildEmployeeUserMap($employees);
 
-        $attendanceByUser = EmployeeAttendance::query()
+        // Fetch ALL attendance records for this date (not filtered by mapped userIds)
+        // This ensures we don't miss records due to mapping failures
+        $allAttendanceForDate = EmployeeAttendance::query()
             ->whereDate('date', $selectedDate->format('Y-m-d'))
-            ->when(! empty($userIds), fn ($query) => $query->whereIn('user_id', $userIds))
-            ->get()
-            ->keyBy('user_id');
+            ->get();
 
-        // Direct count via DB facade to bypass any Eloquent/model caching
-        $directCount = \DB::table('employee_attendances')
-            ->whereDate('date', $selectedDate->format('Y-m-d'))
-            ->when(! empty($userIds), fn ($query) => $query->whereIn('user_id', $userIds))
-            ->count();
+        // Primary lookup: by user_id (from forward mapping)
+        $attendanceByUser = $allAttendanceForDate->keyBy('user_id');
 
-        Log::info('AttendanceMonitor::buildDailyRows - attendance query', [
-            'date' => $selectedDate->format('Y-m-d'),
-            'userIds_count' => count($userIds),
-            'attendance_records_found' => $attendanceByUser->count(),
-            'direct_db_count' => $directCount,
-            'sample_user_ids' => array_slice($userIds, 0, 5),
-        ]);
+        // Secondary lookup: build a NIP-based reverse map for unmapped employees
+        // Get all user IDs that have attendance records today
+        $attendanceUserIds = $allAttendanceForDate->pluck('user_id')->unique()->values();
 
-        $rows = $employees->map(function (Employee $employee) use ($employeeToUserId, $attendanceByUser, $isWorkingDay) {
+        // Fetch those users with their NIP info
+        $attendanceUsers = $attendanceUserIds->isEmpty()
+            ? collect()
+            : User::whereIn('id', $attendanceUserIds)
+                ->whereNotNull('nip')
+                ->get(['id', 'nip']);
+
+        // Build NIP → attendance record map for reverse lookup
+        $attendanceByNip = collect();
+        foreach ($attendanceUsers as $user) {
+            $normNip = $this->normalizeNip($user->nip);
+            if ($normNip && $attendanceByUser->has($user->id)) {
+                $attendanceByNip[$normNip] = $attendanceByUser->get($user->id);
+            }
+        }
+
+        $rows = $employees->map(function (Employee $employee) use ($employeeToUserId, $attendanceByUser, $attendanceByNip, $isWorkingDay) {
             $userId = $employeeToUserId[$employee->id] ?? null;
+
+            // Try forward mapping first
             $attendance = $userId ? $attendanceByUser->get($userId) : null;
+
+            // Fallback: reverse NIP lookup if forward mapping failed
+            if (! $attendance) {
+                $normNip = $this->normalizeNip($employee->nip);
+                $attendance = $normNip ? $attendanceByNip->get($normNip) : null;
+            }
 
             $status = 'holiday';
             $statusLabel = 'Libur';
@@ -258,16 +275,40 @@ class AttendanceMonitor extends Component
 
         [$employeeToUserId, $userIds] = $this->buildEmployeeUserMap($employees);
 
-        $attendances = EmployeeAttendance::query()
+        // Fetch ALL attendance records for the range (not filtered by mapped userIds)
+        $allAttendances = EmployeeAttendance::query()
             ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-            ->when(! empty($userIds), fn ($query) => $query->whereIn('user_id', $userIds))
-            ->get()
+            ->get();
+
+        $attendances = $allAttendances
             ->groupBy(function (EmployeeAttendance $attendance) {
                 return $attendance->user_id.'|'.$attendance->date->format('Y-m-d');
             });
 
-        return $employees->map(function (Employee $employee) use ($employeeToUserId, $attendances, $start, $end) {
+        // Build NIP-based reverse lookup for unmapped employees
+        $attendanceUserIds = $allAttendances->pluck('user_id')->unique()->values();
+        $attendanceUsers = $attendanceUserIds->isEmpty()
+            ? collect()
+            : User::whereIn('id', $attendanceUserIds)
+                ->whereNotNull('nip')
+                ->get(['id', 'nip']);
+
+        $userIdByNip = collect();
+        foreach ($attendanceUsers as $user) {
+            $normNip = $this->normalizeNip($user->nip);
+            if ($normNip) {
+                $userIdByNip[$normNip] = $user->id;
+            }
+        }
+
+        return $employees->map(function (Employee $employee) use ($employeeToUserId, $attendances, $userIdByNip, $start, $end) {
             $userId = $employeeToUserId[$employee->id] ?? null;
+
+            // Fallback: reverse NIP lookup if forward mapping failed
+            if (! $userId) {
+                $normNip = $this->normalizeNip($employee->nip);
+                $userId = $normNip ? $userIdByNip->get($normNip) : null;
+            }
 
             $present = 0;
             $late = 0;
