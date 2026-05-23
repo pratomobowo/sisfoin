@@ -85,6 +85,19 @@ class AttendanceMonitor extends Component
                 causer: Auth::user(),
             );
 
+            // Verify the activity log was actually created
+            $freshLog = Activity::query()
+                ->where('log_name', 'attendance_operations')
+                ->latest('created_at')
+                ->first();
+
+            Log::info('AttendanceMonitor::reprocessAllAttendance - activity log verification', [
+                'activity_id' => $freshLog?->id,
+                'activity_created_at' => $freshLog?->created_at?->format('Y-m-d H:i:s'),
+                'activity_action' => $freshLog?->action,
+                'activity_properties' => $freshLog?->properties,
+            ]);
+
             $message = ($result['message'] ?? 'Proses ulang selesai.').' (Monitor telah diperbarui)';
             $this->toastSuccess($message);
 
@@ -130,6 +143,14 @@ class AttendanceMonitor extends Component
     {
         $employees = $this->getEmployeeBaseQuery()->get(['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja']);
         $lastAttendanceOperation = $this->lastAttendanceOperation;
+
+        Log::info('AttendanceMonitor::render - lastAttendanceOperation', [
+            'found' => $lastAttendanceOperation ? true : false,
+            'id' => $lastAttendanceOperation?->id,
+            'created_at' => $lastAttendanceOperation?->created_at?->format('Y-m-d H:i:s'),
+            'log_name' => $lastAttendanceOperation?->log_name,
+            'action' => $lastAttendanceOperation?->action,
+        ]);
 
         if ($this->mode === 'range') {
             $rows = $this->buildRangeRows($employees);
@@ -187,6 +208,13 @@ class AttendanceMonitor extends Component
             ->when(! empty($userIds), fn ($query) => $query->whereIn('user_id', $userIds))
             ->get()
             ->keyBy('user_id');
+
+        Log::info('AttendanceMonitor::buildDailyRows - attendance query', [
+            'date' => $selectedDate->format('Y-m-d'),
+            'userIds_count' => count($userIds),
+            'attendance_records_found' => $attendanceByUser->count(),
+            'sample_user_ids' => array_slice($userIds, 0, 5),
+        ]);
 
         $rows = $employees->map(function (Employee $employee) use ($employeeToUserId, $attendanceByUser, $isWorkingDay) {
             $userId = $employeeToUserId[$employee->id] ?? null;
