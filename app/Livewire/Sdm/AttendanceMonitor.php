@@ -3,6 +3,7 @@
 namespace App\Livewire\Sdm;
 
 use App\Livewire\Concerns\InteractsWithToast;
+use App\Models\ActivityLog;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Employee\Attendance as EmployeeAttendance;
@@ -18,7 +19,6 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Spatie\Activitylog\Models\Activity;
 
 #[Layout('layouts.app')]
 class AttendanceMonitor extends Component
@@ -73,6 +73,7 @@ class AttendanceMonitor extends Component
                 description: 'Reprocess attendance from monitor',
                 properties: [
                     'source' => 'attendance_monitor',
+                    'action' => 'attendance.logs.reprocess_all',
                     'processed_count' => $result['processed_count'] ?? 0,
                     'error_count' => $result['error_count'] ?? 0,
                     'execution_time' => $result['execution_time'] ?? null,
@@ -85,24 +86,14 @@ class AttendanceMonitor extends Component
                 causer: Auth::user(),
             );
 
-            // Verify the activity log was actually created
-            $freshLog = Activity::query()
-                ->where('log_name', 'attendance_operations')
-                ->latest('created_at')
-                ->first();
-
-            Log::info('AttendanceMonitor::reprocessAllAttendance - activity log verification', [
-                'activity_id' => $freshLog?->id,
-                'activity_created_at' => $freshLog?->created_at?->format('Y-m-d H:i:s'),
-                'activity_action' => $freshLog?->action,
-                'activity_properties' => $freshLog?->properties,
-            ]);
-
             $message = ($result['message'] ?? 'Proses ulang selesai.').' (Monitor telah diperbarui)';
             $this->toastSuccess($message);
 
             $this->resetPage();
         } catch (\Exception $e) {
+            Log::error('AttendanceMonitor::reprocessAllAttendance failed', [
+                'error' => $e->getMessage(),
+            ]);
             $message = 'Gagal memproses ulang data absensi: '.$e->getMessage();
             $this->toastError($message);
         }
@@ -118,29 +109,6 @@ class AttendanceMonitor extends Component
             $this->dateFrom = now()->startOfMonth()->format('Y-m-d');
             $this->dateTo = now()->format('Y-m-d');
         }
-
-        // Log all DELETE queries to employee_attendances and activity_log for debugging
-        \DB::listen(function ($query) {
-            $sql = $query->sql;
-            if (stripos($sql, 'delete') !== false) {
-                if (stripos($sql, 'employee_attendances') !== false) {
-                    Log::warning('DELETE query detected on employee_attendances', [
-                        'sql' => $sql,
-                        'bindings' => $query->bindings,
-                        'time' => $query->time,
-                        'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10),
-                    ]);
-                }
-                if (stripos($sql, 'activity_log') !== false) {
-                    Log::warning('DELETE query detected on activity_log', [
-                        'sql' => $sql,
-                        'bindings' => $query->bindings,
-                        'time' => $query->time,
-                        'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10),
-                    ]);
-                }
-            }
-        });
     }
 
     public function updated($name): void
@@ -167,14 +135,6 @@ class AttendanceMonitor extends Component
         $employees = $this->getEmployeeBaseQuery()->get(['id', 'id_pegawai', 'nama', 'nip', 'satuan_kerja']);
         $lastAttendanceOperation = $this->lastAttendanceOperation;
 
-        Log::info('AttendanceMonitor::render - lastAttendanceOperation', [
-            'found' => $lastAttendanceOperation ? true : false,
-            'id' => $lastAttendanceOperation?->id,
-            'created_at' => $lastAttendanceOperation?->created_at?->format('Y-m-d H:i:s'),
-            'log_name' => $lastAttendanceOperation?->log_name,
-            'action' => $lastAttendanceOperation?->action,
-        ]);
-
         if ($this->mode === 'range') {
             $rows = $this->buildRangeRows($employees);
 
@@ -194,9 +154,9 @@ class AttendanceMonitor extends Component
         ]);
     }
 
-    public function getLastAttendanceOperationProperty(): ?Activity
+    public function getLastAttendanceOperationProperty(): ?ActivityLog
     {
-        return Activity::query()
+        return ActivityLog::query()
             ->where('log_name', 'attendance_operations')
             ->latest('created_at')
             ->first();

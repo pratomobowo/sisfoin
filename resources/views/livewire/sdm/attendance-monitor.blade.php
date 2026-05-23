@@ -39,7 +39,7 @@
                 <span class="font-semibold">Proses terakhir:</span>
                 {{ $lastAttendanceOperation->created_at?->format('d/m/Y H:i:s') }}
                 oleh {{ $lastAttendanceOperation->causer?->name ?? 'System' }}
-                | aksi: {{ $lastAttendanceOperation->properties['action'] ?? '-' }}
+                | aksi: {{ $lastAttendanceOperation->action ?? ($lastAttendanceOperation->properties['action'] ?? '-') }}
                 | processed: {{ $lastAttendanceOperation->properties['processed_count'] ?? 0 }}
                 | errors: {{ $lastAttendanceOperation->properties['error_count'] ?? 0 }}
             </div>
