@@ -232,10 +232,17 @@ class AttendanceMonitor extends Component
             ->get()
             ->keyBy('user_id');
 
+        // Direct count via DB facade to bypass any Eloquent/model caching
+        $directCount = \DB::table('employee_attendances')
+            ->whereDate('date', $selectedDate->format('Y-m-d'))
+            ->when(! empty($userIds), fn ($query) => $query->whereIn('user_id', $userIds))
+            ->count();
+
         Log::info('AttendanceMonitor::buildDailyRows - attendance query', [
             'date' => $selectedDate->format('Y-m-d'),
             'userIds_count' => count($userIds),
             'attendance_records_found' => $attendanceByUser->count(),
+            'direct_db_count' => $directCount,
             'sample_user_ids' => array_slice($userIds, 0, 5),
         ]);
 
