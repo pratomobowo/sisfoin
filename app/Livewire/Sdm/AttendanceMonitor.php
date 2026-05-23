@@ -118,6 +118,29 @@ class AttendanceMonitor extends Component
             $this->dateFrom = now()->startOfMonth()->format('Y-m-d');
             $this->dateTo = now()->format('Y-m-d');
         }
+
+        // Log all DELETE queries to employee_attendances and activity_log for debugging
+        \DB::listen(function ($query) {
+            $sql = $query->sql;
+            if (stripos($sql, 'delete') !== false) {
+                if (stripos($sql, 'employee_attendances') !== false) {
+                    Log::warning('DELETE query detected on employee_attendances', [
+                        'sql' => $sql,
+                        'bindings' => $query->bindings,
+                        'time' => $query->time,
+                        'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10),
+                    ]);
+                }
+                if (stripos($sql, 'activity_log') !== false) {
+                    Log::warning('DELETE query detected on activity_log', [
+                        'sql' => $sql,
+                        'bindings' => $query->bindings,
+                        'time' => $query->time,
+                        'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10),
+                    ]);
+                }
+            }
+        });
     }
 
     public function updated($name): void
