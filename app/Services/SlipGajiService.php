@@ -222,7 +222,7 @@ class SlipGajiService
                 $detailData['nip'] = $row->nip;
                 $detailData['nama'] = $row->nama ?? '-';
                 $detailData['status'] = $detailData['status'] ?: 'KARYAWAN_TETAP';
-                $detailData['gaji_bersih'] = $detailData['gaji_bersih'] ?? $row->net_amount ?? 0;
+                $detailData['penerimaan_bersih'] = $detailData['penerimaan_bersih'] ?? $row->net_amount ?? 0;
                 SlipGajiDetail::create($detailData);
             }
 
