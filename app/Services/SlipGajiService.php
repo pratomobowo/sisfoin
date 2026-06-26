@@ -27,7 +27,7 @@ class SlipGajiService
     {
         // Check if periode and mode combination already exists
         if (SlipGajiHeader::where('periode', $periode)->where('mode', $mode)->exists()) {
-            $modeLabel = $mode === 'gaji_13' ? 'Gaji 13' : 'Standard';
+            $modeLabel = $this->getModeLabel($mode);
 
             return [
                 'success' => false,
@@ -518,6 +518,7 @@ class SlipGajiService
     {
         return match ($mode) {
             'gaji_13' => 'Gaji 13',
+            'gaji_14' => 'Gaji 14',
             'thr' => 'THR',
             default => 'Standard',
         };
@@ -740,12 +741,18 @@ class SlipGajiService
         // Determine the template based on employee status and mode
         $status = strtolower(str_replace('_', '-', $detail->status));
 
-        // For gaji_13 mode, use special templates
+        // For gaji_13 / gaji_14 mode, use special templates
         if ($mode === 'gaji_13') {
             if ($detail->status === 'KARYAWAN_MAGANG') {
                 $template = 'sdm.slip-gaji.pdf-templates.karyawan-kontrak-gaji13';
             } else {
                 $template = 'sdm.slip-gaji.pdf-templates.'.$status.'-gaji13';
+            }
+        } elseif ($mode === 'gaji_14') {
+            if ($detail->status === 'KARYAWAN_MAGANG') {
+                $template = 'sdm.slip-gaji.pdf-templates.karyawan-kontrak-gaji14';
+            } else {
+                $template = 'sdm.slip-gaji.pdf-templates.'.$status.'-gaji14';
             }
         } elseif ($mode === 'thr') {
             if ($detail->status === 'KARYAWAN_MAGANG') {

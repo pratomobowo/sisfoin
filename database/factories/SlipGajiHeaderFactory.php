@@ -14,7 +14,7 @@ class SlipGajiHeaderFactory extends Factory
     {
         return [
             'periode' => $this->faker->date('Y-m'),
-            'mode' => $this->faker->randomElement(['standard', 'gaji_13', 'thr']),
+            'mode' => $this->faker->randomElement(['standard', 'gaji_13', 'gaji_14', 'thr']),
             'file_original' => $this->faker->word.'.xlsx',
             'uploaded_by' => User::factory(),
             'uploaded_at' => now(),
